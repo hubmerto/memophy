@@ -5,103 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>MEMPHY</title>
 <meta name="description" content="MEMPHY — model / DJ / producer. Soon.">
+<meta property="og:site_name" content="MEMPHY">
 <meta property="og:title" content="MEMPHY">
 <meta property="og:description" content="model / DJ / producer — soon">
-<meta name="theme-color" content="#b9c6ea">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='black'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-style='italic' font-weight='bold' font-size='44' fill='none' stroke='white' stroke-width='2' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.memphy.co/">
+<meta property="og:image" content="https://www.memphy.co/og.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="MEMPHY">
+<meta name="twitter:image" content="https://www.memphy.co/og.jpg">
+<meta name="theme-color" content="#d955d0">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <style>
-  :root{
-    --ink:#181530;
-    --ink-muted:rgba(24,21,48,.55);
-    --ink-faint:rgba(24,21,48,.34);
-  }
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{
-    height:100%;
-    /* fallback approximating the 3D sky while three.js loads */
-    background:linear-gradient(#96bfe8,#b9c6ea 40%,#d5c2e0 62%,#eac3d6 80%,#f0bccc 92%,#93a8d0);
-    color:var(--ink);
-    font-family:'Space Grotesk',sans-serif;
-    font-weight:300;
-    -webkit-font-smoothing:antialiased;
-    overflow:hidden;
+  html,body{height:100%;background:#d955d0;overflow:hidden}
+  #bg{
+    position:fixed;inset:0;z-index:0;
+    width:100%;height:100%;
+    object-fit:cover;
   }
-  ::selection{background:var(--ink);color:#fff}
-
-  /* content sits above the fixed z-index:0 background layer */
-  body{
-    display:grid;
-    grid-template-rows:auto 1fr auto;
-    padding:clamp(20px,4vw,40px);
-    padding-bottom:calc(clamp(20px,4vw,40px) + env(safe-area-inset-bottom));
-  }
-
-  header,footer{
-    display:flex;
-    justify-content:space-between;
-    align-items:baseline;
-    gap:12px;
-    font-size:11px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--ink-muted);
-    position:relative;z-index:1;
-  }
-
-  /* middle row is empty — the chrome emblem spins behind it */
-  .lower{
-    position:relative;z-index:1;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:14px;
-    padding-bottom:clamp(20px,4vh,36px);
-  }
-  .tag{
-    font-size:12px;
-    letter-spacing:.42em;
-    text-indent:.42em; /* recenter the letterspaced line */
-    text-transform:uppercase;
-    color:var(--ink);
-    text-align:center;
-  }
-  .tag span{color:var(--ink-faint);margin:0 .5em}
-  .soon{
-    font-size:11px;
-    letter-spacing:.2em;
-    text-indent:.2em;
-    text-transform:uppercase;
-    color:var(--ink-muted);
-    text-align:center;
-  }
-  .soon b{
-    font-weight:400;
-    color:var(--ink);
-    animation:blink 2.4s steps(1) infinite;
-  }
-  @keyframes blink{50%{opacity:.25}}
-  @media (prefers-reduced-motion:reduce){.soon b{animation:none}}
+  /* the chrome emblem layer (z-index:1) is injected by mephy-background.js */
 </style>
 </head>
 <body>
-  <header>
-    <span>memphy.co</span>
-    <span>est. 2026</span>
-  </header>
-
-  <div></div>
-
-  <div class="lower">
-    <div class="tag">model<span>/</span>dj<span>/</span>producer</div>
-    <div class="soon"><b>soon</b></div>
-    <footer style="align-self:stretch">
-      <span>&copy; memphy</span>
-      <span>all rights reserved</span>
-    </footer>
-  </div>
+  <video id="bg" src="/bg.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
+  <script>
+    // some browsers ignore the autoplay attribute — kick playback explicitly
+    (function(){
+      var v = document.getElementById('bg');
+      var kick = function(){ v.play().catch(function(){}); };
+      kick();
+      v.addEventListener('loadeddata', kick);
+      ['pointerdown','touchstart','keydown'].forEach(function(e){
+        addEventListener(e, kick, { once: true, passive: true });
+      });
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden) kick();
+      });
+    })();
+  </script>
 
   <script type="importmap">
   {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
@@ -110,7 +54,7 @@
   <script>window.MEPHY_BG_MANUAL = true;</script>
   <script type="module">
     import { initMephyBackground } from '/mephy-background.js';
-    initMephyBackground({ margin: 1.45, offsetY: 0.12 });
+    initMephyBackground({ transparent: true, zIndex: 1, margin: 1.45 });
   </script>
 </body>
 </html>

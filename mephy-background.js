@@ -27,6 +27,7 @@ export function initMephyBackground({
   zIndex = 0,
   margin = 1.12,       // camera pullback: higher = smaller emblem, more sky
   offsetY = 0,         // fraction of emblem height to raise it on screen
+  transparent = false, // true: no sky, clear canvas — emblem floats over the page
 } = {}) {
   const layer = document.createElement('div');
   layer.style.cssText = `position:fixed;inset:0;z-index:${zIndex};pointer-events:none;`;
@@ -110,14 +111,15 @@ export function initMephyBackground({
 
   // ---------------------------------------------------------------- scene
   function buildScene(svgPaths) {
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: transparent });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.domElement.style.cssText = 'width:100%;height:100%;display:block;';
+    if (transparent) renderer.setClearColor(0x000000, 0);
     layer.appendChild(renderer.domElement);
 
     scene = new THREE.Scene();
-    scene.background = makeSky();
+    scene.background = transparent ? null : makeSky();
     scene.environment = makeEnv();
 
     camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
