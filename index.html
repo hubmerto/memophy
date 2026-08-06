@@ -7,43 +7,36 @@
 <meta name="description" content="MEMPHY — model / DJ / producer. Soon.">
 <meta property="og:title" content="MEMPHY">
 <meta property="og:description" content="model / DJ / producer — soon">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#b9c6ea">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='black'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-style='italic' font-weight='bold' font-size='44' fill='none' stroke='white' stroke-width='2' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#000;
-    --fg:#e8e8e8;
-    --muted:#777;
-    --faint:#3a3a3a;
+    --ink:#181530;
+    --ink-muted:rgba(24,21,48,.55);
+    --ink-faint:rgba(24,21,48,.34);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{
     height:100%;
-    background:var(--bg);
-    color:var(--fg);
+    /* fallback approximating the 3D sky while three.js loads */
+    background:linear-gradient(#96bfe8,#b9c6ea 40%,#d5c2e0 62%,#eac3d6 80%,#f0bccc 92%,#93a8d0);
+    color:var(--ink);
     font-family:'Space Grotesk',sans-serif;
     font-weight:300;
     -webkit-font-smoothing:antialiased;
     overflow:hidden;
   }
-  ::selection{background:#fff;color:#000}
+  ::selection{background:var(--ink);color:#fff}
 
+  /* content sits above the fixed z-index:0 background layer */
   body{
     display:grid;
     grid-template-rows:auto 1fr auto;
     padding:clamp(20px,4vw,40px);
     padding-bottom:calc(clamp(20px,4vw,40px) + env(safe-area-inset-bottom));
-  }
-
-  /* faint radial glow behind the mark */
-  body::before{
-    content:"";
-    position:fixed;inset:0;
-    background:radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,255,255,.06), transparent 70%);
-    pointer-events:none;
   }
 
   header,footer{
@@ -54,68 +47,39 @@
     font-size:11px;
     letter-spacing:.14em;
     text-transform:uppercase;
-    color:var(--muted);
-    z-index:1;
+    color:var(--ink-muted);
+    position:relative;z-index:1;
   }
 
-  main{
+  /* middle row is empty — the chrome emblem spins behind it */
+  .lower{
+    position:relative;z-index:1;
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:center;
-    gap:clamp(28px,5vh,48px);
-    z-index:1;
+    gap:14px;
+    padding-bottom:clamp(20px,4vh,36px);
   }
-
-  .mark{
-    width:min(78vw,720px);
-    position:relative;
-  }
-  .mark img{
-    display:block;
-    width:100%;
-    height:auto;
-    filter:invert(1);
-  }
-  /* chrome sweep across the wordmark */
-  .mark::after{
-    content:"";
-    position:absolute;inset:0;
-    background:linear-gradient(105deg, transparent 40%, rgba(255,255,255,.5) 50%, transparent 60%);
-    background-size:250% 100%;
-    mix-blend-mode:overlay;
-    animation:sweep 6s ease-in-out infinite;
-    pointer-events:none;
-  }
-  @keyframes sweep{
-    0%,55%{background-position:130% 0}
-    85%,100%{background-position:-30% 0}
-  }
-  @media (prefers-reduced-motion:reduce){
-    .mark::after{animation:none;display:none}
-  }
-
   .tag{
     font-size:12px;
     letter-spacing:.42em;
     text-indent:.42em; /* recenter the letterspaced line */
     text-transform:uppercase;
-    color:var(--fg);
+    color:var(--ink);
     text-align:center;
   }
-  .tag span{color:var(--faint);margin:0 .5em}
-
+  .tag span{color:var(--ink-faint);margin:0 .5em}
   .soon{
     font-size:11px;
     letter-spacing:.2em;
     text-indent:.2em;
     text-transform:uppercase;
-    color:var(--muted);
+    color:var(--ink-muted);
     text-align:center;
   }
   .soon b{
     font-weight:400;
-    color:var(--fg);
+    color:var(--ink);
     animation:blink 2.4s steps(1) infinite;
   }
   @keyframes blink{50%{opacity:.25}}
@@ -128,27 +92,25 @@
     <span>est. 2026</span>
   </header>
 
-  <main>
-    <div class="mark">
-      <img src="assets/memphy-wordmark.png" alt="Memphy" fetchpriority="high">
-    </div>
+  <div></div>
+
+  <div class="lower">
     <div class="tag">model<span>/</span>dj<span>/</span>producer</div>
     <div class="soon"><b>soon</b></div>
-  </main>
-
-  <footer>
-    <span>&copy; memphy</span>
-    <span>all rights reserved</span>
-  </footer>
+    <footer style="align-self:stretch">
+      <span>&copy; memphy</span>
+      <span>all rights reserved</span>
+    </footer>
+  </div>
 
   <script type="importmap">
   {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
               "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
   </script>
-  <script>window.MEPHY_SAVER_MANUAL = true;</script>
+  <script>window.MEPHY_BG_MANUAL = true;</script>
   <script type="module">
-    import { initMephyScreensaver } from '/mephy-screensaver.js';
-    initMephyScreensaver({ idleDelay: 30000 });
+    import { initMephyBackground } from '/mephy-background.js';
+    initMephyBackground({ margin: 1.45, offsetY: 0.12 });
   </script>
 </body>
 </html>
