@@ -55,7 +55,10 @@
   <script>window.MEPHY_BG_MANUAL = true;</script>
   <script type="module">
     import { initMephyBackground } from '/mephy-background.js';
-    initMephyBackground({ transparent: true, zIndex: 1, margin: 1.45 });
+    initMephyBackground({
+      transparent: true, zIndex: 1, margin: 1.45,
+      envVideo: document.getElementById('bg'),
+    });
   </script>
 </body>
 </html>

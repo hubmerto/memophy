@@ -28,13 +28,14 @@ export function initMephyBackground({
   margin = 1.12,       // camera pullback: higher = smaller emblem, more sky
   offsetY = 0,         // fraction of emblem height to raise it on screen
   transparent = false, // true: no sky, clear canvas — emblem floats over the page
+  envVideo = null,     // HTMLVideoElement: reflect this live video instead of the baked horizon
 } = {}) {
   const layer = document.createElement('div');
   layer.style.cssText = `position:fixed;inset:0;z-index:${zIndex};pointer-events:none;`;
   document.body.prepend(layer);
 
   let renderer = null, scene = null, camera = null, logoGroup = null;
-  let raf = 0, spinT = 0, lastT = 0;
+  let raf = 0, spinT = 0, lastT = 0, envUpdate = null;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   // ---------------------------------------------------------------- helpers
@@ -120,7 +121,39 @@ export function initMephyBackground({
 
     scene = new THREE.Scene();
     scene.background = transparent ? null : makeSky();
-    scene.environment = makeEnv();
+    if (envVideo) {
+      // live hybrid env: each frame of the video, with the classic chrome
+      // horizon band overlaid so the metal keeps its hard bright/dark contrast
+      const ec = document.createElement('canvas');
+      ec.width = 512; ec.height = 256;
+      const eg = ec.getContext('2d');
+      const band = document.createElement('canvas');
+      band.width = 512; band.height = 256;
+      const bg = band.getContext('2d');
+      const grad = bg.createLinearGradient(0, 0, 0, 256);
+      [[0, 'rgba(255,255,255,0)'], [0.40, 'rgba(255,255,255,.30)'],
+       [0.475, 'rgba(255,255,255,.95)'], [0.505, 'rgba(10,5,15,.9)'],
+       [0.66, 'rgba(10,5,15,.35)'], [1, 'rgba(0,0,0,.75)']]
+        .forEach(([p, col]) => grad.addColorStop(p, col));
+      bg.fillStyle = grad;
+      bg.fillRect(0, 0, 512, 256);
+      const tex = new THREE.CanvasTexture(ec);
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      scene.environment = tex;
+      envUpdate = () => {
+        const vw = envVideo.videoWidth, vh = envVideo.videoHeight;
+        if (!vw || envVideo.readyState < 2) return;
+        const s = Math.max(512 / vw, 256 / vh);
+        const dw = vw * s, dh = vh * s;
+        eg.drawImage(envVideo, (512 - dw) / 2, (256 - dh) / 2, dw, dh);
+        eg.drawImage(band, 0, 0);
+        tex.needsUpdate = true;
+      };
+      envUpdate();
+    } else {
+      scene.environment = makeEnv();
+    }
 
     camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
 
@@ -238,6 +271,7 @@ export function initMephyBackground({
     const HALF = Math.PI / 2;
     const a = spinT * speed;
     logoGroup.rotation.y = ((((a + HALF) % Math.PI) + Math.PI) % Math.PI) - HALF;
+    if (envUpdate) envUpdate();
     renderer.render(scene, camera);
   }
 
