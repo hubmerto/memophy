@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MEMPHY</title>
+<meta name="description" content="MEMPHY — model / DJ / producer. Soon.">
+<meta property="og:title" content="MEMPHY">
+<meta property="og:description" content="model / DJ / producer — soon">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' fill='black'/%3E%3Ctext x='32' y='46' font-family='Georgia,serif' font-style='italic' font-weight='bold' font-size='44' fill='none' stroke='white' stroke-width='2' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#000;
+    --fg:#e8e8e8;
+    --muted:#777;
+    --faint:#3a3a3a;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{
+    height:100%;
+    background:var(--bg);
+    color:var(--fg);
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+    overflow:hidden;
+  }
+  ::selection{background:#fff;color:#000}
+
+  body{
+    display:grid;
+    grid-template-rows:auto 1fr auto;
+    padding:clamp(20px,4vw,40px);
+    padding-bottom:calc(clamp(20px,4vw,40px) + env(safe-area-inset-bottom));
+  }
+
+  /* faint radial glow behind the mark */
+  body::before{
+    content:"";
+    position:fixed;inset:0;
+    background:radial-gradient(ellipse 60% 40% at 50% 50%, rgba(255,255,255,.06), transparent 70%);
+    pointer-events:none;
+  }
+
+  header,footer{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--muted);
+    z-index:1;
+  }
+
+  main{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(28px,5vh,48px);
+    z-index:1;
+  }
+
+  .mark{
+    width:min(78vw,720px);
+    position:relative;
+  }
+  .mark img{
+    display:block;
+    width:100%;
+    height:auto;
+    filter:invert(1);
+  }
+  /* chrome sweep across the wordmark */
+  .mark::after{
+    content:"";
+    position:absolute;inset:0;
+    background:linear-gradient(105deg, transparent 40%, rgba(255,255,255,.5) 50%, transparent 60%);
+    background-size:250% 100%;
+    mix-blend-mode:overlay;
+    animation:sweep 6s ease-in-out infinite;
+    pointer-events:none;
+  }
+  @keyframes sweep{
+    0%,55%{background-position:130% 0}
+    85%,100%{background-position:-30% 0}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .mark::after{animation:none;display:none}
+  }
+
+  .tag{
+    font-size:12px;
+    letter-spacing:.42em;
+    text-indent:.42em; /* recenter the letterspaced line */
+    text-transform:uppercase;
+    color:var(--fg);
+    text-align:center;
+  }
+  .tag span{color:var(--faint);margin:0 .5em}
+
+  .soon{
+    font-size:11px;
+    letter-spacing:.2em;
+    text-indent:.2em;
+    text-transform:uppercase;
+    color:var(--muted);
+    text-align:center;
+  }
+  .soon b{
+    font-weight:400;
+    color:var(--fg);
+    animation:blink 2.4s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:.25}}
+  @media (prefers-reduced-motion:reduce){.soon b{animation:none}}
+</style>
+</head>
+<body>
+  <header>
+    <span>memphy.co</span>
+    <span>est. 2026</span>
+  </header>
+
+  <main>
+    <div class="mark">
+      <img src="assets/memphy-wordmark.png" alt="Memphy" fetchpriority="high">
+    </div>
+    <div class="tag">model<span>/</span>dj<span>/</span>producer</div>
+    <div class="soon"><b>soon</b></div>
+  </main>
+
+  <footer>
+    <span>&copy; memphy</span>
+    <span>all rights reserved</span>
+  </footer>
+</body>
+</html>
