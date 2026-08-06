@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>MEMPHY — STORE</title>
+<meta name="description" content="MEMPHY store">
+<meta name="robots" content="noindex">
+<meta property="og:site_name" content="MEMPHY">
+<meta property="og:title" content="MEMPHY — STORE">
+<meta property="og:image" content="https://www.memphy.co/og.jpg">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=Inter+Tight:wght@100..900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- loader -->
+<div id="loader" aria-hidden="true">
+  <div id="loaderBrand"></div>
+  <div id="loaderBar"><span></span></div>
+</div>
+
+<!-- text background texture -->
+<div id="textbg" aria-hidden="true"></div>
+
+<!-- header -->
+<header>
+  <button id="burger" class="iconbtn" aria-label="menu">
+    <span></span><span></span>
+  </button>
+  <nav id="mainnav">
+    <a href="#" data-nav="home">SHOP</a>
+    <a href="#" data-nav="info">INFO</a>
+  </nav>
+  <a href="#" id="logo" data-nav="home">MEMPHY</a>
+  <div id="actions">
+    <a href="#" id="login">LOGIN</a>
+    <button id="cartBtn" class="iconbtn" aria-label="cart">CART <span id="cartCount">0</span></button>
+    <button id="modeToggle" class="iconbtn" aria-label="toggle dark mode"><span id="modeDot"></span></button>
+  </div>
+</header>
+
+<!-- views -->
+<main id="content">
+
+  <section id="view-home" class="view">
+    <div id="grid"></div>
+  </section>
+
+  <section id="view-product" class="view" hidden>
+    <button id="backBtn">&larr; BACK</button>
+    <div id="productLayout">
+      <div id="pImageWrap"><img id="pImage" src="" alt=""></div>
+      <div id="pInfo">
+        <h1 id="pName"></h1>
+        <div id="pPrice"></div>
+        <div id="pStatus"></div>
+        <div id="pSizes" class="pills"></div>
+        <div id="pQty">
+          <button id="qtyMinus" class="qbtn" aria-label="less">&minus;</button>
+          <span id="qtyVal">1</span>
+          <button id="qtyPlus" class="qbtn" aria-label="more">+</button>
+        </div>
+        <button id="addBtn">ADD TO CART</button>
+        <ul id="pDesc"></ul>
+        <p class="shipnote">ships worldwide from berlin in 5&ndash;10 days.</p>
+        <p class="finalnote">all sales final.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="view-info" class="view" hidden>
+    <div id="infoInner">
+      <h1>INFO</h1>
+      <h2>RETURNS</h2>
+      <p>All sales are final. Every piece leaves the studio checked and packed by hand. If something arrives damaged, email us within 7 days with photos and we will make it right.</p>
+      <h2>SHIPPING</h2>
+      <p>Orders ship worldwide from Berlin within 5&ndash;10 working days. You will receive tracking by email as soon as your order is on its way. Customs and import fees outside the EU are the buyer's responsibility.</p>
+      <h2>CONTACT</h2>
+      <p><a href="mailto:orders@memphy.co">orders@memphy.co</a></p>
+    </div>
+  </section>
+
+</main>
+
+<!-- cart drawer -->
+<div id="overlay" hidden></div>
+<aside id="cart" aria-label="cart" hidden>
+  <div id="cartHead">
+    <span>CART</span>
+    <button id="cartClose" class="iconbtn" aria-label="close">&times;</button>
+  </div>
+  <div id="cartItems"></div>
+  <div id="cartFoot">
+    <div id="cartSubtotal"><span>SUBTOTAL</span><span id="subtotalVal"></span></div>
+    <button id="checkoutBtn">CHECKOUT</button>
+  </div>
+</aside>
+
+<!-- footer -->
+<footer>
+  <a href="#" data-nav="info">INFO</a>
+  <span>&copy; MEMPHY 2026</span>
+  <a href="/" id="followLink">MEMPHY.CO</a>
+</footer>
+
+<script src="textbg.js"></script>
+<script src="store.js"></script>
+</body>
+</html>
