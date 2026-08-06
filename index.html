@@ -27,11 +27,18 @@
     object-fit:cover;
     object-position:50% 12%; /* bias the crop upward: keep her face in frame on wide screens */
   }
-  /* the chrome emblem layer (z-index:1) is injected by mephy-background.js */
+  #logo3d{
+    position:fixed;z-index:1;
+    top:calc(14px + env(safe-area-inset-top));
+    left:50%;transform:translateX(-50%);
+    width:min(300px,64vw);height:110px;
+    pointer-events:none;
+  }
 </style>
 </head>
 <body>
   <video id="bg" src="/bg.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
+  <div id="logo3d" aria-hidden="true"></div>
   <script>
     // some browsers ignore the autoplay attribute — kick playback explicitly
     (function(){
@@ -54,9 +61,10 @@
   </script>
   <script>window.MEPHY_BG_MANUAL = true;</script>
   <script type="module">
-    import { initMephyBackground } from '/mephy-background.js';
+    import { initMephyBackground } from '/mephy-background.js?v=3';
     initMephyBackground({
-      transparent: true, zIndex: 1, margin: 1.45,
+      transparent: true,
+      mount: document.getElementById('logo3d'),
       envVideo: document.getElementById('bg'),
     });
   </script>

@@ -29,10 +29,14 @@ export function initMephyBackground({
   offsetY = 0,         // fraction of emblem height to raise it on screen
   transparent = false, // true: no sky, clear canvas — emblem floats over the page
   envVideo = null,     // HTMLVideoElement: reflect this live video instead of the baked horizon
+  mount = null,        // element to render into (sized by the page); default: fullscreen layer
 } = {}) {
-  const layer = document.createElement('div');
-  layer.style.cssText = `position:fixed;inset:0;z-index:${zIndex};pointer-events:none;`;
-  document.body.prepend(layer);
+  let layer = mount;
+  if (!layer) {
+    layer = document.createElement('div');
+    layer.style.cssText = `position:fixed;inset:0;z-index:${zIndex};pointer-events:none;`;
+    document.body.prepend(layer);
+  }
 
   let renderer = null, scene = null, camera = null, logoGroup = null;
   let raf = 0, spinT = 0, lastT = 0, envUpdate = null;
@@ -246,7 +250,7 @@ export function initMephyBackground({
   // frame the full swept extent for the current window aspect
   function fitViewport() {
     if (!renderer) return;
-    const w = innerWidth, h = innerHeight;
+    const w = layer.clientWidth || innerWidth, h = layer.clientHeight || innerHeight;
     renderer.setSize(w, h);
     camera.aspect = w / h;
     const box = new THREE.Box3().setFromObject(logoGroup);
