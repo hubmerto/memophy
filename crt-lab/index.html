@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRT LAB</title>
+<style>
+  :root{
+    --bg:#050506; --panel:#0b0b0e; --line:#1c1c22; --txt:#d8d8dc; --dim:#6b6b74;
+    --acc:#4dff7c;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    background:var(--bg); color:var(--txt);
+    font:12px/1.5 "SF Mono", ui-monospace, Menlo, monospace;
+    display:flex; overflow:hidden;
+  }
+  #stage{flex:1; position:relative; min-width:0;}
+  body, #glcanvas, button, select, input{
+    cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"><path d="M5 3 L5 19 L9.2 15.4 L11.6 21 L14.4 19.8 L12 14.4 L17 14.2 Z" fill="white" stroke="black" stroke-width="1.2"/></svg>') 5 3, default;
+  }
+  #glcanvas{display:block; width:100%; height:100%;}
+  #drophint{
+    position:absolute; left:16px; bottom:14px; color:var(--dim); pointer-events:none;
+    text-transform:uppercase; letter-spacing:.12em; font-size:10px;
+  }
+  #stage.dragging::after{
+    content:"DROP MEDIA"; position:absolute; inset:12px; border:1px dashed var(--acc);
+    display:flex; align-items:center; justify-content:center; color:var(--acc);
+    letter-spacing:.3em; background:rgba(0,0,0,.55); pointer-events:none;
+  }
+  #panel{
+    width:292px; flex:none; background:var(--panel); border-left:1px solid var(--line);
+    overflow-y:auto; padding:16px 16px 40px;
+  }
+  #panel::-webkit-scrollbar{width:4px;} #panel::-webkit-scrollbar-thumb{background:#26262e;}
+  h1{font-size:13px; letter-spacing:.28em; font-weight:600; color:#fff;}
+  h1 span{color:var(--acc);}
+  .sub{color:var(--dim); font-size:10px; letter-spacing:.1em; margin:2px 0 14px;}
+  .btnrow{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;}
+  button{
+    background:#131318; border:1px solid var(--line); color:var(--txt);
+    font:inherit; font-size:10px; letter-spacing:.08em; padding:6px 9px; cursor:pointer;
+    text-transform:uppercase;
+  }
+  button:hover{border-color:var(--acc); color:var(--acc);}
+  .presets{display:flex; flex-wrap:wrap; gap:5px; margin-bottom:16px;}
+  .presets button{padding:4px 8px;}
+  .presets button.on{background:var(--acc); border-color:var(--acc); color:#000;}
+  button.rec{border-color:#ff4d4d; color:#ff4d4d;}
+  button.rec:hover{border-color:#ff4d4d; color:#ff4d4d;}
+  .grp{margin-bottom:14px;}
+  .grp>label{
+    display:block; color:var(--dim); font-size:9px; letter-spacing:.22em;
+    text-transform:uppercase; border-bottom:1px solid var(--line);
+    padding-bottom:4px; margin-bottom:8px;
+  }
+  .ctl{display:grid; grid-template-columns:86px 1fr 34px; gap:8px; align-items:center; margin-bottom:5px;}
+  .ctl span{color:var(--txt); font-size:10px; white-space:nowrap; overflow:hidden;}
+  .ctl output{color:var(--dim); font-size:9px; text-align:right;}
+  input[type=range]{
+    -webkit-appearance:none; appearance:none; height:2px; background:#26262e; outline:none; width:100%;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; width:10px; height:10px; background:var(--acc); border-radius:0; cursor:ew-resize;
+  }
+  select{
+    background:#131318; border:1px solid var(--line); color:var(--txt); font:inherit; font-size:10px;
+    padding:3px 4px; width:100%;
+  }
+  #fps{position:absolute; top:12px; left:16px; color:var(--dim); font-size:10px; letter-spacing:.1em; pointer-events:none;}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="glcanvas"></canvas>
+  <div id="fps"></div>
+  <div id="drophint">drop image / video &bull; hold = zoom &bull; scroll = amount</div>
+</div>
+<div id="panel">
+  <h1>CRT<span>_</span>LAB</h1>
+  <div class="sub">webgl crt simulator</div>
+  <div class="btnrow">
+    <button id="bLoad">Load media</button>
+    <button id="bCam">Webcam</button>
+    <button id="bTab">Capture tab</button>
+    <button id="bTest">Test card</button>
+    <button id="bSave">Save frame</button>
+    <button id="bRec">Record</button>
+  </div>
+  <input type="file" id="file" accept="image/*,video/*,.avi,.mov,.mkv,.mpg,.mpeg,.wmv,.m4v,.ts" hidden>
+  <div class="grp"><label>Presets</label><div class="presets" id="presets"></div></div>
+  <div id="controls"></div>
+</div>
+
+<script>
+"use strict";
+/* ---------------- parameter schema ---------------- */
+const GROUPS = [
+  ["Hover zoom", [
+    ["loupeZoom","zoom",        1, 8,  .1, 2],
+  ]],
+  ["Compression", [
+    ["comp",     "artifacts",   0, 1,   .01, 0],
+    ["csub",     "chroma sub",  0, 1,   .01, 0],
+  ]],
+  ["Screen", [
+    ["margin",   "margin px",   0, 200,  1,   48],
+    ["fit",      "fit",         0, 1,    1,   1, "select", ["Cover","Contain"]],
+    ["tiltX",    "tilt v",    -45, 45,   .5,  0],
+    ["tiltY",    "tilt h",    -60, 60,   .5,  0],
+    ["curv",     "curvature",   0, 1,    .01, .35],
+    ["corner",   "corner",      0, .35,  .005,.12],
+    ["vig",      "vignette",    0, 1.5,  .01, .5 ],
+  ]],
+  ["Signal", [
+    ["scan",     "scanlines",   0, 1,    .01, .45],
+    ["scanCount","line count",  60, 700, 1,   300],
+    ["bleed",    "bleed",       0, 6,    .05, 1  ],
+    ["aber",     "aberration",  0, 6,    .05, 1.2],
+  ]],
+  ["Mask", [
+    ["maskType", "type",        0, 3,    1,   0, "select", ["Aperture grille","Slot mask","Shadow dot","LED grid"]],
+    ["maskScale","triad size",  1, 16,   .5,  2 ],
+    ["maskInt",  "strength",    0, 1,    .01, .5],
+    ["pix",      "pixelate",    0, 320,  1,   0 ],
+  ]],
+  ["Glow", [
+    ["glow",     "amount",      0, 1.5,  .01, .35],
+    ["glowSize", "radius",      1, 6,    .1,  3  ],
+  ]],
+  ["Damage", [
+    ["noise",    "noise",       0, 1,    .01, .06],
+    ["flicker",  "flicker",     0, 1,    .01, .05],
+    ["jitter",   "jitter",      0, 1,    .01, 0  ],
+    ["roll",     "roll bar",    0, 1,    .01, .1 ],
+  ]],
+  ["Color", [
+    ["bright",   "brightness",  .3, 1.8, .01, 1.05],
+    ["contrast", "contrast",    .5, 1.8, .01, 1.05],
+    ["sat",      "saturation",  0, 2.2,  .01, 1.1 ],
+    ["tint",     "warm/cool",  -1, 1,    .01, 0   ],
+  ]],
+];
+const DEFAULTS = {};
+GROUPS.forEach(([_,ps])=>ps.forEach(p=>DEFAULTS[p[0]]=p[5]));
+
+const PRESETS = {
+  "Default":        {},
+  "Arcade":         {curv:.55,scan:.6,scanCount:240,maskInt:.65,maskScale:3,maskType:1,glow:.5,glowSize:3.5,aber:1.5,bleed:1.5,flicker:.08,roll:.15,vig:.65,corner:.18,sat:1.25,bright:1.1},
+  "Video game":     {curv:.5,scan:.55,scanCount:220,maskInt:.6,maskScale:3,maskType:1,pix:160,glow:.55,glowSize:3.5,aber:1.4,bleed:1,sat:1.35,vig:.6,corner:.16,bright:1.1},
+  "Broken":         {curv:.45,scan:.5,jitter:.8,noise:.35,flicker:.5,roll:.6,aber:3.5,bleed:2,glow:.4,vig:.6,corner:.15,contrast:1.15},
+  "Monitor 1980s":  {curv:.6,scan:.55,scanCount:220,maskInt:.55,maskScale:2.5,maskType:2,glow:.45,aber:2,bleed:2.5,noise:.12,flicker:.12,roll:.25,vig:.7,corner:.2,sat:.9,tint:.35,bright:.95},
+  "Monitor 1990s":  {curv:.4,scan:.45,scanCount:320,maskInt:.5,maskScale:2,glow:.3,aber:1,bleed:1.2,noise:.07,flicker:.06,roll:.08,vig:.55,corner:.14},
+  "Monitor 2000s":  {curv:.15,scan:.3,scanCount:420,maskInt:.4,maskScale:1.5,glow:.2,aber:.5,bleed:.6,noise:.04,flicker:.03,roll:0,vig:.35,corner:.08},
+  "Grid LED":       {curv:0,scan:0,maskType:3,pix:96,maskInt:.85,glow:.6,glowSize:4,corner:.03,vig:.3,sat:1.2,aber:0,bleed:0,roll:0},
+  "Billboard":      {curv:0,scan:0,maskType:3,pix:56,maskInt:.9,glow:.7,glowSize:4.5,corner:.02,vig:.25,sat:1.25,bright:1.15,aber:0,bleed:0,roll:0,noise:.03},
+  "Degraded":       {curv:.5,scan:.4,bleed:4,glow:.5,glowSize:4.5,noise:.2,aber:2.5,sat:.8,bright:.9,flicker:.15,vig:.75,corner:.16},
+  "Macro funk":     {curv:.2,scan:.2,scanCount:90,maskInt:.9,maskScale:14,maskType:1,glow:.5,vig:.4,corner:.1,bleed:2},
+  "Plasma":         {curv:.05,scan:.15,scanCount:500,maskInt:.3,maskScale:1.5,glow:.3,aber:.4,sat:1.15,contrast:1.1,corner:.05,vig:.3,roll:0},
+  "Rave":           {curv:.4,scan:.5,sat:1.9,glow:.8,glowSize:3,aber:2.5,contrast:1.2,flicker:.1,maskInt:.5,vig:.5,corner:.14},
+  "Tired":          {curv:.45,scan:.4,tint:.8,bright:.8,sat:.75,glow:.3,noise:.08,vig:.8,corner:.16},
+  "Webrip":         {curv:.1,scan:.25,scanCount:420,maskInt:.3,maskScale:1.5,glow:.25,aber:.4,bleed:.5,noise:.04,comp:.7,csub:.85,corner:.06,vig:.3,roll:0,flicker:.02},
+};
+
+const P = {...DEFAULTS};
+
+/* ---------------- shaders ---------------- */
+const VS = `#version 300 es
+in vec2 aPos;
+void main(){ gl_Position = vec4(aPos,0.,1.); }`;
+
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uTex;
+uniform vec2  uRes;
+uniform float uTime;
+uniform vec2  uUVScale, uUVOff;
+uniform float uCurv,uCorner,uVig;
+uniform float uScan,uScanCount,uBleed,uAber;
+uniform float uMaskType,uMaskScale,uMaskInt,uPix;
+uniform float uGlow,uGlowSize;
+uniform float uNoise,uFlicker,uJitter,uRoll;
+uniform float uBright,uContrast,uSat,uTint;
+uniform vec2  uMouse;
+uniform float uZoom,uZoomAmt;
+uniform float uTiltX,uTiltY;
+uniform float uComp,uCsub;
+out vec4 outColor;
+
+float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+
+vec2 curveUV(vec2 uv){
+  vec2 c = uv*2.0-1.0;
+  c.x *= 1.0 + uCurv*0.045*(c.y*c.y);
+  c.y *= 1.0 + uCurv*0.058*(c.x*c.x);
+  return c*0.5+0.5;
+}
+
+vec2 srcUV(vec2 uv){
+  vec2 suv = uv*uUVScale + uUVOff;
+  if(suv.x<0.0||suv.x>1.0||suv.y<0.0||suv.y>1.0) return vec2(-1.0);
+  if(uPix>0.5){
+    vec2 grid = vec2(uPix, uPix*uRes.y/uRes.x);
+    suv = (floor(suv*grid)+0.5)/grid;
+  }
+  return clamp(suv, 0.001, 0.999);
+}
+
+vec3 fetch(vec2 uv, float lod){
+  vec2 suv = srcUV(uv);
+  if(suv.x<0.0) return vec3(0.0);        // contain-fit letterbox
+  return textureLod(uTex, suv, lod).rgb;
+}
+
+void main(){
+  vec2 fragUV = gl_FragCoord.xy/uRes;
+
+  // hover zoom: whole frame expands smoothly, anchored under the cursor
+  float mag = mix(1.0, max(uZoom,1.0), uZoomAmt);
+  fragUV = uMouse + (fragUV-uMouse)/mag;
+
+  // tilted screen: perspective ray hit against the rotated screen plane
+  if(abs(uTiltX)+abs(uTiltY)>0.0005){
+    float asp = uRes.y/uRes.x;
+    vec2 pp = vec2(fragUV.x*2.0-1.0, (fragUV.y*2.0-1.0)*asp);
+    float cx=cos(uTiltX), sxx=sin(uTiltX), cy=cos(uTiltY), syy=sin(uTiltY);
+    mat3 R = mat3(cy,0.,-syy, 0.,1.,0., syy,0.,cy)
+           * mat3(1.,0.,0., 0.,cx,sxx, 0.,-sxx,cx);
+    vec3 n  = R*vec3(0.,0.,1.);
+    vec3 cp = vec3(0.,0.,-2.);
+    vec3 rd = vec3(pp,-2.0);
+    float den = dot(rd,n);
+    if(den > -1e-4){ outColor=vec4(0.,0.,0.,1.); return; }
+    vec3 local = transpose(R)*(rd*(dot(cp,n)/den) - cp);
+    fragUV = vec2(local.x, local.y/asp)*0.5+0.5;
+  }
+
+  vec2 uv = curveUV(fragUV);
+
+  // rounded-bezel screen mask
+  vec2 p2 = uv*2.0-1.0;
+  float r = max(uCorner,0.001);
+  vec2 q = abs(p2)-(vec2(1.0)-r);
+  float d = length(max(q,0.0))-r;
+  float aa = fwidth(d)*1.5;
+  float screenMask = smoothstep(aa,-aa,d);
+  if(screenMask<=0.0){ outColor=vec4(0.,0.,0.,1.); return; }
+
+  // jitter (per-line tearing)
+  if(uJitter>0.001){
+    float ln = floor(uv.y*uScanCount);
+    float t  = floor(uTime*24.0);
+    float burst = step(0.985-uJitter*0.1, hash(vec2(t,ln)));
+    uv.x += (hash(vec2(ln,t))-0.5)*burst*uJitter*0.08;
+    float bandY = hash(vec2(floor(uTime*3.0),7.0));
+    float band  = step(abs(uv.y-bandY), uJitter*0.03);
+    uv.x += band*(hash(vec2(t,9.0))-0.5)*uJitter*0.15;
+  }
+
+  // chroma offset (radial) + horizontal bleed
+  vec2 chroma = (uv-0.5)*uAber*2.0/uRes.x;
+  vec3 col = vec3(0.0); float wsum=0.0;
+  for(int i=-2;i<=2;i++){
+    float w = exp(-float(i*i)*0.35);
+    vec2 o = vec2(float(i)*uBleed/uRes.x, 0.0);
+    col.r += fetch(uv+o+chroma,0.0).r*w;
+    col.g += fetch(uv+o,0.0).g*w;
+    col.b += fetch(uv+o-chroma,0.0).b*w;
+    wsum += w;
+  }
+  col /= wsum;
+
+  // compression: 4:2:0-style chroma subsampling (blocky color)
+  if(uCsub>0.001){
+    vec2 cuv = (floor(uv*uRes/16.0)+0.5)*16.0/uRes;
+    vec3 cs = fetch(cuv, 1.0);
+    float lc = dot(cs, vec3(0.299,0.587,0.114));
+    float ll = dot(col, vec3(0.299,0.587,0.114));
+    col = mix(col, vec3(ll) + (cs - vec3(lc)), uCsub);
+  }
+  // compression: macroblock DC pumping + quantization banding
+  if(uComp>0.001){
+    vec2 b = floor(uv*uRes/14.0);
+    float bn = hash(b*0.173 + floor(uTime*2.0)*0.37);
+    col += (bn-0.5)*uComp*0.14;
+    float lv = mix(40.0, 5.0, uComp);
+    col = floor(col*lv+0.5)/lv;
+  }
+
+  // glow (mip-based bloom)
+  vec3 glow = fetch(uv,uGlowSize)*0.6 + fetch(uv,uGlowSize+1.5)*0.4;
+  col += glow*glow*uGlow*1.4;
+
+  // scanlines
+  float sl = sin(uv.y*uScanCount*6.2831853);
+  col *= mix(1.0, 0.75+0.35*sl, uScan);
+
+  // phosphor mask (mp instead of gl_FragCoord so the loupe magnifies the triads)
+  vec2 mp = fragUV*uRes;
+  vec3 m = vec3(1.0);
+  if(uMaskType<0.5){                              // aperture grille
+    float i = mod(floor(mp.x/uMaskScale),3.0);
+    vec3 s = vec3(i<0.5?1.:0., (i>0.5&&i<1.5)?1.:0., i>1.5?1.:0.);
+    m = mix(vec3(1.0), s*2.0+0.25, uMaskInt);
+  } else if(uMaskType<1.5){                       // slot mask
+    float i = mod(floor(mp.x/uMaskScale),3.0);
+    vec3 s = vec3(i<0.5?1.:0., (i>0.5&&i<1.5)?1.:0., i>1.5?1.:0.);
+    float g   = floor(mp.x/(uMaskScale*3.0));
+    float yy  = fract(mp.y/(uMaskScale*4.0) + mod(g,2.0)*0.5);
+    float gap = smoothstep(0.0,0.12,yy)*smoothstep(1.0,0.88,yy);
+    m = mix(vec3(1.0), (s*2.0+0.25)*(gap*0.9+0.1), uMaskInt);
+  } else if(uMaskType<2.5){                       // shadow dot
+    float row = floor(mp.y/uMaskScale);
+    float px  = mp.x/uMaskScale + mod(row,2.0)*1.5;
+    float i   = mod(floor(px),3.0);
+    vec3 s = vec3(i<0.5?1.:0., (i>0.5&&i<1.5)?1.:0., i>1.5?1.:0.);
+    float fy  = fract(mp.y/uMaskScale);
+    float gap = smoothstep(0.0,0.2,fy)*smoothstep(1.0,0.8,fy);
+    m = mix(vec3(1.0), (s*2.0+0.25)*(gap*0.85+0.15), uMaskInt);
+  } else {                                        // LED grid
+    vec2 grid = vec2(max(uPix,8.0), max(uPix,8.0)*uRes.y/uRes.x);
+    vec2 f = fract((uv*uUVScale+uUVOff)*grid);
+    float g = smoothstep(0.02,0.22,f.x)*smoothstep(0.98,0.78,f.x)
+            * smoothstep(0.02,0.22,f.y)*smoothstep(0.98,0.78,f.y);
+    m = mix(vec3(1.0), vec3(g*1.5), uMaskInt);
+  }
+  col *= m;
+
+  // rolling bar
+  if(uRoll>0.001){
+    float rp = fract(uTime*0.08);
+    float rd = abs(uv.y-rp); rd = min(rd,1.0-rd);
+    col *= 1.0 - uRoll*0.35*smoothstep(0.15,0.0,rd);
+  }
+
+  // flicker + noise
+  col *= 1.0 - uFlicker*0.25*hash(vec2(floor(uTime*60.0)*0.013,2.7));
+  col += (hash(fragUV*931.0+vec2(uTime*17.0,uTime*29.0))-0.5)*uNoise*0.35;
+
+  // grade
+  col = (col-0.5)*uContrast + 0.5;
+  col *= uBright;
+  float lum = dot(col, vec3(0.299,0.587,0.114));
+  col = mix(vec3(lum), col, uSat);
+  col *= mix(vec3(1.0), vec3(1.1,0.96,0.78), max(uTint,0.0));
+  col *= mix(vec3(1.0), vec3(0.82,0.95,1.15), max(-uTint,0.0));
+
+  // vignette
+  float vig = pow(max(16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y),1e-4), uVig*0.45);
+  col *= vig;
+
+
+  outColor = vec4(col*screenMask, 1.0);
+}`;
+
+/* ---------------- gl setup ---------------- */
+const canvas = document.getElementById("glcanvas");
+const gl = canvas.getContext("webgl2", {preserveDrawingBuffer:true, antialias:false});
+if(!gl){ document.body.innerHTML = "WebGL2 required"; throw new Error("no webgl2"); }
+
+function sh(type,src){
+  const s = gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+  return s;
+}
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER,VS));
+gl.attachShader(prog, sh(gl.FRAGMENT_SHADER,FS));
+gl.linkProgram(prog);
+if(!gl.getProgramParameter(prog,gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+
+const vao = gl.createVertexArray(); gl.bindVertexArray(vao);
+const vb = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, vb);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+const locPos = gl.getAttribLocation(prog,"aPos");
+gl.enableVertexAttribArray(locPos);
+gl.vertexAttribPointer(locPos,2,gl.FLOAT,false,0,0);
+
+const U = {};
+["uTex","uRes","uTime","uUVScale","uUVOff","uCurv","uCorner","uVig","uScan","uScanCount",
+ "uBleed","uAber","uMaskType","uMaskScale","uMaskInt","uPix","uGlow","uGlowSize",
+ "uNoise","uFlicker","uJitter","uRoll","uBright","uContrast","uSat","uTint",
+ "uMouse","uZoom","uZoomAmt","uTiltX","uTiltY","uComp","uCsub"]
+ .forEach(n=>U[n]=gl.getUniformLocation(prog,n));
+
+const tex = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, tex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+/* ---------------- sources ---------------- */
+let srcEl = null, srcIsVideo = false, srcW = 4, srcH = 3;
+
+// animated test card
+const tc = document.createElement("canvas"); tc.width = 960; tc.height = 720;
+const tctx = tc.getContext("2d");
+function drawTestCard(t){
+  const ca = canvas.width/Math.max(canvas.height,1);
+  const targetH = Math.max(240, Math.min(2600, Math.round(960/Math.max(ca,0.2))));
+  if(tc.height!==targetH){ tc.height=targetH; }
+  const w=tc.width, h=tc.height;
+  if(animateTC){ srcW=w; srcH=h; }
+  tctx.fillStyle="#111"; tctx.fillRect(0,0,w,h);
+  const bars=["#c0c0c0","#c0c000","#00c0c0","#00c000","#c000c0","#c00000","#0000c0"];
+  const bw=w/bars.length;
+  bars.forEach((c,i)=>{ tctx.fillStyle=c; tctx.fillRect(i*bw,0,bw+1,h*0.62); });
+  // ramp
+  const grad=tctx.createLinearGradient(0,0,w,0);
+  grad.addColorStop(0,"#000"); grad.addColorStop(1,"#fff");
+  tctx.fillStyle=grad; tctx.fillRect(0,h*0.62,w,h*0.12);
+  // lower block
+  tctx.fillStyle="#1e1e24"; tctx.fillRect(0,h*0.74,w,h*0.26);
+  tctx.fillStyle="#fff"; tctx.font="bold 64px monospace"; tctx.textBaseline="middle";
+  const scroll=(t*120)%(w+800)-400;
+  tctx.fillText("CRT LAB • TEST TRANSMISSION", w-scroll-800, h*0.87);
+  // bouncing box
+  const bx=(0.5+0.42*Math.sin(t*1.3))*w, by=h*0.68;
+  tctx.fillStyle="#fff"; tctx.fillRect(bx-14,by-14,28,28);
+  // clock
+  tctx.fillStyle="#4dff7c"; tctx.font="bold 28px monospace";
+  tctx.fillText(t.toFixed(2), 24, 36);
+}
+function useTestCard(){
+  stopMedia();
+  srcEl = tc; srcIsVideo = false; srcW = tc.width; srcH = tc.height;
+  animateTC = true;
+}
+let animateTC = true;
+
+let video = null, camStream = null;
+function stopMedia(){
+  animateTC = false;
+  if(video){ video.pause(); video.src=""; video=null; }
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+}
+function useImage(url){
+  const img = new Image();
+  img.onload = ()=>{ stopMedia(); srcEl=img; srcIsVideo=false; srcW=img.naturalWidth; srcH=img.naturalHeight; uploadFrame(true); };
+  img.src = url;
+}
+function useVideo(url, name){
+  stopMedia();
+  video = document.createElement("video");
+  video.src = url; video.loop = true; video.muted = true; video.playsInline = true;
+  video.addEventListener("error", ()=>{
+    alert("The browser can't decode the codec inside \""+(name||"this file")+"\".\n"+
+          "Convert it once with:\n\nffmpeg -i \""+(name||"input.avi")+"\" -c:v libx264 -pix_fmt yuv420p -crf 18 converted.mp4\n\nthen drop converted.mp4 here.");
+    useTestCard();
+  });
+  video.addEventListener("loadeddata", ()=>{
+    srcEl = video; srcIsVideo = true; srcW = video.videoWidth; srcH = video.videoHeight;
+    video.play();
+  });
+}
+async function useDisplay(){
+  try{
+    const stream = await navigator.mediaDevices.getDisplayMedia({video:{frameRate:60}, audio:false});
+    stopMedia();
+    camStream = stream;
+    stream.getVideoTracks()[0].addEventListener("ended", useTestCard);
+    video = document.createElement("video");
+    video.srcObject = stream; video.muted = true; video.playsInline = true;
+    video.addEventListener("loadeddata", ()=>{
+      srcEl = video; srcIsVideo = true; srcW = video.videoWidth; srcH = video.videoHeight;
+      video.play();
+    });
+    video.play().catch(()=>{});
+  }catch(e){ /* user cancelled picker */ }
+}
+async function useCam(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({video:{width:1280,height:720}});
+    stopMedia();
+    camStream = stream;
+    video = document.createElement("video");
+    video.srcObject = stream; video.muted = true; video.playsInline = true;
+    video.addEventListener("loadeddata", ()=>{
+      srcEl = video; srcIsVideo = true; srcW = video.videoWidth; srcH = video.videoHeight;
+      video.play();
+    });
+    video.play().catch(()=>{});
+  }catch(e){ alert("webcam unavailable: "+e.message); }
+}
+function loadFile(f){
+  const url = URL.createObjectURL(f);
+  const isVideo = f.type.startsWith("video") ||
+    /\.(avi|mov|mkv|webm|mp4|m4v|mpg|mpeg|ts|wmv)$/i.test(f.name);
+  if(isVideo) useVideo(url, f.name); else useImage(url);
+}
+
+let needUpload = true;
+function uploadFrame(force){
+  if(!srcEl) return;
+  if(srcIsVideo && video && video.readyState < 2) return;
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcEl);
+  gl.generateMipmap(gl.TEXTURE_2D);
+}
+
+/* ---------------- render loop ---------------- */
+function resize(){
+  const dpr = Math.min(devicePixelRatio||1, 2);
+  const w = canvas.clientWidth*dpr, h = canvas.clientHeight*dpr;
+  if(canvas.width!==w||canvas.height!==h){ canvas.width=w; canvas.height=h; }
+}
+new ResizeObserver(resize).observe(canvas);
+
+/* mouse / loupe state */
+const mouse = {x:.5,y:.5}, mouseS = {x:.5,y:.5};
+let mouseOver = false, loupeAmt = 0;
+canvas.addEventListener("pointermove", e=>{
+  const r = canvas.getBoundingClientRect();
+  mouse.x = (e.clientX-r.left)/r.width;
+  mouse.y = 1-(e.clientY-r.top)/r.height;
+});
+canvas.addEventListener("pointerdown", e=>{
+  canvas.setPointerCapture(e.pointerId);
+  mouseOver = true;               // press-and-hold triggers the zoom
+});
+["pointerup","pointercancel","pointerleave"].forEach(ev=>
+  canvas.addEventListener(ev, ()=>mouseOver=false));
+canvas.addEventListener("wheel", e=>{
+  e.preventDefault();
+  P.loupeZoom = Math.min(8, Math.max(1.1, P.loupeZoom*Math.exp(-e.deltaY*0.001)));
+  inputs.loupeZoom.set(P.loupeZoom);
+}, {passive:false});
+
+let frames=0, lastFps=performance.now();
+const fpsEl = document.getElementById("fps");
+const t0 = performance.now();
+
+function frame(){
+  requestAnimationFrame(frame);
+  resize();
+  const t = (performance.now()-t0)/1000;
+
+  if(animateTC){ drawTestCard(t); uploadFrame(); }
+  else if(srcIsVideo){ uploadFrame(); }
+
+  // frame margin (padding around the CRT)
+  const pad = Math.round(P.margin)+"px";
+  if(stage.style.padding!==pad) stage.style.padding = pad;
+
+  // fit uv transform: cover crops, contain letterboxes
+  const ca = canvas.width/canvas.height, ta = srcW/srcH;
+  let sx=1, sy=1;
+  if(P.fit<0.5){ if(ta>ca) sx = ca/ta; else sy = ta/ca; }
+  else         { if(ta>ca) sy = ta/ca; else sx = ca/ta; }
+  gl.viewport(0,0,canvas.width,canvas.height);
+  gl.uniform1i(U.uTex,0);
+  gl.uniform2f(U.uRes,canvas.width,canvas.height);
+  gl.uniform1f(U.uTime,t);
+  gl.uniform2f(U.uUVScale,sx,sy);
+  gl.uniform2f(U.uUVOff,(1-sx)/2,(1-sy)/2);
+  gl.uniform1f(U.uCurv,P.curv);       gl.uniform1f(U.uCorner,P.corner);
+  gl.uniform1f(U.uVig,P.vig);         gl.uniform1f(U.uScan,P.scan);
+  gl.uniform1f(U.uScanCount,P.scanCount); gl.uniform1f(U.uBleed,P.bleed);
+  gl.uniform1f(U.uAber,P.aber);       gl.uniform1f(U.uMaskType,P.maskType);
+  gl.uniform1f(U.uMaskScale,P.maskScale*Math.min(devicePixelRatio||1,2));
+  gl.uniform1f(U.uMaskInt,P.maskInt); gl.uniform1f(U.uPix,P.pix);
+  gl.uniform1f(U.uGlow,P.glow);       gl.uniform1f(U.uGlowSize,P.glowSize);
+  gl.uniform1f(U.uNoise,P.noise);     gl.uniform1f(U.uFlicker,P.flicker);
+  gl.uniform1f(U.uJitter,P.jitter);   gl.uniform1f(U.uRoll,P.roll);
+  gl.uniform1f(U.uBright,P.bright);   gl.uniform1f(U.uContrast,P.contrast);
+  gl.uniform1f(U.uSat,P.sat);         gl.uniform1f(U.uTint,P.tint);
+
+  // hover zoom (smoothed mouse follow + eased in/out)
+  mouseS.x += (mouse.x-mouseS.x)*0.09;
+  mouseS.y += (mouse.y-mouseS.y)*0.09;
+  loupeAmt += ((mouseOver?1:0)-loupeAmt)*0.12;
+  gl.uniform2f(U.uMouse,mouseS.x,mouseS.y);
+  gl.uniform1f(U.uZoom,P.loupeZoom);
+  gl.uniform1f(U.uZoomAmt,Math.max(loupeAmt-0.01,0));
+  gl.uniform1f(U.uTiltX,P.tiltX*Math.PI/180);
+  gl.uniform1f(U.uTiltY,P.tiltY*Math.PI/180);
+  gl.uniform1f(U.uComp,P.comp);
+  gl.uniform1f(U.uCsub,P.csub);
+
+  gl.drawArrays(gl.TRIANGLES,0,3);
+
+  frames++;
+  const now = performance.now();
+  if(now-lastFps>1000){ fpsEl.textContent = frames+" fps"; frames=0; lastFps=now; }
+}
+
+/* ---------------- ui ---------------- */
+const controls = document.getElementById("controls");
+const inputs = {};
+GROUPS.forEach(([gname, ps])=>{
+  const grp = document.createElement("div"); grp.className="grp";
+  grp.innerHTML = `<label>${gname}</label>`;
+  ps.forEach(([key,label,min,max,step,def,kind,opts])=>{
+    const row = document.createElement("div"); row.className="ctl";
+    if(kind==="select"){
+      const sel = document.createElement("select");
+      opts.forEach((o,i)=>{ const op=document.createElement("option"); op.value=i; op.textContent=o; sel.appendChild(op); });
+      sel.value = P[key];
+      sel.oninput = ()=>{ P[key]=+sel.value; clearPresetHi(); };
+      row.style.gridTemplateColumns = "86px 1fr";
+      row.innerHTML = `<span>${label}</span>`;
+      row.appendChild(sel);
+      inputs[key] = {set:v=>{ sel.value=v; }};
+    } else {
+      const out = document.createElement("output");
+      const r = document.createElement("input");
+      r.type="range"; r.min=min; r.max=max; r.step=step; r.value=P[key];
+      const fmt = v=> (step>=1? String(Math.round(v)) : (+v).toFixed(2));
+      out.textContent = fmt(P[key]);
+      r.oninput = ()=>{ P[key]=+r.value; out.textContent=fmt(r.value); clearPresetHi(); };
+      row.innerHTML = `<span>${label}</span>`;
+      row.appendChild(r); row.appendChild(out);
+      inputs[key] = {set:v=>{ r.value=v; out.textContent=fmt(v); }};
+    }
+    grp.appendChild(row);
+  });
+  controls.appendChild(grp);
+});
+
+const presetsEl = document.getElementById("presets");
+function clearPresetHi(){ presetsEl.querySelectorAll("button").forEach(b=>b.classList.remove("on")); }
+Object.keys(PRESETS).forEach(name=>{
+  const b = document.createElement("button");
+  b.textContent = name;
+  b.onclick = ()=>{
+    const keep = {loupeZoom:P.loupeZoom,
+                  margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
+    Object.assign(P, DEFAULTS, PRESETS[name], keep);
+    Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
+    clearPresetHi(); b.classList.add("on");
+  };
+  presetsEl.appendChild(b);
+});
+presetsEl.firstChild.classList.add("on");
+
+document.getElementById("bLoad").onclick = ()=>document.getElementById("file").click();
+document.getElementById("file").onchange = e=>{ if(e.target.files[0]) loadFile(e.target.files[0]); };
+document.getElementById("bCam").onclick = useCam;
+document.getElementById("bTab").onclick = useDisplay;
+document.getElementById("bTest").onclick = useTestCard;
+/* video recording (mp4 when the browser can mux it, webm fallback) */
+let recorder=null, recChunks=[], recT0=0, recTimer=null;
+const bRec = document.getElementById("bRec");
+function recMime(){
+  return ["video/mp4;codecs=avc1.640028","video/mp4;codecs=avc1.42E01E","video/mp4",
+          "video/webm;codecs=h264","video/webm;codecs=vp9","video/webm"]
+         .find(t=>MediaRecorder.isTypeSupported(t)) || "";
+}
+bRec.onclick = ()=>{
+  if(recorder){ recorder.stop(); return; }
+  const mime = recMime();
+  recorder = new MediaRecorder(canvas.captureStream(60),
+    {mimeType:mime||undefined, videoBitsPerSecond:20e6});
+  recChunks = [];
+  recorder.ondataavailable = e=>{ if(e.data.size) recChunks.push(e.data); };
+  recorder.onstop = ()=>{
+    const type = recorder.mimeType||mime, ext = type.includes("mp4")?"mp4":"webm";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(recChunks,{type}));
+    a.download = "crt_capture."+ext; a.click();
+    recorder = null; clearInterval(recTimer);
+    bRec.textContent = "Record"; bRec.classList.remove("rec");
+  };
+  recorder.start(250);
+  recT0 = performance.now();
+  bRec.classList.add("rec");
+  recTimer = setInterval(()=>{
+    bRec.textContent = "■ "+((performance.now()-recT0)/1000).toFixed(0)+"s";
+  }, 250);
+};
+
+document.getElementById("bSave").onclick = ()=>{
+  canvas.toBlob(b=>{
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(b); a.download="crt_frame.png"; a.click();
+  },"image/png");
+};
+
+const stage = document.getElementById("stage");
+["dragenter","dragover"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.add("dragging");}));
+["dragleave","drop"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.remove("dragging");}));
+stage.addEventListener("drop",e=>{ if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+
+useTestCard();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
