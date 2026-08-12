@@ -108,6 +108,7 @@ const GROUPS = [
   ["Screen", [
     ["margin",   "margin px",   0, 200,  1,   48],
     ["fit",      "fit",         0, 1,    1,   1, "select", ["Cover","Contain"]],
+    ["cursor",   "cursor",      0, 1,    1,   1, "select", ["Hidden","Shown"]],
     ["tiltX",    "tilt v",    -45, 45,   .5,  0],
     ["tiltY",    "tilt h",    -60, 60,   .5,  0],
     ["curv",     "curvature",   0, 1,    .01, .35],
@@ -547,6 +548,10 @@ function frame(){
   const pad = Math.round(P.margin)+"px";
   if(stage.style.padding!==pad) stage.style.padding = pad;
 
+  // cursor visibility over the screen
+  const cur = P.cursor<0.5 ? "none" : "";
+  if(canvas.style.cursor!==cur) canvas.style.cursor = cur;
+
   // fit uv transform: cover crops, contain letterboxes
   const ca = canvas.width/canvas.height, ta = srcW/srcH;
   let sx=1, sy=1;
@@ -628,7 +633,7 @@ Object.keys(PRESETS).forEach(name=>{
   const b = document.createElement("button");
   b.textContent = name;
   b.onclick = ()=>{
-    const keep = {loupeZoom:P.loupeZoom,
+    const keep = {loupeZoom:P.loupeZoom, cursor:P.cursor,
                   margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
