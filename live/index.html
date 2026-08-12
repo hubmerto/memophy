@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>MEMPHY.TV &mdash; Her Show. Her Rules. &mdash; Official Live Broadcast</title>
+<style>
+/* ============ MEMPHY LIVE — vernacular web 2010-2012 register ============ */
+/* fixed 960 / floats only / prefixed gradients / web-safe fonts / no transitions */
+
+html,body{margin:0;padding:0;height:100%;}
+body{
+  overflow:hidden;
+  background:#12010c;
+  background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#6b1054),color-stop(1,#12010c));
+  background:-webkit-linear-gradient(top,#6b1054 0%,#12010c 100%);
+  background:-moz-linear-gradient(top,#6b1054 0%,#12010c 100%);
+  background:linear-gradient(to bottom,#6b1054 0%,#12010c 100%);
+  background-attachment:fixed;
+  font:14px Arial,Helvetica,sans-serif;color:#f2cbe4;
+  scrollbar-face-color:#d0429e;scrollbar-track-color:#16040f;scrollbar-arrow-color:#ffd1ec;
+}
+::-webkit-scrollbar{width:12px;height:12px;}
+::-webkit-scrollbar-track{background:#16040f;border:1px solid #33102a;}
+::-webkit-scrollbar-thumb{background:#d0429e;background:-webkit-linear-gradient(left,#f070c4,#b52e88);background:linear-gradient(to right,#f070c4,#b52e88);border:1px solid #7a1a5c;}
+/* big cursor for on-camera legibility */
+*,*:hover{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24'><path d='M3 1 L3 20 L8 15.5 L11 22 L14 20.5 L11 14 L18 14 Z' fill='white' stroke='%23d0429e' stroke-width='1.5'/></svg>") 5 2, auto !important;}
+a{color:#ffa02f;}
+a:hover{color:#ffc873;}
+.clear{clear:both;}
+
+#wrap{width:auto;margin:0;min-width:1100px;}
+
+/* ---------- header ---------- */
+#hdr{
+  height:62px;background:#c22e86;position:relative;
+  background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#ff7ed4),color-stop(0.5,#ea48a8),color-stop(0.51,#d02a90),color-stop(1,#a91672));
+  background:-webkit-linear-gradient(top,#ff7ed4 0%,#ea48a8 50%,#d02a90 51%,#a91672 100%);
+  background:-moz-linear-gradient(top,#ff7ed4 0%,#ea48a8 50%,#d02a90 51%,#a91672 100%);
+  background:linear-gradient(to bottom,#ff7ed4 0%,#ea48a8 50%,#d02a90 51%,#a91672 100%);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff7ed4',endColorstr='#a91672',GradientType=0);
+  border-top:1px solid #ffb1e4;border-bottom:1px solid #5c0f45;
+  box-shadow:0 2px 6px rgba(0,0,0,.6);
+}
+#logo{float:left;padding:8px 0 0 14px;}
+#logo .mph{
+  font:bold italic 36px Arial,Helvetica,sans-serif;color:#fff;letter-spacing:-1px;
+  text-shadow:0 1px 0 #ffc4ea,0 2px 3px #6b0448,0 -1px 0 #401;
+}
+#logo .mph b{color:#4ff6ff;text-shadow:0 1px 0 #d6fdff,0 2px 2px #0a4a58;}
+#logo .tag{font:bold 11px Verdana,Geneva,sans-serif;color:#ffd1ec;letter-spacing:2px;text-transform:uppercase;}
+#hnav{float:right;padding:22px 14px 0 0;font:bold 14px Arial;}
+#hnav a{color:#ffe3f4;text-decoration:none;margin-left:12px;}
+#hnav a:hover{color:#4ff6ff;text-decoration:underline;}
+#hnav .free{color:#7cfc00;}
+
+/* nav bar under header */
+#nav2{
+  height:34px;line-height:34px;padding:0 12px;font:bold 14px Arial;
+  background:#ffd9ee;
+  background:-webkit-linear-gradient(top,#ffffff 0%,#ffe0f1 50%,#ffd1ea 51%,#ffbfe2 100%);
+  background:-moz-linear-gradient(top,#ffffff 0%,#ffe0f1 50%,#ffd1ea 51%,#ffbfe2 100%);
+  background:linear-gradient(to bottom,#ffffff 0%,#ffe0f1 50%,#ffd1ea 51%,#ffbfe2 100%);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff',endColorstr='#ffbfe2',GradientType=0);
+  border-bottom:1px solid #d977b4;
+}
+#nav2 a{color:#a1005e;text-decoration:none;margin-right:14px;}
+#nav2 a:hover{text-decoration:underline;color:#00b5cc;}
+#nav2 .live{color:#e10098;}
+#onlinecount{float:right;color:#a1005e;}
+#onlinecount b{color:#e10098;}
+
+/* ---------- leaderboard ad ---------- */
+.adlbl{font:10px Arial;color:#a15f8c;text-align:center;text-transform:uppercase;letter-spacing:1px;}
+#lead{width:auto;height:26px;margin:4px 10px 0;background:#2a0a22;border:1px solid #8a2f70;overflow:hidden;position:relative;}
+#lead .inner{padding-top:3px;text-align:center;}
+#lead .l1,#lead .l2{display:none;}
+#lead marquee{color:#ff9ade;font:bold 13px Verdana;}
+
+/* ---------- columns ---------- */
+#cols{margin-top:12px;padding:0 10px;}
+#main{float:left;width:calc(100% - 312px);}
+#rail{float:right;width:300px;height:calc(100vh - 164px);overflow-y:auto;overflow-x:hidden;}
+
+.panel{background:#260920;border:1px solid #8a2f70;box-shadow:0 1px 4px rgba(0,0,0,.5);margin-bottom:12px;}
+.panel .pbar{
+  height:32px;line-height:32px;padding:0 10px;font:bold 14px Tahoma,Geneva,sans-serif;color:#fff;
+  text-shadow:0 -1px 0 rgba(0,0,0,.6);
+  background:#c22e86;
+  background:-webkit-linear-gradient(top,#ff8ad4 0%,#e0459f 50%,#c22e86 51%,#a11c6e 100%);
+  background:-moz-linear-gradient(top,#ff8ad4 0%,#e0459f 50%,#c22e86 51%,#a11c6e 100%);
+  background:linear-gradient(to bottom,#ff8ad4 0%,#e0459f 50%,#c22e86 51%,#a11c6e 100%);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff8ad4',endColorstr='#a11c6e',GradientType=0);
+  border-bottom:1px solid #5c0f45;
+}
+.pbar .r{float:right;font-weight:normal;color:#ffd1ec;}
+
+/* ---------- dual cams side by side, full width (stranger left, host right) ---------- */
+#camrow{padding:4px 4px 0;}
+.camcol{float:left;}
+#hcol{width:calc(50% - 4px);margin-right:8px;}
+#gcol{width:calc(50% - 4px);}
+.camcol .pbar{white-space:nowrap;overflow:hidden;}
+.camstage{position:relative;width:100%;height:calc(100vh - 592px);min-height:200px;background:#000;overflow:hidden;}
+.camstage video{width:100%;height:100%;background:#000;display:block;object-fit:cover;}
+.camdz{
+  position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;box-sizing:border-box;
+  background:#12020d;
+  background:-webkit-radial-gradient(50% 42%,circle,#3a0d2e 0%,#12020d 78%);
+  background:-moz-radial-gradient(50% 42%,circle,#3a0d2e 0%,#12020d 78%);
+  background:radial-gradient(circle at 50% 42%,#3a0d2e 0%,#12020d 78%);
+}
+.camdz .nosig{
+  margin:14% auto 0;width:auto;text-align:center;
+  font:bold 30px Arial;color:#c34f9b;letter-spacing:6px;text-shadow:0 0 14px #571040;
+}
+.camdz .cammsg{text-align:center;font:bold 13px Verdana;color:#e59fcb;margin-top:10px;}
+.camdz.dragover{border:3px dashed #7cfc00;}
+.camdz .scan{position:absolute;left:0;top:0;width:100%;height:2px;background:#8a2f70;opacity:.6;}
+/* memphy's cam placeholder photo */
+.camdz .camph{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
+.camdz .shade{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(18,2,13,.45);}
+.camdz .nosig,.camdz .cammsg,.camdz .bigbtn{position:relative;}
+.camdz .bigbtn{width:340px;margin:18px auto 0;padding:12px 0;font:bold 17px Arial;}
+.camdz .bigbtn small{font-size:11px;}
+.camcol .ctrls{border-bottom:none;padding:7px 8px;}
+.camcol .cbtn{padding:6px 13px;font:bold 13px Arial;margin-right:5px;}
+#camsub{clear:both;padding:7px 10px;background:#240820;border-top:1px solid #7a2a63;font:bold 13px Verdana;color:#e59fcb;}
+#camsub .warn{float:right;color:#ffcc00;}
+
+/* her status bar mirrors the caller's control bar so both columns bottom-align */
+#herbar{font:bold 13px Verdana;color:#e59fcb;padding:14px 10px;}
+
+/* waiting line — thousands deep, lives in the sidebar */
+#queue{height:224px;overflow-y:auto;background:#16040f;}
+.qrow{padding:6px 10px;border-bottom:1px solid #33102a;font:13px Verdana;color:#f2cbe4;}
+.qrow .pos{display:inline-block;width:26px;color:#4ff6ff;font-weight:bold;}
+.qrow b{color:#ff8ad4;}
+.qrow .wait{float:right;color:#a15f8c;font-size:11px;padding-top:1px;}
+.qrow.next{background:#3a0d2e;}
+.qrow.next .tag{color:#7cfc00;font-size:9px;font-weight:bold;}
+.qrow.more{color:#a15f8c;font-style:italic;text-align:center;}
+
+/* the call — live transcript between memphy and the caller */
+#calllog{height:150px;overflow-y:auto;padding:8px 10px;background:#16040f;font:15px Verdana,Geneva,sans-serif;}
+#calllog div{margin-bottom:5px;line-height:19px;word-wrap:break-word;}
+#calllog .sys{color:#a15f8c;font-style:italic;}
+#calllog .mem b{color:#ff54c0;}
+#calllog .cal b{color:#4ff6ff;}
+#callin{padding:8px;background:#240820;border-top:1px solid #7a2a63;}
+#callmsg{width:65%;border:1px solid #7a2a63;background:#16040f;color:#f2cbe4;font:14px Verdana;padding:5px;}
+#callsend{padding:5px 12px;font:bold 13px Arial;color:#fff;border:1px solid #7a1a5c;cursor:pointer;
+  background:#d0429e;background:-webkit-linear-gradient(top,#f070c4,#951b6e);background:-moz-linear-gradient(top,#f070c4,#951b6e);background:linear-gradient(to bottom,#f070c4,#951b6e);}
+
+.bigbtn{
+  display:block;width:280px;margin:16px auto 0;padding:9px 0;text-align:center;cursor:pointer;
+  font:bold 14px Arial;color:#fff;text-decoration:none;text-shadow:0 -1px 0 rgba(0,0,0,.45);
+  border:1px solid #2e7d12;border-radius:4px;
+  background:#5cb82b;
+  background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#7fd94f),color-stop(.5,#5cb82b),color-stop(.51,#4c9e22),color-stop(1,#3f8a1c));
+  background:-webkit-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  background:-moz-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  background:linear-gradient(to bottom,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#7fd94f',endColorstr='#3f8a1c',GradientType=0);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 4px rgba(0,0,0,.5);
+}
+.bigbtn:hover{background:#6fce3a;}
+.bigbtn small{display:block;font:normal 10px Verdana;color:#d8ffc4;}
+
+.livebadge{position:absolute;top:12px;left:12px;display:none;background:#c00;color:#fff;font:bold 14px Verdana;padding:3px 10px;border:1px solid #ff5b5b;text-shadow:0 1px 1px #600;}
+.recdot{color:#ff2b2b;}
+
+/* controls under each cam */
+.ctrls{padding:6px 8px;background:#240820;border-top:1px solid #7a2a63;border-bottom:1px solid #7a2a63;}
+.cbtn{
+  display:inline-block;padding:4px 12px;margin-right:6px;cursor:pointer;
+  font:bold 11px Arial;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.5);
+  border:1px solid #7a1a5c;border-radius:3px;
+  background:#d0429e;
+  background:-webkit-linear-gradient(top,#f070c4 0%,#d0429e 50%,#b52e88 51%,#951b6e 100%);
+  background:-moz-linear-gradient(top,#f070c4 0%,#d0429e 50%,#b52e88 51%,#951b6e 100%);
+  background:linear-gradient(to bottom,#f070c4 0%,#d0429e 50%,#b52e88 51%,#951b6e 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+.cbtn:hover{background:#e055ae;}
+.ctrls .warn{float:right;font:bold 10px Verdana;color:#ffcc00;padding-top:6px;}
+
+/* playlist — one-row film strip */
+#playlist{padding:8px;white-space:nowrap;overflow-x:auto;overflow-y:hidden;}
+.clip{display:inline-block;vertical-align:top;width:150px;margin:0 8px 0 0;font:12px Arial;cursor:pointer;white-space:normal;}
+.clip .cpic{position:relative;width:148px;height:96px;background:#000;border:1px solid #8a2f70;}
+.clip .cpic img,.clip .cpic canvas{width:148px;height:96px;display:block;}
+.clip .cdur{position:absolute;right:2px;bottom:2px;background:#000;color:#fff;padding:0 4px;font:10px Arial;filter:alpha(opacity=80);opacity:.8;}
+.clip .cttl{display:block;color:#ff9ade;font-weight:bold;margin-top:3px;width:148px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.clip .cmeta{color:#a15f8c;font-size:11px;}
+.clip:hover .cpic{border-color:#4ff6ff;}
+.clip.playing .cpic{border:1px solid #7cfc00;}
+.clip.playing .cttl{color:#7cfc00;}
+.clip.playingg .cpic{border:1px solid #4ff6ff;}
+.clip.playingg .cttl{color:#4ff6ff;}
+.clip .route{margin-top:3px;}
+.clip .route span{display:inline-block;padding:3px 9px;margin-right:4px;font:bold 11px Verdana;color:#fff;cursor:pointer;border:1px solid #7a1a5c;background:#d0429e;background:-webkit-linear-gradient(top,#f070c4,#951b6e);background:-moz-linear-gradient(top,#f070c4,#951b6e);background:linear-gradient(to bottom,#f070c4,#951b6e);}
+.clip .route span:hover{background:#e055ae;}
+.clip .route .rg{border-color:#0e7286;background:#1795ac;background:-webkit-linear-gradient(top,#6fe8f7,#127c92);background:-moz-linear-gradient(top,#6fe8f7,#127c92);background:linear-gradient(to bottom,#6fe8f7,#127c92);}
+.clip .route .rg:hover{background:#25b5cf;}
+#plempty{color:#a15f8c;font:italic 13px Arial;padding:6px;}
+
+/* ---------- rail ---------- */
+#viewerbox{padding:8px;text-align:center;}
+#viewerbox .big{font:bold 34px Arial;color:#7cfc00;text-shadow:0 0 10px #1d5a00;}
+#viewerbox .sub{font:bold 12px Verdana;color:#e59fcb;}
+
+/* goal bar */
+#goal{padding:8px;}
+#goalbar{height:20px;background:#16040f;border:1px solid #7a2a63;position:relative;}
+#goalfill{
+  height:20px;width:62%;
+  background:#ff54b8;
+  background:-webkit-linear-gradient(top,#ffb1e0 0%,#ff54b8 50%,#f03aa6 51%,#d21e8c 100%);
+  background:-moz-linear-gradient(top,#ffb1e0 0%,#ff54b8 50%,#f03aa6 51%,#d21e8c 100%);
+  background:linear-gradient(to bottom,#ffb1e0 0%,#ff54b8 50%,#f03aa6 51%,#d21e8c 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+}
+#goaltxt{font:bold 12px Verdana;color:#ffcc00;margin-top:5px;}
+
+/* chat */
+#chatlog{height:240px;overflow:auto;padding:8px;background:#1c0515;font:13px Verdana,Geneva,sans-serif;}
+#chatlog div{margin-bottom:4px;line-height:17px;word-wrap:break-word;}
+#chatlog .sys{color:#b06a97;font-style:italic;}
+#chatlog b{color:#4ff6ff;}
+#chatlog .u2 b{color:#c07dff;}
+#chatlog .u3 b{color:#7cfc00;}
+#chatlog .u4 b{color:#ffcc00;}
+#chatlog .me b{color:#ff54c0;}
+#chatlog .tip{color:#ffcc00;font-weight:bold;}
+#chatlog .tip b{color:#7cfc00;}
+#chatin{padding:8px;background:#240820;border-top:1px solid #7a2a63;}
+#chatmsg{width:180px;border:1px solid #7a2a63;background:#16040f;color:#f2cbe4;font:13px Verdana;padding:5px;}
+#chatsend{padding:5px 12px;font:bold 13px Arial;color:#fff;border:1px solid #7a1a5c;cursor:pointer;
+  background:#d0429e;background:-webkit-linear-gradient(top,#f070c4,#951b6e);background:-moz-linear-gradient(top,#f070c4,#951b6e);background:linear-gradient(to bottom,#f070c4,#951b6e);}
+
+/* chum / mpu */
+#mpu{width:300px;}
+#mpu .cell{float:left;width:139px;margin:0 5px 6px 0;font:10px Arial;}
+#mpu .cell .ph{width:137px;height:70px;border:1px solid #8a2f70;background:#4a1238;
+  background:-webkit-linear-gradient(top,#4a1238,#1c0615);background:-moz-linear-gradient(top,#4a1238,#1c0615);background:linear-gradient(to bottom,#4a1238,#1c0615);
+  text-align:center;font:bold 20px "Times New Roman",serif;color:#8a2f70;line-height:70px;}
+#mpu .cell a{display:block;color:#ffe3f4;font-weight:bold;text-decoration:none;margin-top:2px;line-height:13px;font-size:11px;}
+#mpu .cell a:hover{color:#4ff6ff;text-decoration:underline;}
+#mpu .spon{color:#a15f8c;font-size:9px;}
+#mpu .pad{padding:6px 0 2px 6px;}
+
+/* ---------- footer ---------- */
+#ftr{display:none;margin:6px 0 30px;padding:10px;border-top:1px solid #2a3f7c;text-align:center;font:10px Verdana;color:#5f74ae;}
+#ftr a{color:#7f96d8;text-decoration:none;margin:0 6px;}
+#ftr a:hover{text-decoration:underline;}
+
+/* ---------- MEMPHY popup ---------- */
+#mpop{
+  display:none;position:fixed;top:110px;left:50%;margin-left:-215px;width:430px;z-index:1000;
+  background:#ffe6f5;border:1px solid #8a1460;font:12px Tahoma,Geneva,sans-serif;color:#3a1030;
+  box-shadow:3px 3px 12px rgba(0,0,0,.7);
+}
+#mpop .bar{
+  height:22px;line-height:22px;padding:0 6px;color:#fff;font-weight:bold;cursor:move;
+  text-shadow:0 1px 1px #001;
+  background:#8a1460;
+  background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#e864b4),color-stop(1,#8a1460));
+  background:-webkit-linear-gradient(top,#e864b4,#8a1460);
+  background:-moz-linear-gradient(top,#e864b4,#8a1460);
+  background:linear-gradient(to bottom,#e864b4,#8a1460);
+  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#e864b4',endColorstr='#8a1460',GradientType=0);
+}
+#mpop .bar .x{float:right;margin-top:3px;background:#c75050;border:1px solid #fff;color:#fff;padding:0 5px;cursor:pointer;font:bold 10px Tahoma;line-height:13px;}
+#mpop .body{padding:12px;}
+#mpop .cam{
+  float:left;width:120px;height:132px;margin-right:12px;position:relative;overflow:hidden;
+  background:#0a1b4d;
+  border:2px inset #aab;
+}
+#mpop .cam img{width:120px;display:block;}
+#mpop .cam .lv{position:absolute;top:3px;left:3px;background:#c00;color:#fff;padding:0 4px;font:bold 8px Verdana;}
+#mpop .cam .onair{position:absolute;bottom:0;left:0;width:120px;background:#000;color:#7cfc00;font:bold 8px Verdana;text-align:center;padding:2px 0;filter:alpha(opacity=85);opacity:.85;}
+#mpop h3{margin:0 0 6px;font:bold 15px Tahoma;color:#8a1460;}
+#mpop .hot{color:#c00;}
+#mpop p{margin:0 0 8px;line-height:15px;}
+#mpop .btns{text-align:center;clear:both;padding-top:8px;}
+#mpop .go{
+  display:inline-block;padding:7px 22px;margin:0 4px;cursor:pointer;
+  font:bold 13px Arial;color:#fff;text-decoration:none;text-shadow:0 -1px 0 rgba(0,0,0,.4);
+  border:1px solid #2e7d12;border-radius:3px;
+  background:#5cb82b;background:-webkit-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);background:-moz-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);background:linear-gradient(to bottom,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
+}
+#mpop .no{display:inline-block;padding:7px 14px;font:11px Arial;color:#667;cursor:pointer;text-decoration:underline;}
+#mpop .fine{clear:both;font:8px Tahoma;color:#99a;margin-top:8px;text-align:center;}
+
+/* ---------- age gate ---------- */
+#gate{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;background:#14020e;text-align:center;}
+#gate .box{width:470px;margin:120px auto;background:#260920;border:1px solid #8a2f70;padding:30px;color:#fff;font:bold 19px Arial;box-shadow:0 4px 30px #000;}
+#gate .mphbig{font:bold italic 40px Arial;color:#fff;text-shadow:0 1px 0 #ffc4ea,0 3px 3px #000;}
+#gate .mphbig b{color:#4ff6ff;}
+#gate p{font:normal 13px Verdana;color:#e59fcb;line-height:18px;}
+#gate .enter,#gate .exit{display:inline-block;padding:11px 30px;margin:10px 6px 0;color:#fff;text-decoration:none;border-radius:4px;font:bold 15px Arial;cursor:pointer;text-shadow:0 -1px 0 rgba(0,0,0,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
+#gate .enter{border:1px solid #2e7d12;background:#4c9e22;background:-webkit-linear-gradient(top,#7fd94f,#3f8a1c);background:-moz-linear-gradient(top,#7fd94f,#3f8a1c);background:linear-gradient(to bottom,#7fd94f,#3f8a1c);}
+#gate .exit{border:1px solid #7a1010;background:#a00;background:-webkit-linear-gradient(top,#d33,#800);background:-moz-linear-gradient(top,#d33,#800);background:linear-gradient(to bottom,#d33,#800);}
+
+.blink{}
+#fileinput{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ================= age gate ================= -->
+<div id="gate">
+  <div class="box">
+    <div class="mphbig">MEM<b>PHY</b>.TV</div>
+    <p>HER SHOW &middot; HER RULES &middot; ONE GIRL, ONE LINE</p>
+    You must be 18 or older to enter.
+    <p>By entering you agree you are joining memphy's official broadcast.<br>She decides who gets to talk. Shows may contain chrome.</p>
+    <span class="enter" onclick="closeGate()">ENTER</span>
+    <a class="exit" href="http://www.google.com">EXIT</a>
+  </div>
+</div>
+
+<!-- ================= MEMPHY popup ================= -->
+<div id="mpop">
+  <div class="bar" id="mpopbar">MEMPHY MESSENGER &mdash; 1 new alert <span class="x" onclick="closePop()">&#10005;</span></div>
+  <div class="body">
+    <div class="cam">
+      <span class="lv">LIVE</span>
+      <img src="assets/memphy_girl.png" alt="">
+      <div class="onair">&#9679; ON AIR &middot; 0.8 mi</div>
+    </div>
+    <h3>&#9733; SHE is broadcasting in <span class="hot">YOUR AREA</span> right now &#9733;</h3>
+    <p><b>memphy_girl (23)</b> just went LIVE 0.8 miles away and is waiting for you.
+    Doctors HATE her show. Viewers get FREE access for the next <b id="popcount">04:59</b>!</p>
+    <p style="color:#c00;font-weight:bold;" id="popblink">This show won't stay up long!</p>
+    <div class="btns">
+      <span class="go" onclick="closePop()">WATCH NOW &raquo;</span>
+      <span class="no" onclick="closePop()">no thanks, i hate free shows</span>
+    </div>
+    <div class="fine">MEMPHY.CO is not responsible for lost time. One weird pendant may appear. Jewelers hate this popup.</div>
+  </div>
+</div>
+
+<div id="wrap">
+
+  <!-- ================= header ================= -->
+  <div id="hdr">
+    <div id="logo" style="padding-top:12px;">
+      <div class="mph">MEM<b>PHY</b>.TV</div>
+    </div>
+    <div id="hnav">
+      <a href="#">Fanclub Login</a> <a href="#" class="free">Join FREE</a> <a href="#">Tip Memphy</a> <a href="#">Schedule</a>
+    </div>
+    <div class="clear"></div>
+  </div>
+  <div id="nav2">
+    <a href="#" class="live">&#9679; MEMPHY IS LIVE</a>
+    <a href="#">Schedule</a>
+    <a href="#">Pendants</a>
+    <a href="#">Chrome</a>
+    <a href="#">Fanclub</a>
+    <a href="#">Shop</a>
+    <a href="#">Guestbook</a>
+    <span id="onlinecount"><b id="totonline">4,382</b> fans online</span>
+  </div>
+
+  <!-- ================= leaderboard ================= -->
+  <div class="adlbl" style="margin-top:8px;">Advertisement</div>
+  <div id="lead">
+    <div class="inner">
+      <div class="l1">This ONE Pendant Has Jewelers FURIOUS</div>
+      <div class="l2">&#9658; LOCAL ARTIST discovers weird chrome trick &mdash; CLICK to be SHOCKED</div>
+      <marquee scrollamount="4">This ONE Pendant Has Jewelers FURIOUS &#9658; LOCAL ARTIST discovers weird chrome trick &mdash; CLICK to be SHOCKED &mdash; MEMPHY.CO &mdash; MPH-PND DROP 001 &mdash; 100% CHROME &mdash; LIMITED &mdash; MEMPHY.CO</marquee>
+    </div>
+  </div>
+
+  <!-- ================= columns ================= -->
+  <div id="cols">
+
+    <!-- ===== main column ===== -->
+    <div id="main">
+      <div class="panel">
+        <div id="camrow">
+          <div class="camcol" id="hcol">
+            <div class="pbar">&#9679; MEMPHY &mdash; LIVE ON AIR <span id="roomstatus" style="color:#ffcc00;">&mdash; OFFLINE</span></div>
+            <div class="camstage" id="hstage">
+              <video id="vid" playsinline></video>
+              <div class="livebadge" id="livebadge"><span class="recdot">&#9679;</span> LIVE</div>
+              <div class="camdz" id="dropzone">
+                <img class="camph" src="assets/memphy_cam.webp" alt="">
+                <div class="shade"></div>
+                <div class="scan"></div>
+                <div class="nosig">SHOW STARTING SOON</div>
+                <div class="cammsg">memphy is getting ready</div>
+                <span class="bigbtn" id="upbtn">&#9650; UPLOAD MEMPHY'S CAM
+                  <small>or drag &amp; drop video files onto this cam</small>
+                </span>
+              </div>
+            </div>
+            <div class="ctrls" id="herbar">
+              <span class="warn blink" id="staywarn">&#9888; This show won't stay up long!</span>
+              <div class="clear"></div>
+            </div>
+          </div>
+          <div class="camcol" id="gcol">
+            <div class="pbar">ON THE LINE <span id="gueststatus" style="color:#ffcc00;">&mdash; no one connected</span></div>
+            <div class="camstage" id="gstage">
+              <video id="gvid" playsinline></video>
+              <div class="livebadge" id="glive"><span class="recdot">&#9679;</span> CALLER</div>
+              <div class="camdz" id="gdz">
+                <div class="scan"></div>
+                <div class="nosig" id="gnosig">NO ONE ON THE LINE</div>
+                <div class="cammsg" id="gcammsg">accept a guy from the waiting line</div>
+                <span class="bigbtn" id="gupbtn">&#9650; UPLOAD CALLER CAMS
+                  <small>or drag &amp; drop video files onto this cam</small>
+                </span>
+              </div>
+            </div>
+            <div class="ctrls">
+              <span class="cbtn" onclick="acceptNext()">&#9742; Accept Next</span><span class="cbtn" onclick="skipCaller()">&#9658;&#9658; Skip</span><span class="cbtn" onclick="endCall()">&#10006; End</span><span class="cbtn" onclick="gctl('mute')" id="gmutebtn">&#128263; Unmute</span>
+              <div class="clear"></div>
+            </div>
+          </div>
+          <div class="clear"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="pbar">&#9829; THE CALL <span id="callwith">&mdash; no one on the line</span> <span class="r">live transcript</span></div>
+        <div id="calllog">
+          <div class="sys">accept a caller to start a conversation...</div>
+        </div>
+        <div id="callin">
+          <input type="text" id="callmsg" maxlength="120"><button id="callsend" onclick="sendCall()">Send as memphy</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== right rail ===== -->
+    <div id="rail">
+      <div class="panel">
+        <div id="viewerbox">
+          <div class="big" id="viewers">1,347</div>
+          <div class="sub">WATCHING MEMPHY RIGHT NOW</div>
+        </div>
+        <div id="goal">
+          <div id="goalbar"><div id="goalfill"></div></div>
+          <div id="goaltxt">TIP GOAL: NEW CHROME LENS &mdash; <span id="goalpct">62</span>%</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="pbar">&#9829; WAITING LINE <span class="r"><b id="linecount" style="color:#7cfc00;">0</b> in line</span></div>
+        <div id="queue"></div>
+      </div>
+
+      <div class="panel">
+        <div class="pbar">Free chat <span class="r">be nice or get banned</span></div>
+        <div id="chatlog">
+          <div class="sys">Connecting to server...</div>
+          <div class="sys">Welcome to MEMPHY.TV &mdash; she picks who gets to talk.</div>
+          <div class="sys">Begging is allowed. Demanding is a ban.</div>
+        </div>
+        <div id="chatin">
+          <input type="text" id="chatmsg" maxlength="120"><button id="chatsend" onclick="sendChat()">Send</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="pbar">clips <span class="r"><span id="clipcount">0</span> loaded</span></div>
+        <div id="playlist">
+          <div id="plempty">Drop videos on a cam &mdash; they collect here.</div>
+          <div class="clear"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="mpu">
+        <div class="pbar">Around the Web</div>
+        <div class="pad">
+          <div class="cell"><div class="ph">?</div><a href="#">Mom In YOUR CITY Discovers Odd Chrome Method</a><span class="spon">Sponsored</span></div>
+          <div class="cell"><div class="ph">!</div><a href="#">1 Weird Trick To Shine Any Pendant (Experts Furious)</a><span class="spon">Sponsored</span></div>
+          <div class="cell"><div class="ph">$</div><a href="#">Local Man Won't Stop Uploading Web Shows</a><span class="spon">Sponsored</span></div>
+          <div class="cell"><div class="ph">&#9733;</div><a href="#">Congratulations! You Are Viewer #1,000,000</a><span class="spon">Sponsored</span></div>
+          <div class="clear"></div>
+        </div>
+      </div>
+
+      <div class="adlbl">Advertisement</div>
+      <div class="panel" style="width:298px;height:250px;overflow:hidden;text-align:center;">
+        <div style="padding-top:70px;font:bold 26px 'Times New Roman',serif;color:#ffd24a;text-shadow:0 2px 2px #000;">MEMPHY.CO</div>
+        <div style="font:bold 11px Verdana;color:#7cfc00;">CHROME FOR THE INTERNET</div>
+        <div style="font:10px Verdana;color:#5f74ae;margin-top:14px;">300&times;250 &middot; house ad</div>
+      </div>
+    </div>
+
+    <div class="clear"></div>
+  </div>
+
+  <!-- ================= footer ================= -->
+  <div id="ftr">
+    <a href="#">Terms</a>|<a href="#">Privacy</a>|<a href="#">DMCA</a>|<a href="#">Webmasters $$$</a>|<a href="#">Contact</a><br>
+    &copy; 2010-2012 MEMPHY.CO &middot; All models are polygons. All polygons are over 18.<br>
+    Best viewed in Internet Explorer 8 or Firefox 3.6 at 1024&times;768
+  </div>
+</div>
+
+<input type="file" id="fileinput" accept="video/*" multiple>
+
+<script>
+// ======================= MEMPHY LIVE frame =======================
+// clips in ./clips/ listed here auto-load into the playlist on page open
+var PRELOADED = [];   // memphy's cam clips — her photo placeholder shows until one plays
+var PRELOADED_GUEST = [
+  'clips/MPH-CAM-02_standup_v1_wrong-tattoo.mp4'
+];   // caller cams in rotation
+
+var vid  = document.getElementById('vid');    // host cam (bottom)
+var gvid = document.getElementById('gvid');   // stranger cam (top)
+var dz   = document.getElementById('dropzone');
+var gdz  = document.getElementById('gdz');
+var fi   = document.getElementById('fileinput');
+var pl   = document.getElementById('playlist');
+var clips = [];
+var current = -1;    // host clip index
+var gcurrent = -1;   // guest clip index
+var pendingCam = 'host';
+
+vid.loop = true; gvid.loop = true;
+vid.muted = true; gvid.muted = true;   // shows are silent — the music video carries the audio
+
+// ---- upload / drop (routes to whichever cam you click / drop on) ----
+document.getElementById('upbtn').onclick  = function(e){ e.stopPropagation(); pendingCam='host'; fi.click(); };
+document.getElementById('gupbtn').onclick = function(e){ e.stopPropagation(); pendingCam='guest'; fi.click(); };
+dz.onclick  = function(){ pendingCam='host'; fi.click(); };
+gdz.onclick = function(){ pendingCam='guest'; fi.click(); };
+fi.onchange = function(){ mphAddFiles(fi.files, pendingCam); fi.value=''; };
+
+function camOf(e){
+  var el = e.target;
+  return (el.closest && el.closest('#gstage')) ? 'guest' : 'host';
+}
+document.body.addEventListener('dragover', function(e){
+  e.preventDefault();
+  var c = camOf(e);
+  dz.className  = 'camdz'+(c==='host' ?' dragover':'');
+  gdz.className = 'camdz'+(c==='guest'?' dragover':'');
+});
+document.body.addEventListener('dragleave', function(e){
+  if(e.target===document.body){ dz.className='camdz'; gdz.className='camdz'; }
+});
+document.body.addEventListener('drop', function(e){
+  e.preventDefault();
+  var c = camOf(e);
+  dz.className='camdz'; gdz.className='camdz';
+  if(e.dataTransfer && e.dataTransfer.files.length) mphAddFiles(e.dataTransfer.files, c);
+});
+
+function mphAddFiles(list, cam){
+  cam = cam || 'host';
+  var firstNew = -1;
+  for(var i=0;i<list.length;i++){
+    var f = list[i];
+    if(f.type.indexOf('video')!==0 && !/\.(mp4|webm|mov|m4v|ogv)$/i.test(f.name)) continue;
+    var url = URL.createObjectURL(f);
+    clips.push({name:f.name, url:url, dur:'--:--'});
+    if(firstNew===-1) firstNew = clips.length-1;
+    addClipCell(clips.length-1);
+  }
+  updateCounts();
+  if(firstNew>-1){
+    if(cam==='guest') playClip(firstNew,'guest');
+    else if(current===-1) playClip(firstNew,'host');
+  }
+}
+
+function mphAddUrl(url, cam){
+  var name = decodeURIComponent(url.split('/').pop());
+  clips.push({name:name, url:url, dur:'--:--'});
+  addClipCell(clips.length-1);
+  updateCounts();
+  if(cam!=='guest' && current===-1) playClip(clips.length-1,'host');
+  // guest preloads wait in rotation — the caller cam stays empty until memphy accepts
+}
+
+function updateCounts(){
+  document.getElementById('clipcount').innerHTML = clips.length;
+  var gc = document.getElementById('guestclipcount');
+  if(gc) gc.innerHTML = clips.length;
+  var emp = document.getElementById('plempty');
+  if(emp && clips.length) emp.style.display='none';
+}
+
+function addClipCell(idx){
+  var c = clips[idx];
+  var d = document.createElement('div');
+  d.className='clip'; d.id='clip'+idx;
+  d.innerHTML =
+    '<div class="cpic"><canvas width="148" height="96" id="th'+idx+'"></canvas>'+
+    '<span class="cdur" id="dur'+idx+'">--:--</span></div>'+
+    '<span class="cttl">'+esc(c.name)+'</span>'+
+    '<span class="cmeta">'+(1000+Math.floor(Math.random()*90000)).toLocaleString()+' views &middot; today</span>'+
+    '<div class="route"><span onclick="routeClip(event,'+idx+',\'host\')">&#9658; MEMPHY</span><span class="rg" onclick="routeClip(event,'+idx+',\'guest\')">&#9658; CALLER</span></div>';
+  d.onclick = (function(i){ return function(){ playClip(i,'host'); }; })(idx);
+  pl.insertBefore(d, pl.lastElementChild);
+  makeThumb(idx);
+}
+function routeClip(e,i,cam){ e.stopPropagation(); playClip(i,cam); }
+
+// grab a frame + duration for the thumbnail
+function makeThumb(idx){
+  var v = document.createElement('video');
+  v.muted = true; v.src = clips[idx].url;
+  v.addEventListener('loadedmetadata', function(){
+    var t = document.getElementById('dur'+idx);
+    if(t && isFinite(v.duration)) t.innerHTML = fmt(v.duration);
+    try{ v.currentTime = Math.min(1, (v.duration||2)/2); }catch(e){}
+  });
+  v.addEventListener('seeked', function(){
+    var cv = document.getElementById('th'+idx);
+    if(cv){ try{ cv.getContext('2d').drawImage(v,0,0,148,96); }catch(e){} }
+    v.src=''; v.load();
+  });
+}
+
+function playClip(i, cam){
+  cam = cam || 'host';
+  var v    = (cam==='guest') ? gvid : vid;
+  var zone = (cam==='guest') ? gdz  : dz;
+  if(cam==='guest') gcurrent = i; else current = i;
+  v.src = clips[i].url;
+  var p = v.play();
+  if(p && p.catch) p.catch(function(){
+    v.muted = true;
+    var mb = document.getElementById(cam==='guest'?'gmutebtn':'mutebtn');
+    if(mb) mb.innerHTML = '&#128263; Unmute';
+    v.play();
+  });
+  zone.style.display='none';
+  if(cam==='guest'){
+    var who = currentCaller || clips[i].name;
+    document.getElementById('glive').style.display='block';
+    document.getElementById('gueststatus').innerHTML = '&mdash; <span style="color:#7cfc00;">ON THE LINE</span> &middot; '+esc(who);
+    pushChat('sys', null, esc(who)+' is now on the line with memphy');
+    document.getElementById('callwith').innerHTML = '&mdash; memphy &hearts; '+esc(who);
+    startCallChat(who);
+  } else {
+    document.getElementById('livebadge').style.display='block';
+    document.getElementById('roomstatus').innerHTML = '&mdash; <span style="color:#7cfc00;">LIVE</span> &middot; now playing: '+esc(clips[i].name);
+    pushChat('sys', null, 'memphy_live started a new clip: '+clips[i].name);
+  }
+  markCells();
+}
+function markCells(){
+  for(var k=0;k<clips.length;k++){
+    var el = document.getElementById('clip'+k);
+    if(el) el.className = 'clip'+(k===current?' playing':'')+(k===gcurrent?' playingg':'');
+  }
+}
+vid.addEventListener('ended', function(){
+  if(!vid.loop && clips.length) playClip((current+1)%clips.length, 'host');
+});
+gvid.addEventListener('ended', function(){
+  if(!gvid.loop && clips.length) playClip((gcurrent+1)%clips.length, 'guest');
+});
+
+// ---- host controls ----
+function ctl(a){
+  if(a==='play') vid.play();
+  if(a==='pause') vid.pause();
+  if(a==='mute'){ vid.muted=!vid.muted; document.getElementById('mutebtn').innerHTML = vid.muted?'&#128263; Unmute':'&#128266; Mute'; }
+  if(a==='loop'){ vid.loop=!vid.loop; document.getElementById('loopbtn').innerHTML = '&#8635; Loop: '+(vid.loop?'ON':'OFF'); }
+  if(a==='full'){ if(vid.requestFullscreen) vid.requestFullscreen(); else if(vid.webkitRequestFullscreen) vid.webkitRequestFullscreen(); }
+}
+
+// ---- waiting line (her POV: the guys queue, she picks) ----
+var QNAMES = ['xX_chrome_boy_Xx','TommyV','guest8841','DJ_MPH','polygon_luvr','ringtone_king','sk8er_tom','lonely_rob','chromedude92','VinnyD','sadboy2009','first_time_caller','BluRayKing','mikey_4real','gr00ve_guy','P_Diamanti','jetski_owner','milano_marco'];
+var queue = [], qserial = 0, currentCaller = null;
+var lineTotal = 14382;   // thousands are waiting; the queue panel shows the head of the line
+
+function joinLine(silent){
+  var n = QNAMES[qserial % QNAMES.length] + (qserial >= QNAMES.length ? '_'+(qserial%97) : '');
+  qserial++;
+  lineTotal++;
+  if(queue.length < 12) queue.push({name:n, mins:Math.floor(Math.random()*40)+1});
+  if(!silent){ pushChat('sys', null, n+' joined the line (#'+lineTotal.toLocaleString()+')'); }
+  renderQueue();
+}
+function renderQueue(){
+  var q = document.getElementById('queue'); q.innerHTML='';
+  for(var i=0;i<queue.length;i++){
+    var r = document.createElement('div');
+    r.className = 'qrow'+(i===0?' next':'');
+    r.innerHTML = '<span class="pos">'+(i+1)+'.</span><b>'+queue[i].name+'</b>'+
+      (i===0?' <span class="tag">&#9654; NEXT</span>':'')+
+      '<span class="wait">waiting '+queue[i].mins+' min</span>';
+    q.appendChild(r);
+  }
+  var more = document.createElement('div');
+  more.className = 'qrow more';
+  more.innerHTML = '&hellip; plus <b>'+(lineTotal - queue.length).toLocaleString()+'</b> more behind them';
+  q.appendChild(more);
+  document.getElementById('linecount').innerHTML = lineTotal.toLocaleString();
+}
+for(var qi=0;qi<9;qi++) joinLine(true);
+
+setInterval(function(){
+  lineTotal += 2 + Math.floor(Math.random()*40);
+  if(Math.random()<.5 && queue.length<12) joinLine(false);
+  else if(queue.length>4 && Math.random()<.25){
+    var d = queue.splice(3+Math.floor(Math.random()*(queue.length-3)),1)[0];
+    pushChat('sys', null, d.name+' got tired of waiting and left the line');
+  }
+  for(var i=0;i<queue.length;i++) if(Math.random()<.25) queue[i].mins++;
+  renderQueue();
+}, 6000);
+
+function acceptNext(){
+  if(!queue.length){ pushChat('sys', null, 'the line is empty right now'); return; }
+  if(!clips.length){ pushChat('sys', null, 'no caller cams uploaded yet &mdash; drop clips on the caller cam'); return; }
+  currentCaller = queue.shift().name;
+  lineTotal = Math.max(lineTotal-1, queue.length);
+  renderQueue();
+  connectCaller();
+}
+function skipCaller(){
+  if(currentCaller) pushChat('sys', null, 'memphy skipped '+currentCaller);
+  if(queue.length && clips.length){
+    currentCaller = queue.shift().name;
+    lineTotal = Math.max(lineTotal-1, queue.length);
+    renderQueue();
+    connectCaller();
+  } else endCall();
+}
+function connectCaller(){
+  gvid.pause();
+  gdz.style.display='block';
+  document.getElementById('glive').style.display='none';
+  document.getElementById('gnosig').innerHTML = 'CONNECTING...';
+  document.getElementById('gcammsg').innerHTML = 'patching '+esc(currentCaller)+' through to memphy';
+  document.getElementById('gueststatus').innerHTML = '&mdash; connecting '+esc(currentCaller)+'...';
+  document.getElementById('gupbtn').style.display = 'none';
+  setTimeout(function(){
+    document.getElementById('gupbtn').style.display = 'block';
+    playClip((gcurrent+1)%clips.length, 'guest');
+  }, 900);
+}
+function endCall(){
+  gvid.pause(); gcurrent = -1;
+  if(currentCaller){ pushChat('sys', null, 'memphy ended the call with '+currentCaller); currentCaller = null; }
+  gdz.style.display='block';
+  document.getElementById('glive').style.display='none';
+  document.getElementById('gnosig').innerHTML = 'NO ONE ON THE LINE';
+  document.getElementById('gcammsg').innerHTML = 'accept a guy from the waiting line';
+  document.getElementById('gueststatus').innerHTML = '&mdash; no one connected';
+  stopCallChat();
+  pushCall('sys', null, 'call ended. the line shuffles forward...');
+  document.getElementById('callwith').innerHTML = '&mdash; no one on the line';
+  markCells();
+}
+
+// ---- the call: live transcript between memphy and her caller ----
+var CALLER_LINES = [
+  'i cant believe its really you','i practiced this moment in the mirror all week',
+  'you look amazing today. i mean it. i wrote it down','MILANO. tomorrow. im serious, window seat',
+  'that $500 tip earlier? that was me. no pressure','my mom says hi. she loves you too',
+  'can you say my username. just once','i wrote you a poem. its 40 lines. stanza one:',
+  'this is the best day of my life','i waited 6 hours and i would do it again',
+  'is the pendant real chrome? it changed my life','everyone in the line is so jealous rn'
+];
+var MEM_LINES = [
+  'hi. you have 60 seconds','cute. talk fast','say that to the tip jar &#9829;',
+  'milano? i prefer tokyo','louder for the chat pls','ok that was actually sweet',
+  'the whole line is watching. behave','mmm. next question','you may compliment the pendant now',
+  'careful. i skip fast','my rules. my show. go on','one more compliment and i extend you 30 seconds'
+];
+var callTimer = null, callTurn = 0;
+function startCallChat(who){
+  stopCallChat();
+  var l = document.getElementById('calllog'); l.innerHTML='';
+  pushCall('sys', null, 'connected &mdash; memphy &hearts; '+esc(who));
+  callTurn = 0;
+  callTimer = setInterval(function(){
+    if(callTurn%2===0) pushCall('cal', esc(who), CALLER_LINES[Math.floor(Math.random()*CALLER_LINES.length)]);
+    else pushCall('mem', 'memphy', MEM_LINES[Math.floor(Math.random()*MEM_LINES.length)]);
+    callTurn++;
+  }, 2800);
+}
+function stopCallChat(){ if(callTimer){ clearInterval(callTimer); callTimer = null; } }
+function pushCall(cls, name, text){
+  var l = document.getElementById('calllog');
+  var d = document.createElement('div');
+  if(cls==='sys'){ d.className='sys'; d.innerHTML = text; }
+  else { d.className = cls; d.innerHTML = '<b>'+name+':</b> '+text; }
+  l.appendChild(d);
+  while(l.children.length>50) l.removeChild(l.firstChild);
+  l.scrollTop = l.scrollHeight;
+}
+function sendCall(){
+  var inp = document.getElementById('callmsg');
+  if(!inp.value) return;
+  pushCall('mem', 'memphy', esc(inp.value));
+  inp.value='';
+}
+document.getElementById('callmsg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendCall(); });
+function gctl(a){
+  if(a==='mute'){ gvid.muted=!gvid.muted; document.getElementById('gmutebtn').innerHTML = gvid.muted?'&#128263; Unmute':'&#128266; Mute'; }
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='F9'){ e.preventDefault(); skipCaller(); }
+});
+
+// ---- helpers ----
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;'); }
+function fmt(s){ s=Math.floor(s); var m=Math.floor(s/60); var r=s%60; return m+':'+(r<10?'0':'')+r; }
+
+// ---- fake chat ----
+var log = document.getElementById('chatlog');
+var users = [
+  ['xX_chrome_boy_Xx','u1'],['VinnyD','u2'],['TommyV','u3'],['guest8841','u4'],
+  ['DJ_MPH','u1'],['lonely_rob','u2'],['ringtone_king','u3'],['polygon_luvr','u4'],
+  ['milano_marco','u1'],['jetski_owner','u2'],['P_Diamanti','u3'],['first_time_caller','u4'],
+  ['sadboy2009','u1'],['BluRayKing','u2'],['chromedude92','u3']
+];
+var lines = [
+  'MEMPHY I LOVE YOU','MARRY ME','queen','goddess of chrome','pick me pls pls pls',
+  'i been in line since 3pm and i would wait 3 more years','accept me memphy i am literally right here',
+  'she skipped me and honestly? deserved','blink twice if you love me back',
+  '$200 if you say my name','$500 for ONE minute on the line','i tip therefore i am',
+  'i will fly you to MILANO tonight just say yes','private jet to paris. just say the word',
+  'monaco?? tomorrow?? i know a guy','flying to your city tomorrow no joke',
+  'i named my car memphy','i wrote you a song it is 9 minutes long',
+  'bought 3 pendants just to feel closer','my whole paycheck is going in the tip jar',
+  'she looked at my message once. i can die happy','ATM machine reporting for duty',
+  'my therapist knows about you','this is the only real thing on the internet',
+  'MEMPHY!!!!','&lt;3&lt;3&lt;3','the chrome is chroming','realest show on the internet'
+];
+var TIPS = [
+  ['VinnyD',50,'for the queen'],['BluRayKing',500,'flights to MILANO. offer stands'],
+  ['jetski_owner',200,'say my name pls'],['milano_marco',300,'duomo dinner date fund'],
+  ['P_Diamanti',1000,'PARIS. FIRST CLASS. TONIGHT'],['lonely_rob',20,'it is all i have'],
+  ['sadboy2009',75,'skip me but keep the money'],['first_time_caller',150,'longtime watcher first time tipper']
+];
+function fakeTip(){
+  var t = TIPS[Math.floor(Math.random()*TIPS.length)];
+  var d = document.createElement('div');
+  d.className='tip';
+  d.innerHTML = '&#128176; <b>'+t[0]+'</b> tipped <b>$'+t[1]+'</b> &mdash; &ldquo;'+t[2]+'&rdquo;';
+  log.appendChild(d);
+  while(log.children.length>60) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+  if(pct<99){ pct = Math.min(99, pct + Math.ceil(t[1]/150)); document.getElementById('goalpct').innerHTML = pct; document.getElementById('goalfill').style.width = pct+'%'; }
+  setTimeout(fakeTip, 7000+Math.random()*14000);
+}
+setTimeout(fakeTip, 5000);
+function pushChat(cls, user, text){
+  var d = document.createElement('div');
+  if(cls==='sys'){ d.className='sys'; d.innerHTML = text; }
+  else { d.className=cls; d.innerHTML = '<b>'+user+':</b> '+text; }
+  log.appendChild(d);
+  while(log.children.length>60) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+function fakeChat(){
+  var u = users[Math.floor(Math.random()*users.length)];
+  pushChat(u[1], u[0], lines[Math.floor(Math.random()*lines.length)]);
+  setTimeout(fakeChat, 1800+Math.random()*4200);
+}
+setTimeout(fakeChat, 2200);
+
+function sendChat(){
+  var inp = document.getElementById('chatmsg');
+  if(!inp.value) return;
+  pushChat('me','You', esc(inp.value));
+  inp.value='';
+}
+document.getElementById('chatmsg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendChat(); });
+
+// ---- counters ----
+var viewers = 1347, online = 4382, pct = 62;
+setInterval(function(){
+  viewers += Math.floor(Math.random()*21)-9;
+  if(viewers<900) viewers=900+Math.floor(Math.random()*50);
+  document.getElementById('viewers').innerHTML = viewers.toLocaleString();
+  online += Math.floor(Math.random()*31)-14;
+  document.getElementById('totonline').innerHTML = online.toLocaleString();
+  if(Math.random()<.3 && pct<99){ pct++; document.getElementById('goalfill').style.width=pct+'%'; document.getElementById('goalpct').innerHTML=pct; }
+}, 2500);
+
+// ---- blink (blink tag is dead, long live setInterval) ----
+setInterval(function(){
+  var w = document.getElementById('staywarn'); if(w) w.style.visibility = (w.style.visibility==='hidden')?'visible':'hidden';
+  var p = document.getElementById('popblink'); if(p) p.style.visibility = (p.style.visibility==='hidden')?'visible':'hidden';
+}, 600);
+
+// ---- scanline drift on empty cams ----
+var scanY = 0;
+setInterval(function(){
+  scanY += 3;
+  var ss = document.querySelectorAll('.camdz .scan');
+  for(var si=0;si<ss.length;si++){
+    var h = ss[si].parentNode.offsetHeight || 240;
+    ss[si].style.top = (scanY % h)+'px';
+  }
+}, 50);
+
+// ---- preloaded clips ----
+for(var pi=0;pi<PRELOADED.length;pi++) mphAddUrl(PRELOADED[pi], 'host');
+for(var gi=0;gi<PRELOADED_GUEST.length;gi++) mphAddUrl(PRELOADED_GUEST[gi], 'guest');
+
+// ---- age gate ----
+function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
+if(location.search.indexOf('nogate')>-1){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
+
+// ---- MEMPHY popup ----
+var pop = document.getElementById('mpop');
+function showPop(){
+  if(location.search.indexOf('nopop')>-1) return;
+  pop.style.display='block';
+  var t = 299;
+  setInterval(function(){
+    if(t>0) t--;
+    var m=Math.floor(t/60), s=t%60;
+    var el=document.getElementById('popcount');
+    if(el) el.innerHTML = '0'+m+':'+(s<10?'0':'')+s;
+  },1000);
+}
+function closePop(){ pop.style.display='none'; }
+
+// draggable popup (period style: manual mouse math)
+var drag=null;
+document.getElementById('mpopbar').addEventListener('mousedown', function(e){
+  if(e.target.className==='x') return;
+  drag={x:e.clientX-pop.offsetLeft, y:e.clientY-pop.offsetTop};
+  pop.style.marginLeft='0';
+  e.preventDefault();
+});
+document.addEventListener('mousemove', function(e){
+  if(!drag) return;
+  pop.style.left=(e.clientX-drag.x)+'px';
+  pop.style.top=(e.clientY-drag.y)+'px';
+});
+document.addEventListener('mouseup', function(){ drag=null; });
+</script>
+</body>
+</html>
