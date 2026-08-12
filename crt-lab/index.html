@@ -101,6 +101,7 @@ const GROUPS = [
   ["Hover zoom", [
     ["loupeZoom","zoom",        1, 8,    .1,  2],
     ["zoomSpeed","speed",       .02, .4, .01, .12],
+    ["zoomFish", "fisheye",     0, 1,    .01, .35],
   ]],
   ["Compression", [
     ["comp",     "artifacts",   0, 1,   .01, 0],
@@ -186,7 +187,7 @@ uniform float uGlow,uGlowSize;
 uniform float uNoise,uFlicker,uJitter,uRoll;
 uniform float uBright,uContrast,uSat,uTint;
 uniform vec2  uMouse;
-uniform float uZoom,uZoomAmt;
+uniform float uZoom,uZoomAmt,uFish;
 uniform float uTiltX,uTiltY;
 uniform float uComp,uCsub;
 out vec4 outColor;
@@ -219,9 +220,13 @@ vec3 fetch(vec2 uv, float lod){
 void main(){
   vec2 fragUV = gl_FragCoord.xy/uRes;
 
-  // hover zoom: whole frame expands smoothly, anchored under the cursor
+  // hover zoom: whole frame expands smoothly, anchored under the cursor,
+  // with fisheye bulge that blooms in as the zoom engages
   float mag = mix(1.0, max(uZoom,1.0), uZoomAmt);
-  fragUV = uMouse + (fragUV-uMouse)/mag;
+  vec2 zoff = fragUV - uMouse;
+  vec2 za = zoff * vec2(1.0, uRes.y/uRes.x);
+  float fish = 1.0 + uFish*uZoomAmt*1.2*dot(za,za);
+  fragUV = uMouse + zoff*fish/mag;
 
   // tilted screen: perspective ray hit against the rotated screen plane
   if(abs(uTiltX)+abs(uTiltY)>0.0005){
@@ -385,7 +390,7 @@ const U = {};
 ["uTex","uRes","uTime","uUVScale","uUVOff","uCurv","uCorner","uVig","uScan","uScanCount",
  "uBleed","uAber","uMaskType","uMaskScale","uMaskInt","uPix","uGlow","uGlowSize",
  "uNoise","uFlicker","uJitter","uRoll","uBright","uContrast","uSat","uTint",
- "uMouse","uZoom","uZoomAmt","uTiltX","uTiltY","uComp","uCsub"]
+ "uMouse","uZoom","uZoomAmt","uFish","uTiltX","uTiltY","uComp","uCsub"]
  .forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 
 const tex = gl.createTexture();
@@ -583,6 +588,7 @@ function frame(){
   gl.uniform2f(U.uMouse,mouseS.x,mouseS.y);
   gl.uniform1f(U.uZoom,P.loupeZoom);
   gl.uniform1f(U.uZoomAmt,Math.max(loupeAmt-0.01,0));
+  gl.uniform1f(U.uFish,P.zoomFish);
   gl.uniform1f(U.uTiltX,P.tiltX*Math.PI/180);
   gl.uniform1f(U.uTiltY,P.tiltY*Math.PI/180);
   gl.uniform1f(U.uComp,P.comp);
@@ -634,7 +640,8 @@ Object.keys(PRESETS).forEach(name=>{
   const b = document.createElement("button");
   b.textContent = name;
   b.onclick = ()=>{
-    const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, cursor:P.cursor,
+    const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, zoomFish:P.zoomFish,
+                  cursor:P.cursor,
                   margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
