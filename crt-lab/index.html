@@ -99,7 +99,8 @@
 /* ---------------- parameter schema ---------------- */
 const GROUPS = [
   ["Hover zoom", [
-    ["loupeZoom","zoom",        1, 8,  .1, 2],
+    ["loupeZoom","zoom",        1, 8,    .1,  2],
+    ["zoomSpeed","speed",       .02, .4, .01, .12],
   ]],
   ["Compression", [
     ["comp",     "artifacts",   0, 1,   .01, 0],
@@ -578,7 +579,7 @@ function frame(){
   // hover zoom (smoothed mouse follow + eased in/out)
   mouseS.x += (mouse.x-mouseS.x)*0.09;
   mouseS.y += (mouse.y-mouseS.y)*0.09;
-  loupeAmt += ((mouseOver?1:0)-loupeAmt)*0.12;
+  loupeAmt += ((mouseOver?1:0)-loupeAmt)*P.zoomSpeed;
   gl.uniform2f(U.uMouse,mouseS.x,mouseS.y);
   gl.uniform1f(U.uZoom,P.loupeZoom);
   gl.uniform1f(U.uZoomAmt,Math.max(loupeAmt-0.01,0));
@@ -633,7 +634,7 @@ Object.keys(PRESETS).forEach(name=>{
   const b = document.createElement("button");
   b.textContent = name;
   b.onclick = ()=>{
-    const keep = {loupeZoom:P.loupeZoom, cursor:P.cursor,
+    const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, cursor:P.cursor,
                   margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
