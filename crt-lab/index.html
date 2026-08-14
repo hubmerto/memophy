@@ -114,6 +114,7 @@ const GROUPS = [
   ["Compression", [
     ["comp",     "artifacts",   0, 1,   .01, 0],
     ["csub",     "chroma sub",  0, 1,   .01, 0],
+    ["mosh",     "datamosh",    0, 1,   .01, 0],
   ]],
   ["Film", [
     ["grain",    "grain",       0, 1,   .01, 0],
@@ -184,6 +185,7 @@ const PRESETS = {
   "Dissolve":       {scatter:.55,wave:.2,curv:.3,scan:.3,maskInt:.35,glow:.45,glowSize:3.5,noise:.1,aber:1,vig:.5,corner:.12},
   "Modulate":       {wave:.8,curv:.3,scan:.4,maskInt:.4,glow:.35,aber:2,bleed:1.5,comp:.2,vig:.5,corner:.12,flicker:.06},
   "Super 8":        {grain:.7,dust:.6,leak:.35,burn:.35,scan:0,maskInt:0,curv:.04,corner:.05,vig:.65,tint:.45,sat:.85,glow:.25,bleed:.5,aber:.3,noise:0,roll:0,flicker:.09,bright:1.05,contrast:1.1},
+  "Datamosh":       {mosh:.65,comp:.35,csub:.5,scan:.2,maskInt:.25,curv:.2,corner:.08,vig:.35,aber:.8,noise:.04,roll:0},
   "VHS 1994":       {track:.7,jitter:.15,noise:.1,bleed:2.5,aber:1.8,sat:.85,scan:.3,scanCount:240,curv:.35,roll:.12,vig:.55,corner:.14,tint:.15,csub:.4,flicker:.06},
 };
 
@@ -214,6 +216,8 @@ uniform float uWave,uScatter,uHolo;
 uniform vec3  uAudio;      // bass, mid, high 0..1
 uniform float uAudioAmt;
 uniform float uGrain,uLeak,uBurn,uDust,uTrack;
+uniform sampler2D uPrev;   // previous rendered frame (feedback)
+uniform float uMosh;
 out vec4 outColor;
 
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
@@ -486,7 +490,20 @@ void main(){
   }
 
 
-  outColor = vec4(col*screenMask, 1.0);
+  col *= screenMask;
+
+  // datamosh: stuck macroblocks re-sample the previous frame with drift — smears compound
+  if(uMosh>0.001){
+    vec2 bid = floor(gl_FragCoord.xy/24.0);
+    float epoch = floor(uTime*1.5);
+    float r = hash(bid*0.31 + epoch*0.77);
+    float stuck = step(1.0 - uMosh*0.6, r);
+    vec2 drift = (vec2(hash(bid+epoch), hash(bid*1.7+epoch+3.0))-0.5) * 7.0/uRes;
+    vec3 prev = texture(uPrev, gl_FragCoord.xy/uRes + drift).rgb;
+    col = mix(col, prev, stuck*0.94);
+  }
+
+  outColor = vec4(col, 1.0);
 }`;
 
 /* ---------------- gl setup ---------------- */
@@ -519,7 +536,7 @@ const U = {};
  "uNoise","uFlicker","uJitter","uRoll","uBright","uContrast","uSat","uTint",
  "uMouse","uZoom","uZoomAmt","uFish","uTiltX","uTiltY","uComp","uCsub",
  "uWave","uScatter","uHolo","uAudio","uAudioAmt",
- "uGrain","uLeak","uBurn","uDust","uTrack"]
+ "uGrain","uLeak","uBurn","uDust","uTrack","uPrev","uMosh"]
  .forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 
 const tex = gl.createTexture();
@@ -529,6 +546,17 @@ gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+
+// feedback texture: copy of the previous rendered frame, for datamosh
+const prevTex = gl.createTexture();
+gl.activeTexture(gl.TEXTURE1);
+gl.bindTexture(gl.TEXTURE_2D, prevTex);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+gl.activeTexture(gl.TEXTURE0);
+let prevW = 0, prevH = 0;
 
 /* ---------------- sources ---------------- */
 let srcEl = null, srcIsVideo = false, srcW = 4, srcH = 3;
@@ -764,7 +792,20 @@ function frame(){
   gl.uniform1f(U.uDust,P.dust);
   gl.uniform1f(U.uTrack,P.track);
 
+  gl.uniform1i(U.uPrev,1);
+  gl.uniform1f(U.uMosh,P.mosh);
   gl.drawArrays(gl.TRIANGLES,0,3);
+
+  // capture this frame into the feedback texture for next frame's datamosh
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, prevTex);
+  if(prevW!==canvas.width||prevH!==canvas.height){
+    prevW=canvas.width; prevH=canvas.height;
+    gl.copyTexImage2D(gl.TEXTURE_2D,0,gl.RGBA,0,0,prevW,prevH,0);
+  } else {
+    gl.copyTexSubImage2D(gl.TEXTURE_2D,0,0,0,0,0,prevW,prevH);
+  }
+  gl.activeTexture(gl.TEXTURE0);
 
   frames++;
   const now = performance.now();
