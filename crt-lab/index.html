@@ -98,6 +98,9 @@
 "use strict";
 /* ---------------- parameter schema ---------------- */
 const GROUPS = [
+  ["Export", [
+    ["exportRatio","ratio",     0, 5,   1,   0, "select", ["Source","16:9","9:16","1:1","4:3","4:5"]],
+  ]],
   ["Hover zoom", [
     ["loupeZoom","zoom",        1, 8,    .1,  2],
     ["zoomSpeed","speed",       .02, .4, .01, .12],
@@ -852,7 +855,7 @@ Object.keys(PRESETS).forEach(name=>{
   b.textContent = name;
   b.onclick = ()=>{
     const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, zoomFish:P.zoomFish,
-                  cursor:P.cursor, audioAmt:P.audioAmt,
+                  cursor:P.cursor, audioAmt:P.audioAmt, exportRatio:P.exportRatio,
                   margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
@@ -868,7 +871,7 @@ document.getElementById("bCam").onclick = useCam;
 document.getElementById("bTab").onclick = useDisplay;
 document.getElementById("bTest").onclick = useTestCard;
 /* video recording (mp4 when the browser can mux it, webm fallback) */
-let recorder=null, recChunks=[], recT0=0, recTimer=null;
+let recorder=null, recChunks=[], recT0=0, recTimer=null, recCleanup=null;
 const bRec = document.getElementById("bRec");
 function recMime(){
   return ["video/mp4;codecs=avc1.640028","video/mp4;codecs=avc1.42E01E","video/mp4",
@@ -880,7 +883,8 @@ function lockCanvasToSource(){
   const pad = Math.round(P.margin);
   const availW = stage.clientWidth-2*pad, availH = stage.clientHeight-2*pad;
   if(availW<50||availH<50) return;           // layout not ready / hidden — keep full size
-  const sa = srcW/Math.max(srcH,1);
+  const ratios = [srcW/Math.max(srcH,1), 16/9, 9/16, 1, 4/3, 4/5];
+  const sa = ratios[Math.round(P.exportRatio)] || ratios[0];
   let w,h;
   if(availW/availH > sa){ h=availH; w=Math.round(h*sa); } else { w=availW; h=Math.round(w/sa); }
   canvas.style.width=w+"px"; canvas.style.height=h+"px";
@@ -906,7 +910,18 @@ bRec.onclick = ()=>{
       recorder = null; clearInterval(recTimer);
       bRec.textContent = "Record"; bRec.classList.remove("rec");
       unlockCanvas();
+      if(recCleanup){ recCleanup(); recCleanup = null; }
     };
+    // file videos: stop automatically when one full loop completes
+    if(video && !video.srcObject && isFinite(video.duration)){
+      const v = video; let lastT = 0;
+      const onTU = ()=>{
+        if(recorder && v.currentTime < lastT - 0.5) recorder.stop();
+        else lastT = Math.max(lastT, v.currentTime);
+      };
+      v.addEventListener("timeupdate", onTU);
+      recCleanup = ()=>v.removeEventListener("timeupdate", onTU);
+    }
     recorder.start(250);
     recT0 = performance.now();
     bRec.classList.add("rec");
