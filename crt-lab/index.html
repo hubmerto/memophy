@@ -103,6 +103,9 @@ const GROUPS = [
     ["zoomSpeed","speed",       .02, .4, .01, .12],
     ["zoomFish", "fisheye",     0, 1,    .01, .35],
   ]],
+  ["Audio react", [
+    ["audioAmt", "react",       0, 1,   .01, .6],
+  ]],
   ["Particle FX", [
     ["wave",     "modulation",  0, 1,   .01, 0],
     ["scatter",  "dissolve",    0, 1,   .01, 0],
@@ -199,6 +202,8 @@ uniform float uZoom,uZoomAmt,uFish;
 uniform float uTiltX,uTiltY;
 uniform float uComp,uCsub;
 uniform float uWave,uScatter,uHolo;
+uniform vec3  uAudio;      // bass, mid, high 0..1
+uniform float uAudioAmt;
 out vec4 outColor;
 
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
@@ -236,6 +241,10 @@ void main(){
   vec2 za = zoff * vec2(1.0, uRes.y/uRes.x);
   float fish = 1.0 + uFish*uZoomAmt*1.2*dot(za,za);
   fragUV = uMouse + zoff*fish/mag;
+
+  // audio: bass punch — subtle whole-frame pump from the center
+  float pump = 1.0 + uAudio.x*uAudioAmt*0.05;
+  fragUV = vec2(0.5) + (fragUV-vec2(0.5))/pump;
 
   // tilted screen: perspective ray hit against the rotated screen plane
   if(abs(uTiltX)+abs(uTiltY)>0.0005){
@@ -275,10 +284,11 @@ void main(){
     uv.x += band*(hash(vec2(t,9.0))-0.5)*uJitter*0.15;
   }
 
-  // particle fx: wave modulation
-  if(uWave>0.001){
-    uv.x += sin(uv.y*38.0 + uTime*2.2)*0.010*uWave;
-    uv.y += sin(uv.x*27.0 - uTime*1.7)*0.007*uWave;
+  // particle fx: wave modulation (audio mids add to the slider)
+  float wamp = clamp(uWave + uAudio.y*uAudioAmt*0.9, 0.0, 1.4);
+  if(wamp>0.001){
+    uv.x += sin(uv.y*38.0 + uTime*2.2)*0.010*wamp;
+    uv.y += sin(uv.x*27.0 - uTime*1.7)*0.007*wamp;
   }
   // particle fx: dissolve — image breaks into drifting particle cells
   float cellDim = 1.0;
@@ -299,8 +309,9 @@ void main(){
     uv.x += slice*(hash(vec2(ht,2.0))-0.5)*0.05*uHolo;
   }
 
-  // chroma offset (radial) + horizontal bleed
-  vec2 chroma = (uv-0.5)*uAber*2.0/uRes.x;
+  // chroma offset (radial) + horizontal bleed (audio highs spike aberration)
+  float aber = uAber*(1.0 + uAudio.z*uAudioAmt*2.5);
+  vec2 chroma = (uv-0.5)*aber*2.0/uRes.x;
   vec3 col = vec3(0.0); float wsum=0.0;
   for(int i=-2;i<=2;i++){
     float w = exp(-float(i*i)*0.35);
@@ -335,9 +346,9 @@ void main(){
     col = floor(col*lv+0.5)/lv;
   }
 
-  // glow (mip-based bloom)
+  // glow (mip-based bloom; audio bass pumps it)
   vec3 glow = fetch(uv,uGlowSize)*0.6 + fetch(uv,uGlowSize+1.5)*0.4;
-  col += glow*glow*uGlow*1.4;
+  col += glow*glow*uGlow*1.4*(1.0 + uAudio.x*uAudioAmt*1.6);
 
   // scanlines
   float sl = sin(uv.y*uScanCount*6.2831853);
@@ -438,7 +449,7 @@ const U = {};
  "uBleed","uAber","uMaskType","uMaskScale","uMaskInt","uPix","uGlow","uGlowSize",
  "uNoise","uFlicker","uJitter","uRoll","uBright","uContrast","uSat","uTint",
  "uMouse","uZoom","uZoomAmt","uFish","uTiltX","uTiltY","uComp","uCsub",
- "uWave","uScatter","uHolo"]
+ "uWave","uScatter","uHolo","uAudio","uAudioAmt"]
  .forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 
 const tex = gl.createTexture();
@@ -499,10 +510,39 @@ function useImage(url){
   img.onload = ()=>{ stopMedia(); srcEl=img; srcIsVideo=false; srcW=img.naturalWidth; srcH=img.naturalHeight; uploadFrame(true); };
   img.src = url;
 }
+/* audio analysis: bass/mid/high bands drive the shader when Audio react > 0 */
+let actx=null, analyser=null, audioSrcNode=null, freqData=null;
+const audioBands = [0,0,0];
+function attachAudio(el){
+  try{
+    if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+    actx.resume();
+    if(audioSrcNode){ try{audioSrcNode.disconnect();}catch(_){} }
+    audioSrcNode = actx.createMediaElementSource(el);
+    if(!analyser){
+      analyser = actx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.72;
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+    }
+    audioSrcNode.connect(analyser);
+    analyser.connect(actx.destination);
+  }catch(e){ console.warn("audio attach failed:", e.message); }
+}
+function updateAudioBands(){
+  if(!analyser || P.audioAmt<=0){ audioBands[0]=audioBands[1]=audioBands[2]=0; return; }
+  analyser.getByteFrequencyData(freqData);
+  const avg=(a,b)=>{let s=0;for(let i=a;i<b;i++)s+=freqData[i];return s/((b-a)*255);};
+  // ~93Hz per bin @48kHz, fftSize 512
+  audioBands[0] = Math.min(1, avg(0,4)*1.4);    // bass (bin 0 covers 0-94Hz)
+  audioBands[1] = Math.min(1, avg(4,40)*1.8);   // mids
+  audioBands[2] = Math.min(1, avg(40,128)*2.6); // highs
+}
+
 function useVideo(url, name){
   stopMedia();
   video = document.createElement("video");
-  video.src = url; video.loop = true; video.muted = true; video.playsInline = true;
+  video.src = url; video.loop = true; video.muted = false; video.playsInline = true;
   video.addEventListener("error", ()=>{
     alert("The browser can't decode the codec inside \""+(name||"this file")+"\".\n"+
           "Convert it once with:\n\nffmpeg -i \""+(name||"input.avi")+"\" -c:v libx264 -pix_fmt yuv420p -crf 18 converted.mp4\n\nthen drop converted.mp4 here.");
@@ -510,6 +550,7 @@ function useVideo(url, name){
   });
   video.addEventListener("loadeddata", ()=>{
     srcEl = video; srcIsVideo = true; srcW = video.videoWidth; srcH = video.videoHeight;
+    attachAudio(video);
     video.play();
   });
 }
@@ -644,6 +685,9 @@ function frame(){
   gl.uniform1f(U.uWave,P.wave);
   gl.uniform1f(U.uScatter,P.scatter);
   gl.uniform1f(U.uHolo,P.holo);
+  updateAudioBands();
+  gl.uniform3f(U.uAudio,audioBands[0],audioBands[1],audioBands[2]);
+  gl.uniform1f(U.uAudioAmt,P.audioAmt);
 
   gl.drawArrays(gl.TRIANGLES,0,3);
 
@@ -692,7 +736,7 @@ Object.keys(PRESETS).forEach(name=>{
   b.textContent = name;
   b.onclick = ()=>{
     const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, zoomFish:P.zoomFish,
-                  cursor:P.cursor,
+                  cursor:P.cursor, audioAmt:P.audioAmt,
                   margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
@@ -749,6 +793,12 @@ const stage = document.getElementById("stage");
 ["dragenter","dragover"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.add("dragging");}));
 ["dragleave","drop"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.remove("dragging");}));
 stage.addEventListener("drop",e=>{ if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+
+window._crt = {loadFile, useVideo, bands:audioBands,    // scripting/debug hook
+  dbg:()=>{let s=-1; if(analyser){analyser.getByteFrequencyData(freqData); s=0; for(const v of freqData) s+=v;}
+    return {actx:actx?actx.state:null, analyser:!!analyser, freqSum:s,
+            videoPaused:video?video.paused:null, videoMuted:video?video.muted:null,
+            audioAmt:P.audioAmt};}};
 
 useTestCard();
 requestAnimationFrame(frame);
