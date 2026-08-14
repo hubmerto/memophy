@@ -103,6 +103,11 @@ const GROUPS = [
     ["zoomSpeed","speed",       .02, .4, .01, .12],
     ["zoomFish", "fisheye",     0, 1,    .01, .35],
   ]],
+  ["Particle FX", [
+    ["wave",     "modulation",  0, 1,   .01, 0],
+    ["scatter",  "dissolve",    0, 1,   .01, 0],
+    ["holo",     "hologram",    0, 1,   .01, 0],
+  ]],
   ["Compression", [
     ["comp",     "artifacts",   0, 1,   .01, 0],
     ["csub",     "chroma sub",  0, 1,   .01, 0],
@@ -165,6 +170,9 @@ const PRESETS = {
   "Rave":           {curv:.4,scan:.5,sat:1.9,glow:.8,glowSize:3,aber:2.5,contrast:1.2,flicker:.1,maskInt:.5,vig:.5,corner:.14},
   "Tired":          {curv:.45,scan:.4,tint:.8,bright:.8,sat:.75,glow:.3,noise:.08,vig:.8,corner:.16},
   "Webrip":         {curv:.1,scan:.25,scanCount:420,maskInt:.3,maskScale:1.5,glow:.25,aber:.4,bleed:.5,noise:.04,comp:.7,csub:.85,corner:.06,vig:.3,roll:0,flicker:.02},
+  "Hologram":       {holo:.85,curv:.25,scan:.3,scanCount:260,maskInt:.2,glow:.55,glowSize:3.5,aber:.8,bleed:.8,noise:.09,flicker:.14,roll:.25,vig:.45,corner:.1,bright:1.1,contrast:1.08},
+  "Dissolve":       {scatter:.55,wave:.2,curv:.3,scan:.3,maskInt:.35,glow:.45,glowSize:3.5,noise:.1,aber:1,vig:.5,corner:.12},
+  "Modulate":       {wave:.8,curv:.3,scan:.4,maskInt:.4,glow:.35,aber:2,bleed:1.5,comp:.2,vig:.5,corner:.12,flicker:.06},
 };
 
 const P = {...DEFAULTS};
@@ -190,6 +198,7 @@ uniform vec2  uMouse;
 uniform float uZoom,uZoomAmt,uFish;
 uniform float uTiltX,uTiltY;
 uniform float uComp,uCsub;
+uniform float uWave,uScatter,uHolo;
 out vec4 outColor;
 
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
@@ -266,6 +275,30 @@ void main(){
     uv.x += band*(hash(vec2(t,9.0))-0.5)*uJitter*0.15;
   }
 
+  // particle fx: wave modulation
+  if(uWave>0.001){
+    uv.x += sin(uv.y*38.0 + uTime*2.2)*0.010*uWave;
+    uv.y += sin(uv.x*27.0 - uTime*1.7)*0.007*uWave;
+  }
+  // particle fx: dissolve — image breaks into drifting particle cells
+  float cellDim = 1.0;
+  if(uScatter>0.001){
+    float cells = 56.0;
+    vec2 cell = floor(uv*cells);
+    float h1 = hash(cell*0.123+7.0), h2 = hash(cell*0.377+3.0);
+    vec2 dir = vec2(h1-0.5, h2-0.5)*2.0;
+    float ph = hash(cell*0.529)*6.2831853;
+    float sw = 0.5+0.5*sin(uTime*(0.5+h1*1.2)+ph);
+    uv += dir * uScatter * 0.10 * sw;
+    cellDim = 1.0 - uScatter*0.55*hash(cell+floor(uTime*3.0));
+  }
+  // particle fx: hologram slice offsets
+  if(uHolo>0.001){
+    float ht = floor(uTime*6.0);
+    float slice = step(0.93, hash(vec2(floor(uv.y*26.0), ht)));
+    uv.x += slice*(hash(vec2(ht,2.0))-0.5)*0.05*uHolo;
+  }
+
   // chroma offset (radial) + horizontal bleed
   vec2 chroma = (uv-0.5)*uAber*2.0/uRes.x;
   vec3 col = vec3(0.0); float wsum=0.0;
@@ -278,6 +311,12 @@ void main(){
     wsum += w;
   }
   col /= wsum;
+  col *= cellDim;
+
+  // hologram ghost echo
+  if(uHolo>0.001){
+    col += fetch(uv - vec2(0.016,0.007)*uHolo, 1.0)*0.30*uHolo*vec3(0.4,0.8,1.0);
+  }
 
   // compression: 4:2:0-style chroma subsampling (blocky color)
   if(uCsub>0.001){
@@ -354,6 +393,14 @@ void main(){
   col *= mix(vec3(1.0), vec3(1.1,0.96,0.78), max(uTint,0.0));
   col *= mix(vec3(1.0), vec3(0.82,0.95,1.15), max(-uTint,0.0));
 
+  // hologram projection: cyan luma + scan banding
+  if(uHolo>0.001){
+    float hl = dot(col, vec3(0.299,0.587,0.114));
+    col = mix(col, vec3(0.30,0.85,1.05)*hl*1.25, uHolo*0.85);
+    float hband = 0.78+0.22*sin(uv.y*150.0 - uTime*8.0);
+    col *= mix(1.0, hband, uHolo);
+  }
+
   // vignette
   float vig = pow(max(16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y),1e-4), uVig*0.45);
   col *= vig;
@@ -390,7 +437,8 @@ const U = {};
 ["uTex","uRes","uTime","uUVScale","uUVOff","uCurv","uCorner","uVig","uScan","uScanCount",
  "uBleed","uAber","uMaskType","uMaskScale","uMaskInt","uPix","uGlow","uGlowSize",
  "uNoise","uFlicker","uJitter","uRoll","uBright","uContrast","uSat","uTint",
- "uMouse","uZoom","uZoomAmt","uFish","uTiltX","uTiltY","uComp","uCsub"]
+ "uMouse","uZoom","uZoomAmt","uFish","uTiltX","uTiltY","uComp","uCsub",
+ "uWave","uScatter","uHolo"]
  .forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 
 const tex = gl.createTexture();
@@ -593,6 +641,9 @@ function frame(){
   gl.uniform1f(U.uTiltY,P.tiltY*Math.PI/180);
   gl.uniform1f(U.uComp,P.comp);
   gl.uniform1f(U.uCsub,P.csub);
+  gl.uniform1f(U.uWave,P.wave);
+  gl.uniform1f(U.uScatter,P.scatter);
+  gl.uniform1f(U.uHolo,P.holo);
 
   gl.drawArrays(gl.TRIANGLES,0,3);
 
