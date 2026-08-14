@@ -284,11 +284,10 @@ void main(){
     uv.x += band*(hash(vec2(t,9.0))-0.5)*uJitter*0.15;
   }
 
-  // particle fx: wave modulation (audio mids add to the slider)
-  float wamp = clamp(uWave + uAudio.y*uAudioAmt*0.9, 0.0, 1.4);
-  if(wamp>0.001){
-    uv.x += sin(uv.y*38.0 + uTime*2.2)*0.010*wamp;
-    uv.y += sin(uv.x*27.0 - uTime*1.7)*0.007*wamp;
+  // particle fx: wave modulation (manual slider only — audio does not warp the image)
+  if(uWave>0.001){
+    uv.x += sin(uv.y*38.0 + uTime*2.2)*0.010*uWave;
+    uv.y += sin(uv.x*27.0 - uTime*1.7)*0.007*uWave;
   }
   // particle fx: dissolve — image breaks into drifting particle cells
   float cellDim = 1.0;
