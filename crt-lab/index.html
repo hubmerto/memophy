@@ -16,7 +16,7 @@
     font:12px/1.5 "SF Mono", ui-monospace, Menlo, monospace;
     display:flex; overflow:hidden;
   }
-  #stage{flex:1; position:relative; min-width:0;}
+  #stage{flex:1; position:relative; min-width:0; display:flex; align-items:center; justify-content:center;}
   body, #glcanvas, button, select, input{
     cursor:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24"><path d="M5 3 L5 19 L9.2 15.4 L11.6 21 L14.4 19.8 L12 14.4 L17 14.2 Z" fill="white" stroke="black" stroke-width="1.2"/></svg>') 8 5, default;
   }
@@ -875,27 +875,45 @@ function recMime(){
           "video/webm;codecs=h264","video/webm;codecs=vp9","video/webm"]
          .find(t=>MediaRecorder.isTypeSupported(t)) || "";
 }
+function lockCanvasToSource(){
+  // shrink the canvas to the source's aspect ratio so the export has no letterbox
+  const pad = Math.round(P.margin);
+  const availW = stage.clientWidth-2*pad, availH = stage.clientHeight-2*pad;
+  if(availW<50||availH<50) return;           // layout not ready / hidden — keep full size
+  const sa = srcW/Math.max(srcH,1);
+  let w,h;
+  if(availW/availH > sa){ h=availH; w=Math.round(h*sa); } else { w=availW; h=Math.round(w/sa); }
+  canvas.style.width=w+"px"; canvas.style.height=h+"px";
+  resize();                                  // sync the GL buffer to the new box now
+}
+function unlockCanvas(){ canvas.style.width="100%"; canvas.style.height="100%"; }
+
 bRec.onclick = ()=>{
   if(recorder){ recorder.stop(); return; }
-  const mime = recMime();
-  recorder = new MediaRecorder(canvas.captureStream(60),
-    {mimeType:mime||undefined, videoBitsPerSecond:20e6});
-  recChunks = [];
-  recorder.ondataavailable = e=>{ if(e.data.size) recChunks.push(e.data); };
-  recorder.onstop = ()=>{
-    const type = recorder.mimeType||mime, ext = type.includes("mp4")?"mp4":"webm";
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(recChunks,{type}));
-    a.download = "crt_capture."+ext; a.click();
-    recorder = null; clearInterval(recTimer);
-    bRec.textContent = "Record"; bRec.classList.remove("rec");
-  };
-  recorder.start(250);
-  recT0 = performance.now();
-  bRec.classList.add("rec");
-  recTimer = setInterval(()=>{
-    bRec.textContent = "■ "+((performance.now()-recT0)/1000).toFixed(0)+"s";
-  }, 250);
+  if(video && !video.srcObject){ video.currentTime = 0; video.play(); }   // file videos restart
+  lockCanvasToSource();
+  {
+    const mime = recMime();
+    recorder = new MediaRecorder(canvas.captureStream(60),
+      {mimeType:mime||undefined, videoBitsPerSecond:20e6});
+    recChunks = [];
+    recorder.ondataavailable = e=>{ if(e.data.size) recChunks.push(e.data); };
+    recorder.onstop = ()=>{
+      const type = recorder.mimeType||mime, ext = type.includes("mp4")?"mp4":"webm";
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(recChunks,{type}));
+      a.download = "crt_capture."+ext; a.click();
+      recorder = null; clearInterval(recTimer);
+      bRec.textContent = "Record"; bRec.classList.remove("rec");
+      unlockCanvas();
+    };
+    recorder.start(250);
+    recT0 = performance.now();
+    bRec.classList.add("rec");
+    recTimer = setInterval(()=>{
+      bRec.textContent = "■ "+((performance.now()-recT0)/1000).toFixed(0)+"s";
+    }, 250);
+  }
 };
 
 document.getElementById("bSave").onclick = ()=>{
@@ -914,6 +932,8 @@ window._crt = {loadFile, useVideo, bands:audioBands,    // scripting/debug hook
   dbg:()=>{let s=-1; if(analyser){analyser.getByteFrequencyData(freqData); s=0; for(const v of freqData) s+=v;}
     return {actx:actx?actx.state:null, analyser:!!analyser, freqSum:s,
             videoPaused:video?video.paused:null, videoMuted:video?video.muted:null,
+            videoTime:video?video.currentTime:null, srcW, srcH,
+            canvasW:canvas.width, canvasH:canvas.height,
             audioAmt:P.audioAmt};}};
 
 useTestCard();
