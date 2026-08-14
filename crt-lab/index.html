@@ -115,6 +115,12 @@ const GROUPS = [
     ["comp",     "artifacts",   0, 1,   .01, 0],
     ["csub",     "chroma sub",  0, 1,   .01, 0],
   ]],
+  ["Film", [
+    ["grain",    "grain",       0, 1,   .01, 0],
+    ["leak",     "light leak",  0, 1,   .01, 0],
+    ["burn",     "film burn",   0, 1,   .01, 0],
+    ["dust",     "dust",        0, 1,   .01, 0],
+  ]],
   ["Screen", [
     ["margin",   "margin px",   0, 200,  1,   48],
     ["fit",      "fit",         0, 1,    1,   1, "select", ["Cover","Contain"]],
@@ -145,6 +151,7 @@ const GROUPS = [
     ["noise",    "noise",       0, 1,    .01, .06],
     ["flicker",  "flicker",     0, 1,    .01, .05],
     ["jitter",   "jitter",      0, 1,    .01, 0  ],
+    ["track",    "vhs tracking",0, 1,    .01, 0  ],
     ["roll",     "roll bar",    0, 1,    .01, .1 ],
   ]],
   ["Color", [
@@ -176,6 +183,8 @@ const PRESETS = {
   "Hologram":       {holo:.85,curv:.25,scan:.3,scanCount:260,maskInt:.2,glow:.55,glowSize:3.5,aber:.8,bleed:.8,noise:.09,flicker:.14,roll:.25,vig:.45,corner:.1,bright:1.1,contrast:1.08},
   "Dissolve":       {scatter:.55,wave:.2,curv:.3,scan:.3,maskInt:.35,glow:.45,glowSize:3.5,noise:.1,aber:1,vig:.5,corner:.12},
   "Modulate":       {wave:.8,curv:.3,scan:.4,maskInt:.4,glow:.35,aber:2,bleed:1.5,comp:.2,vig:.5,corner:.12,flicker:.06},
+  "Super 8":        {grain:.7,dust:.6,leak:.35,burn:.35,scan:0,maskInt:0,curv:.04,corner:.05,vig:.65,tint:.45,sat:.85,glow:.25,bleed:.5,aber:.3,noise:0,roll:0,flicker:.09,bright:1.05,contrast:1.1},
+  "VHS 1994":       {track:.7,jitter:.15,noise:.1,bleed:2.5,aber:1.8,sat:.85,scan:.3,scanCount:240,curv:.35,roll:.12,vig:.55,corner:.14,tint:.15,csub:.4,flicker:.06},
 };
 
 const P = {...DEFAULTS};
@@ -204,6 +213,7 @@ uniform float uComp,uCsub;
 uniform float uWave,uScatter,uHolo;
 uniform vec3  uAudio;      // bass, mid, high 0..1
 uniform float uAudioAmt;
+uniform float uGrain,uLeak,uBurn,uDust,uTrack;
 out vec4 outColor;
 
 float hash(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
@@ -306,6 +316,14 @@ void main(){
     float ht = floor(uTime*6.0);
     float slice = step(0.93, hash(vec2(floor(uv.y*26.0), ht)));
     uv.x += slice*(hash(vec2(ht,2.0))-0.5)*0.05*uHolo;
+  }
+
+  // vhs tracking: head-switching tear at the bottom + slow skew wobble
+  float trackBand = 0.0;
+  if(uTrack>0.001){
+    trackBand = smoothstep(0.075,0.03,uv.y);
+    uv.x += trackBand*(hash(vec2(floor(uv.y*160.0), floor(uTime*30.0)))-0.5)*0.10*uTrack;
+    uv.x += sin(uv.y*2.6+uTime*1.8)*0.0022*uTrack;
   }
 
   // chroma offset (radial) + horizontal bleed (audio highs spike aberration)
@@ -415,6 +433,58 @@ void main(){
   float vig = pow(max(16.0*uv.x*uv.y*(1.0-uv.x)*(1.0-uv.y),1e-4), uVig*0.45);
   col *= vig;
 
+  // film: light leaks — warm blobs drifting in from the corners, breathing slowly
+  if(uLeak>0.001){
+    vec2 lp1 = vec2(0.92+0.12*sin(uTime*0.11), 0.78+0.20*sin(uTime*0.07+2.0));
+    vec2 lp2 = vec2(0.06+0.10*sin(uTime*0.09+4.0), 0.18+0.20*sin(uTime*0.13));
+    float leak1 = smoothstep(0.85,0.12,length((uv-lp1)*vec2(1.0,1.4)));
+    float leak2 = smoothstep(0.75,0.10,length((uv-lp2)*vec2(1.2,1.0)));
+    float breathe = 0.55+0.45*sin(uTime*0.21);
+    col += uLeak*breathe*(leak1*vec3(1.00,0.42,0.12)*0.85 + leak2*vec3(0.90,0.22,0.30)*0.6);
+  }
+
+  // film: burns — every ~5s a burn blooms in from a side edge
+  if(uBurn>0.001){
+    float cyc = floor(uTime/5.0);
+    float ph  = fract(uTime/5.0);
+    float env = smoothstep(0.0,0.12,ph)*(1.0-smoothstep(0.22,0.5,ph));
+    float edgeD = hash(vec2(cyc,3.3))<0.5 ? uv.x : 1.0-uv.x;
+    float reach = env*(0.2+0.45*hash(vec2(cyc,8.8)));
+    float burn  = smoothstep(reach, reach-0.3, edgeD);
+    col += uBurn*env*(burn*vec3(1.25,0.55,0.12) + burn*burn*vec3(0.5,0.45,0.4));
+    col *= 1.0 + uBurn*env*0.25;   // flash lift while the burn is active
+  }
+
+  // film: grain — chunky, 24fps-stepped, heavier in shadows
+  if(uGrain>0.001){
+    float gt = floor(uTime*24.0);
+    float g  = hash(floor(fragUV*uRes/2.0) + vec2(fract(gt*0.137)*17.0, fract(gt*0.311)*23.0));
+    float gl = dot(col, vec3(0.299,0.587,0.114));
+    col += (g-0.5)*uGrain*0.22*(0.35+0.65*(1.0-clamp(gl,0.0,1.0)));
+  }
+
+  // film: dust specks + wandering hairline scratches
+  if(uDust>0.001){
+    float ft = floor(uTime*24.0);
+    vec2 dg = floor(uv*vec2(48.0,36.0));
+    float sp = hash(dg + ft*0.713);
+    vec2 fc = fract(uv*vec2(48.0,36.0))-0.5;
+    float speck = step(0.997-uDust*0.004, sp)
+                * smoothstep(0.4,0.1,length(fc)+hash(dg+ft)*0.2);
+    col = mix(col, mix(vec3(0.05), vec3(0.95), step(0.5,hash(dg+ft*1.37))), speck*0.85);
+    float st = floor(uTime*0.5);
+    float scOn = step(0.45, hash(vec2(st,11.0)));
+    float sx = hash(vec2(st,23.0))*0.9+0.05 + (hash(vec2(ft,29.0))-0.5)*0.004;
+    float line = smoothstep(0.0022,0.0004,abs(uv.x-sx));
+    col = mix(col, vec3(0.07), line*scOn*uDust*0.55*step(0.3,hash(vec2(ft,31.0))));
+  }
+
+  // vhs tracking: noise streaks inside the tear band
+  if(uTrack>0.001 && trackBand>0.001){
+    float streak = hash(vec2(floor(uv.y*140.0), floor(uTime*30.0)+floor(uv.x*30.0)));
+    col = mix(col, vec3(streak), trackBand*uTrack*0.55);
+  }
+
 
   outColor = vec4(col*screenMask, 1.0);
 }`;
@@ -448,7 +518,8 @@ const U = {};
  "uBleed","uAber","uMaskType","uMaskScale","uMaskInt","uPix","uGlow","uGlowSize",
  "uNoise","uFlicker","uJitter","uRoll","uBright","uContrast","uSat","uTint",
  "uMouse","uZoom","uZoomAmt","uFish","uTiltX","uTiltY","uComp","uCsub",
- "uWave","uScatter","uHolo","uAudio","uAudioAmt"]
+ "uWave","uScatter","uHolo","uAudio","uAudioAmt",
+ "uGrain","uLeak","uBurn","uDust","uTrack"]
  .forEach(n=>U[n]=gl.getUniformLocation(prog,n));
 
 const tex = gl.createTexture();
@@ -687,6 +758,11 @@ function frame(){
   updateAudioBands();
   gl.uniform3f(U.uAudio,audioBands[0],audioBands[1],audioBands[2]);
   gl.uniform1f(U.uAudioAmt,P.audioAmt);
+  gl.uniform1f(U.uGrain,P.grain);
+  gl.uniform1f(U.uLeak,P.leak);
+  gl.uniform1f(U.uBurn,P.burn);
+  gl.uniform1f(U.uDust,P.dust);
+  gl.uniform1f(U.uTrack,P.track);
 
   gl.drawArrays(gl.TRIANGLES,0,3);
 
