@@ -138,6 +138,45 @@ a{color:#ffa02f;}
 /* hidden sims the engine still feeds */
 #simbin{display:none;}
 
+/* ---------- login ---------- */
+#login{position:absolute;top:0;left:0;width:1080px;height:1920px;z-index:1900;background:#140202;text-align:center;}
+#login .box{width:640px;margin:560px auto 0;background:#260909;border:1px solid #8a2f2f;padding:52px;color:#fff;box-shadow:0 4px 30px #000;}
+#login .mphbig{font:bold italic 64px Arial;color:#fff;text-shadow:0 1px 0 #ffc4c4,0 3px 3px #000;}
+#login .mphbig b{color:#4ff6ff;}
+#login .sub{font:bold 22px Verdana;color:#e59f9f;letter-spacing:4px;margin:10px 0 34px;}
+#login .frow{margin:0 0 22px;text-align:left;}
+#login label{display:block;font:bold 20px Verdana;color:#e59f9f;margin-bottom:8px;}
+#login input[type=text],#login input[type=password]{
+  width:100%;box-sizing:border-box;padding:16px;font:26px Verdana;color:#f2cbcb;
+  background:#160404;border:1px solid #7a2a2a;
+}
+#login .remember{font:16px Verdana;color:#a15f5f;text-align:left;margin-bottom:26px;}
+#login .go{
+  display:block;width:100%;padding:20px 0;text-align:center;cursor:pointer;
+  font:bold 28px Arial;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.4);
+  border:1px solid #2e7d12;border-radius:4px;
+  background:#5cb82b;
+  background:-webkit-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  background:-moz-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  background:linear-gradient(to bottom,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 4px rgba(0,0,0,.5);
+}
+#login .go:hover{background:#6fce3a;}
+#login .forgot{display:block;margin-top:20px;font:16px Verdana;color:#ffa02f;text-decoration:underline;cursor:pointer;}
+
+/* ---------- pixel glitch transition ---------- */
+#glitchcv{position:absolute;top:0;left:0;z-index:3000;display:none;}
+
+/* ---------- loading ring between callers ---------- */
+.loadring{
+  position:relative;width:84px;height:84px;margin:26px auto 0;display:none;
+  border:10px solid rgba(255,255,255,.14);border-top-color:#fff;border-radius:50%;
+  -webkit-animation:ringspin .8s steps(8) infinite;
+  animation:ringspin .8s steps(8) infinite;
+}
+@-webkit-keyframes ringspin{to{-webkit-transform:rotate(360deg);}}
+@keyframes ringspin{to{transform:rotate(360deg);}}
+
 /* ---------- age gate ---------- */
 #gate{position:absolute;top:0;left:0;width:1080px;height:1920px;z-index:2000;background:#140202;text-align:center;}
 #gate .box{width:620px;margin:600px auto 0;background:#260909;border:1px solid #8a2f2f;padding:48px;color:#fff;font:bold 28px Arial;box-shadow:0 4px 30px #000;}
@@ -165,6 +204,25 @@ a{color:#ffa02f;}
       <p>By entering you agree you are joining memphy's official broadcast.<br>She decides who gets to talk.</p>
       <span class="enter" onclick="closeGate()">ENTER</span>
       <a class="exit" href="http://www.google.com">EXIT</a>
+    </div>
+  </div>
+
+  <!-- ================= members login ================= -->
+  <div id="login">
+    <div class="box">
+      <div class="mphbig">MEM<b>PHY</b>.TV</div>
+      <div class="sub">MEMBERS AREA</div>
+      <div class="frow">
+        <label for="lu">USERNAME</label>
+        <input type="text" id="lu" autocomplete="off">
+      </div>
+      <div class="frow">
+        <label for="lp">PASSWORD</label>
+        <input type="password" id="lp" autocomplete="off">
+      </div>
+      <div class="remember"><input type="checkbox" checked id="lr"> <label for="lr" style="display:inline;font:16px Verdana;color:#a15f5f;">remember me on this computer</label></div>
+      <span class="go" onclick="doLogin()">LOGIN &raquo;</span>
+      <span class="forgot">forgot password? tip memphy to remember it</span>
     </div>
   </div>
 
@@ -204,6 +262,7 @@ a{color:#ffa02f;}
     <div class="camdz" id="gdz">
       <div class="scan"></div>
       <div class="nosig" id="gnosig">NO ONE ON THE LINE</div>
+      <div class="loadring" id="gspin"></div>
       <div class="cammsg" id="gcammsg">accept a guy from the waiting line</div>
       <span class="bigbtn" id="gupbtn">&#9650; UPLOAD CALLER CAMS
         <small>or drag &amp; drop video files onto this cam</small>
@@ -213,9 +272,9 @@ a{color:#ffa02f;}
 
   <!-- ================= the call ================= -->
   <div class="pbar">&#9829; THE CALL <span id="callwith" style="color:#ffcc00;"></span></div>
-  <div id="calllog">
-    <div class="sys">accept a caller to start a conversation...</div>
-  </div>
+  <div id="calllog"></div>
+
+  <canvas id="glitchcv" width="1080" height="1920"></canvas>
 
 </div><!-- /stage -->
 </div><!-- /fit -->
@@ -430,13 +489,15 @@ function connectCaller(){
   gdz.style.display='block';
   document.getElementById('glive').style.display='none';
   document.getElementById('gnosig').innerHTML = 'CONNECTING...';
+  document.getElementById('gspin').style.display='block';
   document.getElementById('gcammsg').innerHTML = 'patching '+esc(currentCaller)+' through to memphy';
   document.getElementById('gueststatus').innerHTML = '&mdash; connecting '+esc(currentCaller)+'...';
   document.getElementById('gupbtn').style.display = 'none';
   setTimeout(function(){
+    document.getElementById('gspin').style.display='none';
     document.getElementById('gupbtn').style.display = 'block';
     playClip((gcurrent+1)%clips.length, 'guest');
-  }, 900);
+  }, 1600);
 }
 function endCall(){
   gvid.pause(); gcurrent = -1;
@@ -444,10 +505,11 @@ function endCall(){
   gdz.style.display='block';
   document.getElementById('glive').style.display='none';
   document.getElementById('gnosig').innerHTML = 'NO ONE ON THE LINE';
+  document.getElementById('gspin').style.display='none';
   document.getElementById('gcammsg').innerHTML = 'accept a guy from the waiting line';
   document.getElementById('gueststatus').innerHTML = '';
   stopCallChat();
-  pushCall('sys', null, 'call ended. the line shuffles forward...');
+  document.getElementById('calllog').innerHTML = '';
   document.getElementById('callwith').innerHTML = '';
   markCells();
 }
@@ -470,9 +532,11 @@ var MEM_LINES = [
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
   stopCallChat();
+  // the transcript is strictly memphy and whoever is on the line right now
   var l = document.getElementById('calllog'); l.innerHTML='';
-  pushCall('sys', null, 'connected &mdash; memphy &hearts; '+esc(who));
   callTurn = 0;
+  pushCall('cal', esc(who), CALLER_LINES[Math.floor(Math.random()*CALLER_LINES.length)]);
+  callTurn = 1;
   callTimer = setInterval(function(){
     if(callTurn%2===0) pushCall('cal', esc(who), CALLER_LINES[Math.floor(Math.random()*CALLER_LINES.length)]);
     else pushCall('mem', 'memphy', MEM_LINES[Math.floor(Math.random()*MEM_LINES.length)]);
@@ -534,9 +598,54 @@ setInterval(function(){
 for(var pi=0;pi<PRELOADED.length;pi++) mphAddUrl(PRELOADED[pi], 'host');
 for(var gi=0;gi<PRELOADED_GUEST.length;gi++) mphAddUrl(PRELOADED_GUEST[gi], 'guest');
 
-// ---- age gate ----
-function closeGate(){ document.getElementById('gate').style.display='none'; }
-if(location.search.indexOf('nogate')>-1) closeGate();
+// ---- pixel glitch transition ----
+var GLITCH_COLORS = ['#ff5454','#a90e0e','#4ff6ff','#120101','#ffd1d1','#000000','#7cfc00'];
+var glitching = false;
+function glitchTo(swap){
+  if(glitching){ swap(); return; }
+  glitching = true;
+  var cv = document.getElementById('glitchcv');
+  var g = cv.getContext('2d');
+  cv.style.display = 'block';
+  var frame = 0, TOTAL = 38, swapped = false;
+  function step(){
+    frame++;
+    var t = frame/TOTAL;                       // 0..1
+    var peak = 1 - Math.abs(t*2 - 1);          // ramps up to 1 at midpoint, back down
+    var block = t < .5 ? 120 : 40;             // chunky in, finer out
+    var n = Math.floor(220 * peak) + 8;
+    if(t < .5) { /* accumulate: don't clear */ }
+    else if(!swapped){ swapped = true; swap(); }
+    else { g.clearRect(0,0,1080,1920); n = Math.floor(200 * peak); }
+    for(var i=0;i<n;i++){
+      g.fillStyle = GLITCH_COLORS[Math.floor(Math.random()*GLITCH_COLORS.length)];
+      var bx = Math.floor(Math.random()*(1080/block))*block;
+      var by = Math.floor(Math.random()*(1920/block))*block;
+      g.fillRect(bx, by, block, block*(Math.random()<.2?3:1));
+    }
+    if(frame < TOTAL) requestAnimationFrame(step);
+    else {
+      g.clearRect(0,0,1080,1920);
+      cv.style.display = 'none';
+      glitching = false;
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+// ---- age gate -> login -> show ----
+function closeGate(){
+  glitchTo(function(){ document.getElementById('gate').style.display='none'; });
+}
+function doLogin(){
+  // any username / any password gets in
+  glitchTo(function(){ document.getElementById('login').style.display='none'; });
+}
+function loginKey(e){ if(e.key==='Enter' || e.keyCode===13) doLogin(); }
+document.getElementById('lp').addEventListener('keydown', loginKey);
+document.getElementById('lu').addEventListener('keydown', loginKey);
+if(location.search.indexOf('nogate')>-1) document.getElementById('gate').style.display='none';
+if(location.search.indexOf('nologin')>-1) document.getElementById('login').style.display='none';
 
 // ---- scale the 1080x1920 stage to fit the window, ratio locked ----
 function fitStage(){
