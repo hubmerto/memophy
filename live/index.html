@@ -6,24 +6,21 @@
 <meta name="robots" content="noindex">
 <style>
 /* ===== MEMPHY LIVE — vertical 1080x1920 reel cut, vernacular 2010-2012 ===== */
-/* fixed px / floats only / prefixed gradients / web-safe fonts / no transitions */
-/* record the top 1080x1920 of this page; production controls live below the fold */
+/* mobile-first frame: type sized for a phone screen (frame = phone at 3x). */
+/* record the stage; production controls live below the fold */
 
 html,body{margin:0;padding:0;}
 body{
   overflow-x:hidden;
   background:#120101;
-  background:-webkit-gradient(linear,left top,left bottom,color-stop(0,#6b1010),color-stop(1,#120101));
   background:-webkit-linear-gradient(top,#6b1010 0%,#120101 100%);
   background:-moz-linear-gradient(top,#6b1010 0%,#120101 100%);
   background:linear-gradient(to bottom,#6b1010 0%,#120101 100%);
   background-attachment:fixed;
   font:14px Arial,Helvetica,sans-serif;color:#f2cbcb;
 }
-/* big cursor for on-camera legibility */
 *,*:hover{cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 24 24'><path d='M3 1 L3 20 L8 15.5 L11 22 L14 20.5 L11 14 L18 14 Z' fill='white' stroke='%23d04242' stroke-width='1.5'/></svg>") 5 2, auto !important;}
 a{color:#ffa02f;}
-a:hover{color:#ffc873;}
 .clear{clear:both;}
 
 /* the recorded frame — designed at 1080x1920, scaled to fit the window */
@@ -32,56 +29,34 @@ a:hover{color:#ffc873;}
 
 /* ---------- header ---------- */
 #hdr{
-  height:52px;background:#c22e2e;position:relative;
+  height:96px;background:#c22e2e;position:relative;
   background:-webkit-linear-gradient(top,#ff6a6a 0%,#e83030 50%,#d01818 51%,#a90e0e 100%);
   background:-moz-linear-gradient(top,#ff6a6a 0%,#e83030 50%,#d01818 51%,#a90e0e 100%);
   background:linear-gradient(to bottom,#ff6a6a 0%,#e83030 50%,#d01818 51%,#a90e0e 100%);
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff6a6a',endColorstr='#a90e0e',GradientType=0);
   border-top:1px solid #ffb1b1;border-bottom:1px solid #5c0f0f;
   box-shadow:0 2px 6px rgba(0,0,0,.6);
 }
-#logo{float:left;padding:5px 0 0 14px;}
-#hnav{float:right;padding:17px 14px 0 0;font:bold 14px Arial;}
-#hnav a{color:#ffe3e3;text-decoration:none;margin-left:14px;}
-#hnav a:hover{color:#4ff6ff;text-decoration:underline;}
-#hnav .free{color:#7cfc00;}
-
-#nav2{
-  height:30px;line-height:30px;padding:0 12px;font:bold 14px Arial;
-  background:#ffd9ee;
-  background:-webkit-linear-gradient(top,#ffffff 0%,#ffe0e0 50%,#ffd1d1 51%,#ffbfbf 100%);
-  background:-moz-linear-gradient(top,#ffffff 0%,#ffe0e0 50%,#ffd1d1 51%,#ffbfbf 100%);
-  background:linear-gradient(to bottom,#ffffff 0%,#ffe0e0 50%,#ffd1d1 51%,#ffbfbf 100%);
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff',endColorstr='#ffbfbf',GradientType=0);
-  border-bottom:1px solid #d97777;
-}
-#nav2 a{color:#a10000;text-decoration:none;margin-right:14px;}
-#nav2 a:hover{text-decoration:underline;color:#00b5cc;}
-#nav2 .live{color:#e10000;}
-#onlinecount{float:right;color:#a10000;}
-#onlinecount b{color:#e10000;}
-
-#lead{height:24px;margin:0;background:#2a0a0a;border-bottom:1px solid #8a2f2f;overflow:hidden;}
-#lead marquee{color:#ff9a9a;font:bold 13px Verdana;padding-top:3px;}
+#logo{float:left;padding:14px 0 0 22px;}
+#online{float:right;padding:30px 24px 0 0;font:bold 30px Arial;color:#ffe3e3;text-shadow:0 -1px 0 rgba(0,0,0,.5);}
+#online b{color:#7cfc00;}
 
 /* ---------- stacked cams ---------- */
-.panel{background:#260909;border-bottom:1px solid #8a2f2f;}
 .pbar{
-  height:34px;line-height:34px;padding:0 12px;font:bold 15px Tahoma,Geneva,sans-serif;color:#fff;
+  height:64px;line-height:64px;padding:0 22px;font:bold 32px Tahoma,Geneva,sans-serif;color:#fff;
   text-shadow:0 -1px 0 rgba(0,0,0,.6);
   background:#c22e2e;
   background:-webkit-linear-gradient(top,#ff8a8a 0%,#e04545 50%,#c22e2e 51%,#a11c1c 100%);
   background:-moz-linear-gradient(top,#ff8a8a 0%,#e04545 50%,#c22e2e 51%,#a11c1c 100%);
   background:linear-gradient(to bottom,#ff8a8a 0%,#e04545 50%,#c22e2e 51%,#a11c1c 100%);
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff8a8a',endColorstr='#a11c1c',GradientType=0);
   border-bottom:1px solid #5c0f0f;
   white-space:nowrap;overflow:hidden;
 }
-.pbar .r{float:right;font-weight:normal;color:#ffd1d1;}
+.pbar .r{float:right;font-weight:normal;color:#ffd1d1;font-size:28px;}
+.pbar .r b{font-weight:bold;}
 
 .camstage{position:relative;width:1080px;background:#000;overflow:hidden;}
-#hstage{height:742px;}
-#gstage{height:704px;}
+#hstage{height:660px;}
+#gstage{height:660px;}
 .camstage video{width:100%;height:100%;background:#000;display:block;object-fit:cover;}
 .camdz{
   position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;box-sizing:border-box;
@@ -91,47 +66,27 @@ a:hover{color:#ffc873;}
   background:radial-gradient(circle at 50% 42%,#3a0d0d 0%,#120202 78%);
 }
 .camdz .nosig{
-  margin:22% auto 0;width:auto;text-align:center;
-  font:bold 40px Arial;color:#c34f4f;letter-spacing:8px;text-shadow:0 0 14px #571010;
+  margin:20% auto 0;width:auto;text-align:center;
+  font:bold 52px Arial;color:#c34f4f;letter-spacing:10px;text-shadow:0 0 14px #571010;
 }
-.camdz .cammsg{text-align:center;font:bold 15px Verdana;color:#e59f9f;margin-top:12px;}
-.camdz.dragover{border:4px dashed #7cfc00;}
+.camdz .cammsg{text-align:center;font:bold 22px Verdana;color:#e59f9f;margin-top:16px;}
+.camdz.dragover{border:5px dashed #7cfc00;}
 .camdz .scan{position:absolute;left:0;top:0;width:100%;height:2px;background:#8a2f2f;opacity:.6;}
 .camdz .camph{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
 .camdz .shade{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(18,2,13,.45);}
 .camdz .nosig,.camdz .cammsg,.camdz .bigbtn{position:relative;}
-.camdz .bigbtn{width:420px;margin:22px auto 0;padding:14px 0;font:bold 19px Arial;}
-.camdz .bigbtn small{font-size:12px;}
+.camdz .bigbtn{width:520px;margin:28px auto 0;padding:20px 0;font:bold 26px Arial;}
+.camdz .bigbtn small{font-size:16px;}
 
-.livebadge{position:absolute;top:14px;left:14px;display:none;background:#c00;color:#fff;font:bold 17px Verdana;padding:4px 12px;border:1px solid #ff5b5b;text-shadow:0 1px 1px #600;}
+.livebadge{position:absolute;top:18px;left:18px;display:none;background:#c00;color:#fff;font:bold 26px Verdana;padding:8px 18px;border:1px solid #ff5b5b;text-shadow:0 1px 1px #600;}
 .recdot{color:#ff2b2b;}
-.stagewarn{position:absolute;right:14px;bottom:12px;font:bold 13px Verdana;color:#ffcc00;text-shadow:0 1px 2px #000;}
-
-/* guest controls */
-#gctrls{height:44px;padding:6px 10px;box-sizing:border-box;background:#240808;border-top:1px solid #7a2a2a;}
-.cbtn{
-  display:inline-block;padding:6px 16px;margin-right:8px;cursor:pointer;
-  font:bold 14px Arial;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.5);
-  border:1px solid #7a1a1a;border-radius:3px;
-  background:#d04242;
-  background:-webkit-linear-gradient(top,#f07070 0%,#d04242 50%,#b52e2e 51%,#951b1b 100%);
-  background:-moz-linear-gradient(top,#f07070 0%,#d04242 50%,#b52e2e 51%,#951b1b 100%);
-  background:linear-gradient(to bottom,#f07070 0%,#d04242 50%,#b52e2e 51%,#951b1b 100%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
-}
-.cbtn:hover{background:#e05555;}
-#gctrls .warn{float:right;font:bold 12px Verdana;color:#ffcc00;padding-top:8px;}
 
 /* ---------- the call ---------- */
-#calllog{height:140px;overflow-y:auto;padding:8px 12px;box-sizing:border-box;background:#160404;font:16px Verdana,Geneva,sans-serif;}
-#calllog div{margin-bottom:6px;line-height:22px;word-wrap:break-word;}
+#calllog{height:308px;overflow-y:auto;padding:16px 22px;box-sizing:border-box;background:#160404;font:30px Verdana,Geneva,sans-serif;}
+#calllog div{margin-bottom:12px;line-height:40px;word-wrap:break-word;}
 #calllog .sys{color:#a15f5f;font-style:italic;}
 #calllog .mem b{color:#ff5454;}
 #calllog .cal b{color:#4ff6ff;}
-#callin{height:44px;padding:6px 10px;box-sizing:border-box;background:#240808;border-top:1px solid #7a2a2a;}
-#callmsg{width:860px;border:1px solid #7a2a2a;background:#160404;color:#f2cbcb;font:15px Verdana;padding:6px;}
-#callsend{padding:6px 16px;font:bold 14px Arial;color:#fff;border:1px solid #7a1a1a;cursor:pointer;
-  background:#d04242;background:-webkit-linear-gradient(top,#f07070,#951b1b);background:-moz-linear-gradient(top,#f07070,#951b1b);background:linear-gradient(to bottom,#f07070,#951b1b);}
 
 .bigbtn{
   display:block;text-align:center;cursor:pointer;
@@ -141,7 +96,6 @@ a:hover{color:#ffc873;}
   background:-webkit-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
   background:-moz-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
   background:linear-gradient(to bottom,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);
-  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr='#7fd94f',endColorstr='#3f8a1c',GradientType=0);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 2px 4px rgba(0,0,0,.5);
 }
 .bigbtn:hover{background:#6fce3a;}
@@ -150,6 +104,23 @@ a:hover{color:#ffc873;}
 /* ---------- below the fold: production controls ---------- */
 #prod{width:1080px;background:#1a0505;border-top:3px dashed #8a2f2f;padding-bottom:60px;}
 #prodlbl{padding:10px 12px;font:bold 12px Verdana;color:#a15f5f;text-transform:uppercase;letter-spacing:2px;}
+#prodbtns{padding:4px 12px 10px;}
+.cbtn{
+  display:inline-block;padding:8px 18px;margin-right:8px;cursor:pointer;
+  font:bold 15px Arial;color:#fff;text-shadow:0 -1px 0 rgba(0,0,0,.5);
+  border:1px solid #7a1a1a;border-radius:3px;
+  background:#d04242;
+  background:-webkit-linear-gradient(top,#f07070 0%,#d04242 50%,#b52e2e 51%,#951b1b 100%);
+  background:-moz-linear-gradient(top,#f07070 0%,#d04242 50%,#b52e2e 51%,#951b1b 100%);
+  background:linear-gradient(to bottom,#f07070 0%,#d04242 50%,#b52e2e 51%,#951b1b 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+}
+.cbtn:hover{background:#e05555;}
+#prodbtns .keys{margin-left:14px;font:bold 12px Verdana;color:#ffcc00;}
+#callin{padding:4px 12px 12px;}
+#callmsg{width:700px;border:1px solid #7a2a2a;background:#160404;color:#f2cbcb;font:15px Verdana;padding:8px;}
+#callsend{padding:8px 18px;font:bold 15px Arial;color:#fff;border:1px solid #7a1a1a;cursor:pointer;
+  background:#d04242;background:-webkit-linear-gradient(top,#f07070,#951b1b);background:-moz-linear-gradient(top,#f07070,#951b1b);background:linear-gradient(to bottom,#f07070,#951b1b);}
 #playlist{padding:8px;white-space:nowrap;overflow-x:auto;overflow-y:hidden;}
 .clip{display:inline-block;vertical-align:top;width:150px;margin:0 8px 0 0;font:12px Arial;cursor:pointer;white-space:normal;}
 .clip .cpic{position:relative;width:148px;height:96px;background:#000;border:1px solid #8a2f2f;}
@@ -164,16 +135,16 @@ a:hover{color:#ffc873;}
 .clip.playingg .cttl{color:#4ff6ff;}
 #plempty{color:#a15f5f;font:italic 13px Arial;padding:6px;}
 
-/* hidden sims the engine still feeds (queue / chat / goal) */
+/* hidden sims the engine still feeds */
 #simbin{display:none;}
 
 /* ---------- age gate ---------- */
 #gate{position:absolute;top:0;left:0;width:1080px;height:1920px;z-index:2000;background:#140202;text-align:center;}
-#gate .box{width:520px;margin:640px auto 0;background:#260909;border:1px solid #8a2f2f;padding:36px;color:#fff;font:bold 21px Arial;box-shadow:0 4px 30px #000;}
-#gate .mphbig{font:bold italic 46px Arial;color:#fff;text-shadow:0 1px 0 #ffc4c4,0 3px 3px #000;}
+#gate .box{width:620px;margin:600px auto 0;background:#260909;border:1px solid #8a2f2f;padding:48px;color:#fff;font:bold 28px Arial;box-shadow:0 4px 30px #000;}
+#gate .mphbig{font:bold italic 64px Arial;color:#fff;text-shadow:0 1px 0 #ffc4c4,0 3px 3px #000;}
 #gate .mphbig b{color:#4ff6ff;}
-#gate p{font:normal 14px Verdana;color:#e59f9f;line-height:20px;}
-#gate .enter,#gate .exit{display:inline-block;padding:13px 34px;margin:12px 6px 0;color:#fff;text-decoration:none;border-radius:4px;font:bold 17px Arial;cursor:pointer;text-shadow:0 -1px 0 rgba(0,0,0,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
+#gate p{font:normal 20px Verdana;color:#e59f9f;line-height:30px;}
+#gate .enter,#gate .exit{display:inline-block;padding:20px 48px;margin:18px 8px 0;color:#fff;text-decoration:none;border-radius:4px;font:bold 26px Arial;cursor:pointer;text-shadow:0 -1px 0 rgba(0,0,0,.4);box-shadow:inset 0 1px 0 rgba(255,255,255,.35);}
 #gate .enter{border:1px solid #2e7d12;background:#4c9e22;background:-webkit-linear-gradient(top,#7fd94f,#3f8a1c);background:-moz-linear-gradient(top,#7fd94f,#3f8a1c);background:linear-gradient(to bottom,#7fd94f,#3f8a1c);}
 #gate .exit{border:1px solid #7a1010;background:#a00;background:-webkit-linear-gradient(top,#d33,#800);background:-moz-linear-gradient(top,#d33,#800);background:linear-gradient(to bottom,#d33,#800);}
 
@@ -191,7 +162,7 @@ a:hover{color:#ffc873;}
       <div class="mphbig">MEM<b>PHY</b>.TV</div>
       <p>HER SHOW &middot; HER RULES &middot; ONE GIRL, ONE LINE</p>
       You must be 18 or older to enter.
-      <p>By entering you agree you are joining memphy's official broadcast.<br>She decides who gets to talk. Shows may contain chrome.</p>
+      <p>By entering you agree you are joining memphy's official broadcast.<br>She decides who gets to talk.</p>
       <span class="enter" onclick="closeGate()">ENTER</span>
       <a class="exit" href="http://www.google.com">EXIT</a>
     </div>
@@ -200,78 +171,50 @@ a:hover{color:#ffc873;}
   <!-- ================= header ================= -->
   <div id="hdr">
     <div id="logo">
-      <img src="assets/memphy_logo.svg" alt="MEMPHY" style="height:42px;display:block;">
+      <img src="assets/memphy_logo.svg" alt="MEMPHY" style="height:66px;display:block;">
     </div>
-    <div id="hnav">
-      <a href="#">Fanclub Login</a> <a href="#" class="free">Join FREE</a> <a href="#">Tip Memphy</a>
-    </div>
+    <div id="online"><b id="totonline">4,382</b> fans online</div>
     <div class="clear"></div>
-  </div>
-  <div id="nav2">
-    <a href="#" class="live">&#9679; MEMPHY IS LIVE</a>
-    <a href="#">Schedule</a>
-    <a href="#">Pendants</a>
-    <a href="#">Chrome</a>
-    <a href="#">Shop</a>
-    <span id="onlinecount"><b id="totonline">4,382</b> fans online</span>
-  </div>
-  <div id="lead">
-    <marquee scrollamount="4">This ONE Pendant Has Jewelers FURIOUS &#9658; LOCAL ARTIST discovers weird chrome trick &mdash; CLICK to be SHOCKED &mdash; MEMPHY.CO &mdash; MPH-PND DROP 001 &mdash; 100% CHROME &mdash; LIMITED &mdash; MEMPHY.CO</marquee>
   </div>
 
   <!-- ================= memphy cam (top) ================= -->
-  <div class="panel">
-    <div class="pbar">&#9679; MEMPHY &mdash; LIVE ON AIR <span id="roomstatus" style="color:#ffcc00;">&mdash; OFFLINE</span>
-      <span class="r"><b id="viewers" style="color:#7cfc00;">1,347</b> watching</span></div>
-    <div class="camstage" id="hstage">
-      <video id="vid" playsinline></video>
-      <div class="livebadge" id="livebadge"><span class="recdot">&#9679;</span> LIVE</div>
-      <div class="camdz" id="dropzone">
-        <img class="camph" src="assets/memphy_cam.webp" alt="">
-        <div class="shade"></div>
-        <div class="scan"></div>
-        <div class="nosig">SHOW STARTING SOON</div>
-        <div class="cammsg">memphy is getting ready</div>
-        <span class="bigbtn" id="upbtn">&#9650; UPLOAD MEMPHY'S CAM
-          <small>or drag &amp; drop video files onto this cam</small>
-        </span>
-      </div>
-      <div class="stagewarn" id="staywarn">&#9888; This show won't stay up long!</div>
+  <div class="pbar">&#9679; MEMPHY <span id="roomstatus" style="color:#ffcc00;"></span>
+    <span class="r"><b id="viewers" style="color:#7cfc00;">1,347</b> watching</span></div>
+  <div class="camstage" id="hstage">
+    <video id="vid" playsinline></video>
+    <div class="livebadge" id="livebadge"><span class="recdot">&#9679;</span> LIVE</div>
+    <div class="camdz" id="dropzone">
+      <img class="camph" src="assets/memphy_cam.webp" alt="">
+      <div class="shade"></div>
+      <div class="scan"></div>
+      <div class="nosig">SHOW STARTING SOON</div>
+      <div class="cammsg">memphy is getting ready</div>
+      <span class="bigbtn" id="upbtn">&#9650; UPLOAD MEMPHY'S CAM
+        <small>or drag &amp; drop video files onto this cam</small>
+      </span>
     </div>
   </div>
 
   <!-- ================= caller cam (bottom) ================= -->
-  <div class="panel">
-    <div class="pbar">ON THE LINE <span id="gueststatus" style="color:#ffcc00;">&mdash; no one connected</span>
-      <span class="r"><b id="linecount" style="color:#7cfc00;">0</b> in line</span></div>
-    <div class="camstage" id="gstage">
-      <video id="gvid" playsinline></video>
-      <div class="livebadge" id="glive"><span class="recdot">&#9679;</span> CALLER</div>
-      <div class="camdz" id="gdz">
-        <div class="scan"></div>
-        <div class="nosig" id="gnosig">NO ONE ON THE LINE</div>
-        <div class="cammsg" id="gcammsg">accept a guy from the waiting line</div>
-        <span class="bigbtn" id="gupbtn">&#9650; UPLOAD CALLER CAMS
-          <small>or drag &amp; drop video files onto this cam</small>
-        </span>
-      </div>
-    </div>
-    <div id="gctrls">
-      <span class="cbtn" onclick="acceptNext()">&#9742; Accept Next</span><span class="cbtn" onclick="skipCaller()">&#9658;&#9658; Skip</span><span class="cbtn" onclick="endCall()">&#10006; End</span><span class="cbtn" onclick="gctl('mute')" id="gmutebtn">&#128263; Unmute</span>
-      <span class="warn">F9 = skip</span>
-      <div class="clear"></div>
+  <div class="pbar">ON THE LINE <span id="gueststatus" style="color:#ffcc00;"></span>
+    <span class="r"><b id="linecount" style="color:#7cfc00;">0</b> in line</span></div>
+  <div class="camstage" id="gstage">
+    <video id="gvid" playsinline></video>
+    <div class="livebadge" id="glive"><span class="recdot">&#9679;</span> CALLER</div>
+    <div class="camdz" id="gdz">
+      <div class="scan"></div>
+      <div class="nosig" id="gnosig">NO ONE ON THE LINE</div>
+      <div class="cammsg" id="gcammsg">accept a guy from the waiting line</div>
+      <span class="bigbtn" id="gupbtn">&#9650; UPLOAD CALLER CAMS
+        <small>or drag &amp; drop video files onto this cam</small>
+      </span>
     </div>
   </div>
 
   <!-- ================= the call ================= -->
-  <div class="panel">
-    <div class="pbar">&#9829; THE CALL <span id="callwith">&mdash; no one on the line</span> <span class="r">live transcript</span></div>
-    <div id="calllog">
-      <div class="sys">accept a caller to start a conversation...</div>
-    </div>
-    <div id="callin">
-      <input type="text" id="callmsg" maxlength="120"><button id="callsend" onclick="sendCall()">Send as memphy</button>
-    </div>
+  <div class="pbar">&#9829; THE CALL <span id="callwith" style="color:#ffcc00;"></span></div>
+  <div id="calllog">
+    <div class="sys">accept a caller to start a conversation...</div>
   </div>
 
 </div><!-- /stage -->
@@ -279,7 +222,14 @@ a:hover{color:#ffc873;}
 
 <!-- ============ below the fold: production controls (not recorded) ============ -->
 <div id="prod">
-  <div id="prodlbl">&#9660; below the frame &mdash; production controls (scroll here while directing, record only the stage above)</div>
+  <div id="prodlbl">&#9660; below the frame &mdash; production controls (record only the stage above)</div>
+  <div id="prodbtns">
+    <span class="cbtn" onclick="acceptNext()">&#9742; Accept Next</span><span class="cbtn" onclick="skipCaller()">&#9658;&#9658; Skip</span><span class="cbtn" onclick="endCall()">&#10006; End</span><span class="cbtn" onclick="gctl('mute')" id="gmutebtn">&#128263; Unmute</span>
+    <span class="keys">F8 = accept &middot; F9 = skip &middot; F10 = end</span>
+  </div>
+  <div id="callin">
+    <input type="text" id="callmsg" maxlength="120" placeholder="type a line, Enter sends it as memphy"><button id="callsend" onclick="sendCall()">Send as memphy</button>
+  </div>
   <div id="playlist">
     <div id="plempty">Drop videos on a cam &mdash; they collect here. <span id="clipcount">0</span> loaded.</div>
     <div class="clear"></div>
@@ -290,18 +240,16 @@ a:hover{color:#ffc873;}
 <div id="simbin">
   <div id="queue"></div>
   <div id="chatlog"></div>
-  <div id="goalfill"></div>
-  <span id="goalpct"></span>
 </div>
 
 <input type="file" id="fileinput" accept="video/*" multiple>
 
 <script>
 // ======================= MEMPHY LIVE frame — vertical reel cut =======================
-var PRELOADED = [];   // memphy's cam clips — her photo placeholder shows until one plays
+var PRELOADED = [];
 var PRELOADED_GUEST = [
   'clips/MPH-CAM-02_standup_v1_wrong-tattoo.mp4'
-];   // caller cams in rotation
+];
 
 var vid  = document.getElementById('vid');    // memphy cam (top)
 var gvid = document.getElementById('gvid');   // caller cam (bottom)
@@ -317,7 +265,7 @@ var pendingCam = 'host';
 vid.loop = true; gvid.loop = true;
 vid.muted = true; gvid.muted = true;   // shows are silent — the music video carries the audio
 
-// ---- upload / drop (routes to whichever cam you click / drop on) ----
+// ---- upload / drop ----
 document.getElementById('upbtn').onclick  = function(e){ e.stopPropagation(); pendingCam='host'; fi.click(); };
 document.getElementById('gupbtn').onclick = function(e){ e.stopPropagation(); pendingCam='guest'; fi.click(); };
 dz.onclick  = function(){ pendingCam='host'; fi.click(); };
@@ -368,7 +316,6 @@ function mphAddUrl(url, cam){
   addClipCell(clips.length-1);
   updateCounts();
   if(cam!=='guest' && current===-1) playClip(clips.length-1,'host');
-  // guest preloads wait in rotation — the caller cam stays empty until memphy accepts
 }
 
 function updateCounts(){
@@ -413,15 +360,12 @@ function playClip(i, cam){
   if(cam==='guest') gcurrent = i; else current = i;
   v.src = clips[i].url;
   var p = v.play();
-  if(p && p.catch) p.catch(function(){
-    v.muted = true;
-    v.play();
-  });
+  if(p && p.catch) p.catch(function(){ v.muted = true; v.play(); });
   zone.style.display='none';
   if(cam==='guest'){
     var who = currentCaller || clips[i].name;
     document.getElementById('glive').style.display='block';
-    document.getElementById('gueststatus').innerHTML = '&mdash; <span style="color:#7cfc00;">ON THE LINE</span> &middot; '+esc(who);
+    document.getElementById('gueststatus').innerHTML = '&mdash; <span style="color:#7cfc00;">'+esc(who)+'</span>';
     document.getElementById('callwith').innerHTML = '&mdash; memphy &hearts; '+esc(who);
     startCallChat(who);
   } else {
@@ -443,35 +387,31 @@ gvid.addEventListener('ended', function(){
   if(!gvid.loop && clips.length) playClip((gcurrent+1)%clips.length, 'guest');
 });
 
-// ---- waiting line (her POV: the guys queue, she picks) ----
+// ---- waiting line ----
 var QNAMES = ['xX_chrome_boy_Xx','TommyV','guest8841','DJ_MPH','polygon_luvr','ringtone_king','sk8er_tom','lonely_rob','chromedude92','VinnyD','sadboy2009','first_time_caller','BluRayKing','mikey_4real','gr00ve_guy','P_Diamanti','jetski_owner','milano_marco'];
 var queue = [], qserial = 0, currentCaller = null;
 var lineTotal = 14382;
 
-function joinLine(silent){
+function joinLine(){
   var n = QNAMES[qserial % QNAMES.length] + (qserial >= QNAMES.length ? '_'+(qserial%97) : '');
   qserial++;
   lineTotal++;
-  if(queue.length < 12) queue.push({name:n, mins:Math.floor(Math.random()*40)+1});
+  if(queue.length < 12) queue.push({name:n});
   renderQueue();
 }
 function renderQueue(){
   document.getElementById('linecount').innerHTML = lineTotal.toLocaleString();
 }
-for(var qi=0;qi<9;qi++) joinLine(true);
+for(var qi=0;qi<9;qi++) joinLine();
 
 setInterval(function(){
   lineTotal += 2 + Math.floor(Math.random()*40);
-  if(Math.random()<.5 && queue.length<12) joinLine(false);
-  else if(queue.length>4 && Math.random()<.25){
-    queue.splice(3+Math.floor(Math.random()*(queue.length-3)),1);
-  }
+  if(Math.random()<.5 && queue.length<12) joinLine();
   renderQueue();
 }, 6000);
 
 function acceptNext(){
-  if(!queue.length) return;
-  if(!clips.length) return;
+  if(!queue.length || !clips.length) return;
   currentCaller = queue.shift().name;
   lineTotal = Math.max(lineTotal-1, queue.length);
   renderQueue();
@@ -505,14 +445,14 @@ function endCall(){
   document.getElementById('glive').style.display='none';
   document.getElementById('gnosig').innerHTML = 'NO ONE ON THE LINE';
   document.getElementById('gcammsg').innerHTML = 'accept a guy from the waiting line';
-  document.getElementById('gueststatus').innerHTML = '&mdash; no one connected';
+  document.getElementById('gueststatus').innerHTML = '';
   stopCallChat();
   pushCall('sys', null, 'call ended. the line shuffles forward...');
-  document.getElementById('callwith').innerHTML = '&mdash; no one on the line';
+  document.getElementById('callwith').innerHTML = '';
   markCells();
 }
 
-// ---- the call: live transcript between memphy and her caller ----
+// ---- the call ----
 var CALLER_LINES = [
   'i cant believe its really you','i practiced this moment in the mirror all week',
   'you look amazing today. i mean it. i wrote it down','MILANO. tomorrow. im serious, window seat',
@@ -560,7 +500,9 @@ function gctl(a){
   if(a==='mute'){ gvid.muted=!gvid.muted; document.getElementById('gmutebtn').innerHTML = gvid.muted?'&#128263; Unmute':'&#128266; Mute'; }
 }
 document.addEventListener('keydown', function(e){
+  if(e.key==='F8'){ e.preventDefault(); acceptNext(); }
   if(e.key==='F9'){ e.preventDefault(); skipCaller(); }
+  if(e.key==='F10'){ e.preventDefault(); endCall(); }
 });
 
 // ---- helpers ----
@@ -576,12 +518,6 @@ setInterval(function(){
   online += Math.floor(Math.random()*31)-14;
   document.getElementById('totonline').innerHTML = online.toLocaleString();
 }, 2500);
-
-// ---- blink ----
-setInterval(function(){
-  var w = document.getElementById('staywarn'); if(w) w.style.visibility = (w.style.visibility==='hidden')?'visible':'hidden';
-  var p = document.getElementById('popblink'); if(p) p.style.visibility = (p.style.visibility==='hidden')?'visible':'hidden';
-}, 600);
 
 // ---- scanline drift on empty cams ----
 var scanY = 0;
