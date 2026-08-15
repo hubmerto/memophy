@@ -26,8 +26,9 @@ a{color:#ffa02f;}
 a:hover{color:#ffc873;}
 .clear{clear:both;}
 
-/* the recorded frame */
-#stage{width:1080px;height:1920px;overflow:hidden;position:relative;background:#120101;}
+/* the recorded frame — designed at 1080x1920, scaled to fit the window */
+#fit{position:relative;margin:0 auto;overflow:hidden;}
+#stage{width:1080px;height:1920px;overflow:hidden;position:relative;background:#120101;transform-origin:0 0;}
 
 /* ---------- header ---------- */
 #hdr{
@@ -166,34 +167,6 @@ a:hover{color:#ffc873;}
 /* hidden sims the engine still feeds (queue / chat / goal) */
 #simbin{display:none;}
 
-/* ---------- MEMPHY popup ---------- */
-#mpop{
-  display:none;position:absolute;top:640px;left:50%;margin-left:-215px;width:430px;z-index:1000;
-  background:#ffe6e6;border:1px solid #8a1414;font:12px Tahoma,Geneva,sans-serif;color:#3a1010;
-  box-shadow:3px 3px 12px rgba(0,0,0,.7);
-}
-#mpop .bar{
-  height:22px;line-height:22px;padding:0 6px;color:#fff;font-weight:bold;cursor:move;
-  text-shadow:0 1px 1px #001;
-  background:#8a1414;
-  background:-webkit-linear-gradient(top,#e86464,#8a1414);
-  background:-moz-linear-gradient(top,#e86464,#8a1414);
-  background:linear-gradient(to bottom,#e86464,#8a1414);
-}
-#mpop .bar .x{float:right;margin-top:3px;background:#c75050;border:1px solid #fff;color:#fff;padding:0 5px;cursor:pointer;font:bold 10px Tahoma;line-height:13px;}
-#mpop .body{padding:12px;}
-#mpop .cam{float:left;width:120px;height:132px;margin-right:12px;position:relative;overflow:hidden;background:#0a1b4d;border:2px inset #aab;}
-#mpop .cam img{width:120px;display:block;}
-#mpop .cam .lv{position:absolute;top:3px;left:3px;background:#c00;color:#fff;padding:0 4px;font:bold 8px Verdana;}
-#mpop .cam .onair{position:absolute;bottom:0;left:0;width:120px;background:#000;color:#7cfc00;font:bold 8px Verdana;text-align:center;padding:2px 0;opacity:.85;}
-#mpop h3{margin:0 0 6px;font:bold 15px Tahoma;color:#8a1414;}
-#mpop .hot{color:#c00;}
-#mpop p{margin:0 0 8px;line-height:15px;}
-#mpop .btns{text-align:center;clear:both;padding-top:8px;}
-#mpop .go{display:inline-block;padding:7px 22px;margin:0 4px;cursor:pointer;font:bold 13px Arial;color:#fff;text-decoration:none;text-shadow:0 -1px 0 rgba(0,0,0,.4);border:1px solid #2e7d12;border-radius:3px;background:#5cb82b;background:-webkit-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);background:-moz-linear-gradient(top,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);background:linear-gradient(to bottom,#7fd94f 0%,#5cb82b 50%,#4c9e22 51%,#3f8a1c 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.4);}
-#mpop .no{display:inline-block;padding:7px 14px;font:11px Arial;color:#667;cursor:pointer;text-decoration:underline;}
-#mpop .fine{clear:both;font:8px Tahoma;color:#99a;margin-top:8px;text-align:center;}
-
 /* ---------- age gate ---------- */
 #gate{position:absolute;top:0;left:0;width:1080px;height:1920px;z-index:2000;background:#140202;text-align:center;}
 #gate .box{width:520px;margin:640px auto 0;background:#260909;border:1px solid #8a2f2f;padding:36px;color:#fff;font:bold 21px Arial;box-shadow:0 4px 30px #000;}
@@ -209,6 +182,7 @@ a:hover{color:#ffc873;}
 </head>
 <body>
 
+<div id="fit">
 <div id="stage">
 
   <!-- ================= age gate ================= -->
@@ -220,27 +194,6 @@ a:hover{color:#ffc873;}
       <p>By entering you agree you are joining memphy's official broadcast.<br>She decides who gets to talk. Shows may contain chrome.</p>
       <span class="enter" onclick="closeGate()">ENTER</span>
       <a class="exit" href="http://www.google.com">EXIT</a>
-    </div>
-  </div>
-
-  <!-- ================= MEMPHY popup ================= -->
-  <div id="mpop">
-    <div class="bar" id="mpopbar">MEMPHY MESSENGER &mdash; 1 new alert <span class="x" onclick="closePop()">&#10005;</span></div>
-    <div class="body">
-      <div class="cam">
-        <span class="lv">LIVE</span>
-        <img src="assets/memphy_girl.png" alt="">
-        <div class="onair">&#9679; ON AIR &middot; 0.8 mi</div>
-      </div>
-      <h3>&#9733; SHE is broadcasting in <span class="hot">YOUR AREA</span> right now &#9733;</h3>
-      <p><b>memphy_girl (23)</b> just went LIVE 0.8 miles away and is waiting for you.
-      Doctors HATE her show. Viewers get FREE access for the next <b id="popcount">04:59</b>!</p>
-      <p style="color:#c00;font-weight:bold;" id="popblink">This show won't stay up long!</p>
-      <div class="btns">
-        <span class="go" onclick="closePop()">WATCH NOW &raquo;</span>
-        <span class="no" onclick="closePop()">no thanks, i hate free shows</span>
-      </div>
-      <div class="fine">MEMPHY.CO is not responsible for lost time. One weird pendant may appear. Jewelers hate this popup.</div>
     </div>
   </div>
 
@@ -322,6 +275,7 @@ a:hover{color:#ffc873;}
   </div>
 
 </div><!-- /stage -->
+</div><!-- /fit -->
 
 <!-- ============ below the fold: production controls (not recorded) ============ -->
 <div id="prod">
@@ -645,38 +599,19 @@ for(var pi=0;pi<PRELOADED.length;pi++) mphAddUrl(PRELOADED[pi], 'host');
 for(var gi=0;gi<PRELOADED_GUEST.length;gi++) mphAddUrl(PRELOADED_GUEST[gi], 'guest');
 
 // ---- age gate ----
-function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
-if(location.search.indexOf('nogate')>-1){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
+function closeGate(){ document.getElementById('gate').style.display='none'; }
+if(location.search.indexOf('nogate')>-1) closeGate();
 
-// ---- MEMPHY popup ----
-var pop = document.getElementById('mpop');
-function showPop(){
-  if(location.search.indexOf('nopop')>-1) return;
-  pop.style.display='block';
-  var t = 299;
-  setInterval(function(){
-    if(t>0) t--;
-    var m=Math.floor(t/60), s=t%60;
-    var el=document.getElementById('popcount');
-    if(el) el.innerHTML = '0'+m+':'+(s<10?'0':'')+s;
-  },1000);
+// ---- scale the 1080x1920 stage to fit the window, ratio locked ----
+function fitStage(){
+  var s = Math.min(innerWidth/1080, innerHeight/1920);
+  document.getElementById('stage').style.transform = 'scale('+s+')';
+  var f = document.getElementById('fit');
+  f.style.width  = (1080*s)+'px';
+  f.style.height = (1920*s)+'px';
 }
-function closePop(){ pop.style.display='none'; }
-
-// draggable popup
-var drag=null;
-document.getElementById('mpopbar').addEventListener('mousedown', function(e){
-  if(e.target.className==='x') return;
-  drag={x:e.clientX-pop.offsetLeft, y:e.clientY-pop.offsetTop};
-  pop.style.marginLeft='0';
-  e.preventDefault();
-});
-document.addEventListener('mousemove', function(e){
-  if(!drag) return;
-  pop.style.left=(e.clientX-drag.x)+'px';
-  pop.style.top=(e.clientY-drag.y)+'px';
-});
-document.addEventListener('mouseup', function(){ drag=null; });
+addEventListener('resize', fitStage);
+fitStage();
 </script>
 </body>
 </html>
