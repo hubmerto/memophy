@@ -219,9 +219,9 @@ a:hover{text-decoration:underline;}
 
 /* age gate */
 #gate{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;background:#fff;text-align:center;}
-#gate .box{width:470px;margin:120px auto;padding:0 0 26px;background:#fff;color:#333;font:bold 18px Arial;text-align:center;border:1px solid #e8a3c8;box-shadow:0 4px 18px rgba(0,0,0,.2);border-radius:4px;}
-#gate .box:before{content:"memphy's Cam";display:block;height:36px;line-height:36px;text-align:left;padding:0 14px;color:#ff3fa4;font:bold italic 22px "Brush Script MT","Snell Roundhand","Comic Sans MS",cursive;background:#fff4fa;border-bottom:1px solid #e8a3c8;margin-bottom:22px;}
-#logo3dgate{width:240px;height:76px;margin:6px auto 2px;pointer-events:none;}
+#gate .box{position:relative;width:470px;margin:150px auto;padding:46px 0 26px;background:#fff;color:#333;font:bold 18px Arial;text-align:center;border:1px solid #e8a3c8;box-shadow:0 4px 18px rgba(0,0,0,.2);border-radius:4px;}
+#gate .box:before{display:none;}
+#logo3dgate{position:absolute;top:-38px;left:50%;transform:translateX(-50%);width:220px;height:72px;margin:0;pointer-events:none;z-index:3;}
 #gate .mphbig{font:bold italic 36px Arial;color:#ff3fa4;}
 #gate .mphbig b{color:#0a5a83;}
 #gate p{font:normal 13px Arial;color:#555;line-height:18px;}
@@ -246,11 +246,15 @@ a:hover{text-decoration:underline;}
   #mpop{display:none !important;}                /* no popup on mobile */
 
   #left,#right{float:none;width:100%;}
-  .vbar{display:none !important;}                /* no button bar between the stacked screens */
   #camrow{background:#fff;}
-  .camcol{float:none;width:100% !important;margin:0 0 10px 0 !important;}  /* white strip between */
-  .camstage{height:64vw;min-height:0;}          /* screens dominate */
-  #gstage{height:64vw;}
+  .camcol{float:none;width:100% !important;margin:0 0 10px 0 !important;position:relative;}  /* white strip between */
+  .camstage{height:44vh;min-height:0;}          /* taller videos on mobile */
+  #gstage{height:44vh;}
+  /* her buttons overlaid on top of her screen (no bar between the screens) */
+  #gvbar{display:none !important;}
+  #vbar{display:block;position:absolute;top:0;left:0;right:0;z-index:5;height:auto;line-height:normal;padding:5px 8px;background:rgba(255,255,255,.82);border:0;}
+  #vbar .slider{display:none;}
+  #vbar .vtip{margin-right:8px;}
   #subject,.camcol .pbar{white-space:normal;height:auto;line-height:1.35;padding:5px 8px;font-size:11px;}
 
   #bottomrow{margin-top:0;}
@@ -1131,7 +1135,7 @@ function sendCall(){
   pushCall('mem', 'memphy', esc(inp.value));
   inp.value='';
 }
-document.getElementById('callmsg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendCall(); });
+var _cm=document.getElementById('callmsg'); if(_cm) _cm.addEventListener('keydown', function(e){ if(e.key==='Enter') sendCall(); });
 function gctl(a){
   if(a==='mute'){ gvid.muted=!gvid.muted; var b=document.getElementById('gmutebtn'); if(b) b.innerHTML = gvid.muted?'&#128263; Unmute':'&#128266; Mute'; }
   if(a==='full'){ if(gvid.requestFullscreen) gvid.requestFullscreen(); else if(gvid.webkitRequestFullscreen) gvid.webkitRequestFullscreen(); }
