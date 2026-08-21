@@ -254,10 +254,11 @@ a:hover{text-decoration:underline;}
   /* it's all about the screens — tabs recede into one subtle scrolling row */
   #tabs{height:46px;min-height:0;padding:0 0 0 116px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;border-bottom:1px solid #f0cfe0;}
   #logo3d{width:104px;height:40px;top:2px;left:2px;}
-  /* fuller nav: bigger tabs + the control buttons live up here now */
-  #tabs{height:52px;padding-left:112px;}
-  .tab{font-size:13px;padding:0 12px;height:32px;line-height:32px;margin-top:10px;margin-right:5px;background:#fdeef6;border-color:#f0cfe0;color:#b0106a;box-shadow:none;opacity:1;}
-  .tab .jp{font-size:10px;-webkit-text-stroke:1px #ffe600;text-shadow:none;}
+  /* single-line nav: compact tabs, no wrapping (scrolls sideways) */
+  #tabs{height:42px;min-height:0;padding:0 0 0 96px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;}
+  #logo3d{width:90px;height:36px;top:3px;left:2px;}
+  .tab{display:inline-block;font-size:12px;padding:0 11px;height:30px;line-height:30px;margin-top:6px;margin-right:4px;background:#fdeef6;border-color:#f0cfe0;color:#b0106a;box-shadow:none;opacity:1;vertical-align:top;}
+  .tab .jp{display:none;}       /* drop the JP subtext so the row stays a single line */
   .tab.me{display:none;}
   #mobilebar{display:flex;align-items:center;gap:0;padding:6px 8px;background:#fff;border-bottom:1px solid #f0cfe0;white-space:nowrap;overflow-x:auto;}
   #mobilebar .mbstat{margin-left:14px;}
