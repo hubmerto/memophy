@@ -743,8 +743,13 @@ var PRELOADED = [
   'clips/memphy_03.mp4'
 ];   // memphy's cam clips Ã¢ÂÂ her photo placeholder shows until one plays
 var PRELOADED_GUEST = [
-  'clips/MPH-CAM-12_latino-crew_v3.mp4'
+  'clips/MPH-CAM-12_latino-crew_v3.mp4',
+  'clips/caller_jeans3s.mp4',
+  'clips/caller_jeans_v2.mp4',
+  'clips/caller_standup.mp4'
 ];   // caller cams in rotation
+var CALLER_MAX = { 'caller_jeans3s.mp4': 3 };   // cap playback (seconds) for specific caller clips
+var gMaxPlay = 0;
 
 var vid  = document.getElementById('vid');    // host cam (bottom)
 var gvid = document.getElementById('gvid');   // stranger cam (top)
@@ -1251,6 +1256,7 @@ function rotateCaller(){
   setTimeout(function(){
     if(typeof lab!=='undefined' && lab.playing){ showSpin(false); return; }
     showSpin(false);
+    gMaxPlay = (clips[idx] && CALLER_MAX[clips[idx].name]) || 0;
     playClip(idx,'guest');
     var playMs=(4+Math.random()*4)*1000;
     autoRotTimer=setTimeout(rotateCaller, playMs);
