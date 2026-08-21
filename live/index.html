@@ -221,6 +221,7 @@ a:hover{text-decoration:underline;}
 #gate{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;background:#fff;text-align:center;}
 #gate .box{width:470px;margin:120px auto;padding:0 0 26px;background:#fff;color:#333;font:bold 18px Arial;text-align:center;border:1px solid #e8a3c8;box-shadow:0 4px 18px rgba(0,0,0,.2);border-radius:4px;}
 #gate .box:before{content:"memphy's Cam";display:block;height:36px;line-height:36px;text-align:left;padding:0 14px;color:#ff3fa4;font:bold italic 22px "Brush Script MT","Snell Roundhand","Comic Sans MS",cursive;background:#fff4fa;border-bottom:1px solid #e8a3c8;margin-bottom:22px;}
+#logo3dgate{width:240px;height:76px;margin:6px auto 2px;pointer-events:none;}
 #gate .mphbig{font:bold italic 36px Arial;color:#ff3fa4;}
 #gate .mphbig b{color:#0a5a83;}
 #gate p{font:normal 13px Arial;color:#555;line-height:18px;}
@@ -245,9 +246,11 @@ a:hover{text-decoration:underline;}
   #mpop{display:none !important;}                /* no popup on mobile */
 
   #left,#right{float:none;width:100%;}
-  .camcol{float:none;width:100% !important;margin:0 0 6px 0 !important;}
-  .camstage{height:62vw;min-height:0;}          /* screens dominate */
-  #gstage{height:62vw;}
+  .vbar{display:none !important;}                /* no button bar between the stacked screens */
+  #camrow{background:#fff;}
+  .camcol{float:none;width:100% !important;margin:0 0 10px 0 !important;}  /* white strip between */
+  .camstage{height:64vw;min-height:0;}          /* screens dominate */
+  #gstage{height:64vw;}
   #subject,.camcol .pbar{white-space:normal;height:auto;line-height:1.35;padding:5px 8px;font-size:11px;}
 
   #bottomrow{margin-top:0;}
@@ -314,6 +317,7 @@ html,body{overflow:auto;}
 <!-- ================= age gate ================= -->
 <div id="gate">
   <div class="box">
+    <div id="logo3dgate" aria-hidden="true"></div>
     <div class="mphbig">MEM<b>PHY</b>.TV</div>
     <p>HER SHOW &middot; HER RULES &middot; ONE GIRL, ONE LINE <span class="jp">&#x5F7C;&#x5973;&#x306E;&#x756A;&#x7D44;</span></p>
     You must be 18 or older to enter.
@@ -786,6 +790,7 @@ if (typeof window !== 'undefined' && !window.MEPHY_BG_MANUAL) {
 }
 
 initMephyBackground({ transparent: true, mount: document.getElementById("logo3d"), margin: 1.02, speed: 1.7 });
+initMephyBackground({ transparent: true, mount: document.getElementById("logo3dgate"), margin: 1.02, speed: 1.7 });
 </script>
 
 <script>
@@ -972,7 +977,7 @@ function herIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==
 function herRotate(){
   if(typeof lab!=='undefined' && lab.playing) return;
   var idxs=herIdxs(); if(!idxs.length) return;
-  var idx=idxs[herPos%idxs.length]; herPos++;
+  var idx=bagNext('her', idxs);
   playClip(idx,'host'); vid.loop=false; vid.muted=true;
   var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); });
 }
@@ -1279,10 +1284,17 @@ function drawWave(){
   }
   loop();
 }
+var songFadeIv=null;
+function fadeInSong(){
+  var a=document.getElementById('song'); if(!a) return;
+  if(songFadeIv) clearInterval(songFadeIv);
+  a.volume=0; var v=0;
+  songFadeIv=setInterval(function(){ v=Math.min(1,v+0.035); a.volume=v; if(v>=1){ clearInterval(songFadeIv); songFadeIv=null; } },80);  // ~2.3s fade
+}
 function toggleSong(){
   var a=document.getElementById('song'), b=document.getElementById('mpbtn');
   initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume();
-  if(a.paused){ a.play().catch(function(){}); b.innerHTML='&#10074;&#10074;'; if(!waveRAF) drawWave(); }
+  if(a.paused){ var p=a.play(); if(p&&p.then){ p.then(fadeInSong).catch(function(){}); } else { fadeInSong(); } b.innerHTML='&#10074;&#10074;'; if(!waveRAF) drawWave(); }
   else { a.pause(); b.innerHTML='&#9654;'; }
 }
 // try to start on the first interaction anywhere (autoplay w/ sound needs a gesture)
@@ -1340,6 +1352,21 @@ for(var gi=0;gi<PRELOADED_GUEST.length;gi++) mphAddUrl(PRELOADED_GUEST[gi], 'gue
 
 // ---- auto-rotate the guys on the caller cam: play a few seconds, spinner, next ----
 var autoPos=0, autoRotTimer=null;
+function shuffleArr(a){ for(var i=a.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i];a[i]=a[j];a[j]=t; } return a; }
+var callerBag=[], lastCaller=-1, herBag=[], lastHer=-1;
+function bagNext(bagName,idxs,lastVar){
+  var bag = bagName==='caller'?callerBag:herBag;
+  var last = bagName==='caller'?lastCaller:lastHer;
+  if(!idxs.length) return -1;
+  if(idxs.length===1){ if(bagName==='caller') lastCaller=idxs[0]; else lastHer=idxs[0]; return idxs[0]; }
+  if(!bag.length){
+    bag = shuffleArr(idxs.slice());
+    if(bag[0]===last) bag.push(bag.shift());   // no back-to-back across a reshuffle
+  }
+  var idx=bag.shift();
+  if(bagName==='caller'){ callerBag=bag; lastCaller=idx; } else { herBag=bag; lastHer=idx; }
+  return idx;
+}
 function callerIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==='caller' && !clips[i].removed) a.push(i); return a; }
 function showSpin(on,msg){ var el=document.getElementById('gspin'); if(!el) return; el.className='gspin'+(on?' on':''); if(on&&msg){ var m=el.querySelector('.spinmsg'); if(m) m.innerHTML=msg; } }
 function rotateCaller(){
@@ -1353,7 +1380,7 @@ function rotateCaller(){
   document.getElementById('glive').style.display='none';
   showSpin(true,'connecting '+esc(currentCaller)+'\u2026');
   document.getElementById('gueststatus').innerHTML='&mdash; connecting\u2026';
-  var idx=idxs[autoPos % idxs.length]; autoPos++;
+  var idx=bagNext('caller', idxs);
   var connectMs=250+Math.random()*300;
   setTimeout(function(){
     if(typeof lab!=='undefined' && lab.playing){ showSpin(false); return; }
@@ -1368,7 +1395,7 @@ setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
 setTimeout(function(){ if(typeof herRotate==='function' && herIdxs().length) herRotate(); }, 400);
 
 // ---- age gate ----
-function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
+function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); try{ var a=document.getElementById('song'); if(a && a.paused) toggleSong(); }catch(e){} }
 if(location.search.indexOf('nogate')>-1){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
 
 // ---- MEMPHY popup ----
