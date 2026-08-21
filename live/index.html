@@ -61,9 +61,11 @@ a:hover{text-decoration:underline;}
 .miniplayer .mptitle{font:bold 10px Arial;color:#b0106a;text-transform:uppercase;margin-left:8px;letter-spacing:.5px;white-space:nowrap;}
 #tabs .rt a{color:#b0106a;margin-left:16px;text-transform:uppercase;}
 #tabs .rt a.nxt{padding:5px 12px;font-size:12px;}
-.navctrls{display:none;}
-.ncbtn{display:inline-block;padding:5px 10px;margin-left:5px;font:bold 12px Arial;border-radius:5px;cursor:pointer;border:1px solid #d977b4;color:#b0106a;background:#fff4fa;}
+#mobilebar{display:none;}
+.ncbtn{display:inline-block;padding:6px 12px;margin-right:6px;font:bold 12px Arial;border-radius:6px;cursor:pointer;border:1px solid #d977b4;color:#b0106a;background:#fff4fa;}
 .ncbtn.tip{color:#fff;border-color:#2f8a1e;background:#4cb532;background:-webkit-linear-gradient(top,#6ad04f,#3f9e2a);background:linear-gradient(to bottom,#6ad04f,#3f9e2a);}
+#mobilebar .mbstat{font:bold 12px Arial;color:#a1005e;}
+#mobilebar .mbstat b{color:#e6258f;}
 
 /* ---- columns ---- */
 #stagearea{margin-top:8px;}
@@ -257,9 +259,9 @@ a:hover{text-decoration:underline;}
   .tab{font-size:13px;padding:0 12px;height:32px;line-height:32px;margin-top:10px;margin-right:5px;background:#fdeef6;border-color:#f0cfe0;color:#b0106a;box-shadow:none;opacity:1;}
   .tab .jp{font-size:10px;-webkit-text-stroke:1px #ffe600;text-shadow:none;}
   .tab.me{display:none;}
-  .navctrls{display:inline-block;position:absolute;right:4px;top:12px;background:#fff;padding-left:6px;}
-  .ncbtn{padding:6px 9px;margin-left:4px;font-size:12px;}
-  .miniplayer{position:absolute;right:118px;top:12px;padding:0 6px 0 2px;height:26px;}
+  #mobilebar{display:flex;align-items:center;gap:0;padding:6px 8px;background:#fff;border-bottom:1px solid #f0cfe0;white-space:nowrap;overflow-x:auto;}
+  #mobilebar .mbstat{margin-left:auto;}
+  .miniplayer{position:absolute;right:4px;top:12px;padding:0 6px 0 2px;height:26px;}
   .miniplayer .mpbtn{width:22px;height:22px;line-height:22px;}
   .miniplayer canvas{width:44px;}
   .miniplayer .mptitle{display:none;}
@@ -386,9 +388,14 @@ html,body{overflow:auto;}
       <canvas id="wave" width="104" height="22"></canvas>
       <span class="mptitle">GO ALL NIGHT</span>
     </span>
-    <span class="navctrls"><span class="ncbtn" id="navmute" onclick="navMute(this)">&#128263;</span><span class="ncbtn tip" onclick="viewerTip()">&#128176; TIP</span></span>
     <span class="rt"><a href="#">Join fanclub</a><a href="#" class="nxt">Tip &#x30C1;&#x30C3;&#x30D7; (CTRL+S)</a></span>
     <audio id="song" src="assets/go-all-night.mp3" loop></audio>
+  </div>
+
+  <div id="mobilebar">
+    <span class="ncbtn" id="navmute" onclick="navMute(this)">&#128263;</span>
+    <span class="ncbtn tip" onclick="viewerTip()">&#128176; TIP &#x30C1;&#x30C3;&#x30D7;</span>
+    <span class="mbstat">1,347 watching &middot; <b>14.6k</b> &#10084;</span>
   </div>
 
   <div id="stagearea">
