@@ -806,8 +806,10 @@ if (typeof window !== 'undefined' && !window.MEPHY_BG_MANUAL) {
   initMephyBackground();
 }
 
-initMephyBackground({ transparent: true, mount: document.getElementById("logo3d"), margin: 1.02, speed: 1.7 });
-initMephyBackground({ transparent: true, mount: document.getElementById("logo3dgate"), margin: 1.02, speed: 1.7 });
+if (window.innerWidth > 820) {
+  initMephyBackground({ transparent: true, mount: document.getElementById("logo3d"), margin: 1.02, speed: 1.7 });
+  initMephyBackground({ transparent: true, mount: document.getElementById("logo3dgate"), margin: 1.02, speed: 1.7 });
+}
 </script>
 
 <script>
@@ -1245,13 +1247,14 @@ function tipPop(amount){
   bumpTipTotal(amount);
 }
 // steady "tipped like crazy" stream — dense + fast
+var _isMob = window.innerWidth <= 820;
 setInterval(function(){
   if(document.hidden) return;
-  var n=2+Math.floor(Math.random()*3);
+  var n=_isMob ? 1 : (2+Math.floor(Math.random()*3));
   for(var i=0;i<n;i++) setTimeout(spawnHeart, Math.random()*220);
-  var mn=1+Math.floor(Math.random()*2); for(var mI=0;mI<mn;mI++) setTimeout(function(){ spawnMoney(); }, Math.random()*220);
+  var mn=_isMob ? (Math.random()<0.5?1:0) : (1+Math.floor(Math.random()*2)); for(var mI=0;mI<mn;mI++) setTimeout(function(){ spawnMoney(); }, Math.random()*220);
   if(Math.random()<0.6) bumpTipTotal(1+Math.floor(Math.random()*5));
-}, 260);
+}, _isMob ? 520 : 260);
 
 function pushChat(cls, user, text){
   var d = document.createElement('div');
