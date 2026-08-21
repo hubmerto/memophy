@@ -59,7 +59,7 @@
   <div class="sub">video → depth → 3D glyph cloud · ascii / matrix / holo</div>
 
   <div class="btns presets" id="presets"></div>
-  <div class="btns"><button id="bExport" class="acc" style="flex:1;padding:8px">⬇ EXPORT MP4 (one loop)</button></div>
+  <div class="btns"><button id="bFront" style="flex:1;padding:8px">◎ FRONT VIEW</button><button id="bExport" class="acc" style="flex:2;padding:8px">⬇ EXPORT MP4 (one loop)</button></div>
   <div class="status" id="expStatus"></div>
 
   <details open><summary>SOURCE</summary>
@@ -104,7 +104,7 @@
 <main id="stage">
   <canvas id="gl"></canvas>
   <div id="hud"></div>
-  <div id="hint">drag orbit · scroll fly in · <kbd>R</kbd> reset · <kbd>space</kbd> play</div>
+  <div id="hint">drag orbit · scroll fly in · <kbd>F</kbd> front view · <kbd>R</kbd> reset · <kbd>space</kbd> play</div>
   <div id="drop">DROP VIDEO / IMAGE</div>
 </main>
 </div>
@@ -591,7 +591,7 @@ function togglePlay(){ if(src.kind!=='video')return; if(video.paused){video.play
 ['dragenter','dragover'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.add('drag');}));
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.remove('drag');}));
 stage.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f)loadFile(f);});
-document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT')return; if(e.code==='Space'){e.preventDefault();togglePlay();} if(e.key==='r'||e.key==='R')resetView(); });
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT')return; if(e.code==='Space'){e.preventDefault();togglePlay();} if(e.key==='r'||e.key==='R')resetView(); if(e.key==='f'||e.key==='F')frontView(); });
 
 /* ───────────── depth worker ───────────── */
 let worker=null, workerReady=false, inflight=false, frameId=0, depthMs=0, depthFps=0, depthCount=0, depthT0=performance.now();
@@ -680,6 +680,8 @@ function resetView(){
   camera.position.set(0,0,baseDist); controls.target.set(0,0,0); controls.update();
 }
 $('#bReset').onclick=()=>{resetView();};
+function frontView(){ flyT=-1; P.orbit=false; ctls.orbit.set(false); camera.zoom=1; camera.updateProjectionMatrix(); resetView(); }
+$('#bFront').onclick=frontView;
 let flyT=-1;
 $('#bFly').onclick=()=>{ flyT=0; P.orbit=false; ctls.orbit.set(false); };
 const shakeV=new THREE.Vector3();
