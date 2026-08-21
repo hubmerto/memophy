@@ -17,7 +17,7 @@
 <meta name="twitter:description" content="One girl, one line. Live now — she picks who gets to talk.">
 <meta name="twitter:image" content="https://www.memphy.co/live/assets/og-live.png">
 <meta name="theme-color" content="#ff3fa4">
-<title>MEMPHY.TV &mdash; Her Show. Her Rules. &mdash; Official Live Broadcast</title>
+<title>MEMPHY.TV</title>
 <style>
 /* ============ MEMPHY.TV Ã¢ÂÂ cam-site register ÃÂ· two equal screens ÃÂ· pink tab buttons ÃÂ· EN + Ã£ÂÂ©Ã£ÂÂ³Ã£ÂÂÃ£ÂÂ Ã¦ÂÂ¥Ã¦ÂÂ¬Ã¨ÂªÂ ============ */
 html,body{margin:0;padding:0;height:100%;}
@@ -1497,11 +1497,11 @@ function labPlay(withRec){
   if(lab.playing) return;
   labStop(true); readLab();
   window.scrollTo(0,0);
-  var n=3; setCount(n); beep(880,120); document.title='3 Ã¢ÂÂ MEMPHY.TV';
+  var n=3; setCount(n); beep(880,120); document.title='MEMPHY.TV';
   lab.cd=setInterval(function(){
     n--;
-    if(n>0){ setCount(n); beep(880,120); document.title=n+' Ã¢ÂÂ MEMPHY.TV'; }
-    else { clearInterval(lab.cd); lab.cd=null; setCount('GO'); beep(1320,260); document.title=(withRec?'Ã¢ÂÂ REC':'Ã¢ÂÂ¶')+' Ã¢ÂÂ MEMPHY.TV'; labGo(withRec); }
+    if(n>0){ setCount(n); beep(880,120); document.title='MEMPHY.TV'; }
+    else { clearInterval(lab.cd); lab.cd=null; setCount('GO'); beep(1320,260); document.title='MEMPHY.TV'; labGo(withRec); }
   },1000);
 }
 function labGo(withRec){
@@ -1539,12 +1539,12 @@ function labPause(){
   if(!lab.playing||lab.paused) return;
   lab.paused=true; lab.elapsedBase=elapsed(); lab.t0=null; clearTimers();
   vid.pause(); gvid.pause(); if(lab.rec && lab.rec.state==='recording') lab.rec.pause();
-  setCount('&#10074;&#10074;'); document.title='Ã¢ÂÂÃ¢ÂÂ Ã¢ÂÂ MEMPHY.TV';
+  setCount('&#10074;&#10074;'); document.title='MEMPHY.TV';
 }
 function labResume(){
   lab.paused=false; lab.t0=Date.now();
   if(lab.herStarted) vid.play(); if(lab.gStarted) gvid.play(); if(lab.rec && lab.rec.state==='paused') lab.rec.resume();
-  schedule(); setCount('&#9654;'); document.title='Ã¢ÂÂ¶ Ã¢ÂÂ MEMPHY.TV';
+  schedule(); setCount('&#9654;'); document.title='MEMPHY.TV';
 }
 function labStop(silent){
   clearTimers(); if(lab.cd){ clearInterval(lab.cd); lab.cd=null; } if(lab.tick){ clearInterval(lab.tick); lab.tick=null; }
@@ -1553,7 +1553,7 @@ function labStop(silent){
   vid.pause(); vid.removeAttribute('src'); vid.load(); current=-1;
   dz.style.display='block'; $id('livebadge').style.display='none'; $id('roomstatus').innerHTML='&mdash; OFFLINE';
   endCall(); markCells();
-  setCount('&mdash;'); updateElapsed(); if(!silent){ document.title='MEMPHY.TV Ã¢ÂÂ memphyÃ¢ÂÂs Cam'; setRecStatus(''); }
+  setCount('&mdash;'); updateElapsed(); if(!silent){ document.title='MEMPHY.TV'; setRecStatus(''); }
 }
 // recording: capture this tab/screen, start at GO, stop at recLen (or Stop)
 function labArmRec(){
