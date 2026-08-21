@@ -836,6 +836,7 @@ var PRELOADED_GUEST = [
   'clips/caller_reveal.mp4'
 ];   // caller cams in rotation
 var CALLER_MAX = {};   // cap playback (seconds) for specific caller clips
+var LOOP_CLIPS = { 'caller_reveal.mp4': true };   // clips that loop instead of playing once
 var gMaxPlay = 0;
 
 var vid  = document.getElementById('vid');    // host cam (bottom)
@@ -1416,8 +1417,9 @@ function rotateCaller(){
     showSpin(false);
     gMaxPlay = 0;
     playClip(idx,'guest');
-    gvid.loop=false;                       // never repeat — play once then next
-    autoRotTimer=setTimeout(rotateCaller, 20000);   // safety only; normally advances on 'ended'
+    var _isLoop = clips[idx] && LOOP_CLIPS[clips[idx].name];
+    gvid.loop = !!_isLoop;                  // reveal loops; everything else plays once then next
+    autoRotTimer=setTimeout(rotateCaller, _isLoop ? 30000 : 20000);
   }, connectMs);
 }
 setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
