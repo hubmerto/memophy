@@ -1626,10 +1626,10 @@ function mirrorToCam(cam){
   var tl=$id(cam==='her'?'labHerTL':'labGuestTL');
   if(pv){
     pv.addEventListener('loadedmetadata',function(){ labTL(cam); });
-    pv.addEventListener('timeupdate',function(){ labTL(cam); mirrorToCam(cam); });
-    pv.addEventListener('seeked',function(){ labTL(cam); mirrorToCam(cam); });
+    pv.addEventListener('timeupdate',function(){ labTL(cam); });
+    pv.addEventListener('seeked',function(){ labTL(cam); });
   }
-  if(tl){ tl.addEventListener('click',function(e){ var r=tl.getBoundingClientRect(), f=(e.clientX-r.left)/r.width; if(pv && isFinite(pv.duration)){ pv.currentTime=f*pv.duration; labTL(cam); mirrorToCam(cam); } }); }
+  if(tl){ tl.addEventListener('click',function(e){ var r=tl.getBoundingClientRect(), f=(e.clientX-r.left)/r.width; if(pv && isFinite(pv.duration)){ pv.currentTime=f*pv.duration; labTL(cam); } }); }
 });
 
 // changes in the lab apply live to the streaming cams (paused at the in-point) while idle
@@ -1660,7 +1660,17 @@ function labSetIn2(){}
 labPreview();
 
 
-// (video framing is fixed: object-fit cover fits the screen)
+// drag to pan + wheel to zoom each cam video (frame the shot); dbl-click resets
+function makeCamAdjustable(v){
+  var st={x:0,y:0,s:1.04}, drag=null;
+  function apply(){ v.style.transformOrigin='center center'; v.style.transform='translate('+st.x+'px,'+st.y+'px) scale('+st.s+')'; }
+  v.addEventListener('pointerdown',function(e){ drag={px:e.clientX,py:e.clientY,x:st.x,y:st.y}; try{v.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault(); });
+  v.addEventListener('pointermove',function(e){ if(!drag)return; st.x=drag.x+(e.clientX-drag.px); st.y=drag.y+(e.clientY-drag.py); apply(); });
+  v.addEventListener('pointerup',function(){ drag=null; });
+  v.addEventListener('wheel',function(e){ e.preventDefault(); st.s=Math.max(0.5,Math.min(6, st.s*(e.deltaY<0?1.08:0.925))); apply(); },{passive:false});
+  v.addEventListener('dblclick',function(){ st={x:0,y:0,s:1.04}; apply(); });
+}
+makeCamAdjustable(vid); makeCamAdjustable(gvid);
 </script>
 </body>
 </html>
