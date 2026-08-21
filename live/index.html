@@ -831,9 +831,9 @@ initMephyBackground({ transparent: true, mount: document.getElementById("logo3dg
 // ======================= MEMPHY LIVE frame =======================
 // clips in ./clips/ listed here auto-load into the playlist on page open
 var PRELOADED = [
-  'clips/memphy_02.mp4',
+  'clips/memphy_03.mp4',
   'clips/memphy_01.mp4',
-  'clips/memphy_03.mp4'
+  'clips/memphy_02.mp4'
 ];   // memphy's cam clips Ã¢ÂÂ her photo placeholder shows until one plays
 var PRELOADED_GUEST = [
   'clips/MPH-CAM-08_tattoo-video_v1.mp4',
@@ -1342,7 +1342,7 @@ function toggleSong(){
 }
 // try to start on the first interaction anywhere (autoplay w/ sound needs a gesture)
 (function(){
-  function kick(){ var a=document.getElementById('song'); if(a && a.paused){ toggleSong(); } document.removeEventListener('pointerdown',kick); }
+  function kick(){ try{ vid.muted=true; vid.play().catch(function(){}); }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} var a=document.getElementById('song'); if(a && a.paused){ toggleSong(); } document.removeEventListener('pointerdown',kick); }
   document.addEventListener('pointerdown',kick,{once:true});
 })();
 
@@ -1442,7 +1442,7 @@ setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
 setTimeout(function(){ if(typeof herRotate==='function' && herIdxs().length) herRotate(); }, 400);
 
 // ---- age gate ----
-function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); try{ var a=document.getElementById('song'); if(a && a.paused) toggleSong(); }catch(e){} }
+function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); try{ vid.muted=true; vid.play().catch(function(){}); }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} try{ var a=document.getElementById('song'); if(a && a.paused) toggleSong(); }catch(e){} }
 if(location.search.indexOf('nogate')>-1){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
 
 // ---- MEMPHY popup ----
