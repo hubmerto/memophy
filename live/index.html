@@ -816,9 +816,9 @@ if (window.innerWidth > 820) {
 // ======================= MEMPHY LIVE frame =======================
 // clips in ./clips/ listed here auto-load into the playlist on page open
 var PRELOADED = [
-  'clips/memphy_02.mp4',
+  'clips/memphy_03.mp4',
   'clips/memphy_01.mp4',
-  'clips/memphy_03.mp4'
+  'clips/memphy_02.mp4'
 ];   // memphy's cam clips Ã¢ÂÂ her photo placeholder shows until one plays
 var PRELOADED_GUEST = [
   'clips/MPH-CAM-08_tattoo-video_v1.mp4',
@@ -993,10 +993,13 @@ function markCells(){
 // her cam auto-plays her clips in turns and keeps itself alive
 var herPos=0;
 function herIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==='her' && !clips[i].removed) a.push(i); return a; }
+var herFirst=true;
 function herRotate(){
   if(typeof lab!=='undefined' && lab.playing) return;
   var idxs=herIdxs(); if(!idxs.length) return;
-  var idx=bagNext('her', idxs);
+  var idx;
+  if(herFirst){ herFirst=false; idx=idxs[0]; lastHer=idx; }   // memphy_03 default on entry
+  else idx=bagNext('her', idxs);
   playClip(idx,'host'); vid.loop=false; vid.muted=true;
   var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); });
 }
