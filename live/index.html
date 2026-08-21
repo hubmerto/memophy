@@ -60,15 +60,16 @@ a:hover{text-decoration:underline;}
 /* two equal screens */
 #camrow{}
 .camcol{float:left;}
-#hcol{width:calc(50% - 4px);margin-right:8px;}
-#gcol{width:calc(50% - 4px);}
+#hcol{width:calc(50% - 8px);margin-right:16px;}
+#gcol{width:calc(50% - 8px);}
+#subject,#gcol .phead{display:none;}
 #subject{height:32px;line-height:32px;padding:0 10px;font:bold 14px Arial;color:#111;white-space:nowrap;overflow:hidden;border-bottom:none;}
 #subject .report{float:right;color:#0a5a83;font:bold 11px Arial;text-transform:uppercase;margin-left:12px;}
 #subject .tag{color:#0a5a83;}
 #subject .st{color:#888;font-weight:normal;font-size:12px;}
 #subject .st span{font-weight:bold;}
 #subject .jp{color:#d2287f;font-weight:normal;}
-.camstage{position:relative;width:100%;background:#000;overflow:hidden;border:1px solid #b9b9b9;height:calc(100vh - 402px);min-height:300px;}
+.camstage{position:relative;width:100%;background:#000;overflow:hidden;border:1px solid #b9b9b9;height:calc(100vh - 370px);min-height:300px;}
 .camstage video{width:100%;height:100%;background:#000;display:block;object-fit:cover;transform:scale(1.04);}
 .camdz{position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;box-sizing:border-box;background:#111;}
 .camdz .nosig{margin:12% auto 0;width:auto;text-align:center;font:bold 28px Arial;color:#fff;letter-spacing:4px;}
@@ -135,7 +136,7 @@ a:hover{text-decoration:underline;}
 #chatbox{float:right;width:calc(38% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:190px;overflow-y:auto;padding:8px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog{height:238px;overflow-y:auto;padding:8px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
 #calllog div{margin-bottom:4px;line-height:19px;word-wrap:break-word;}
 #calllog .sys{color:#888;font-style:italic;}
 #calllog .mem b{color:#e0101a;}
@@ -424,9 +425,6 @@ html,body{overflow:auto;}
         <div class="phead">Private show <span class="jp">&#x30D7;&#x30E9;&#x30A4;&#x30D9;&#x30FC;&#x30C8;</span> <span id="callwith">&mdash; no one on the line</span><span class="rt">live transcript</span></div>
         <div id="calllog">
           <div class="sys">accept a caller to start a conversation...</div>
-        </div>
-        <div id="callin">
-          <input type="text" id="callmsg" maxlength="120"><button id="callsend" onclick="sendCall()">Send as memphy</button>
         </div>
       </div>
       <div id="chatbox" class="box">
@@ -979,11 +977,12 @@ function herRotate(){
   var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); });
 }
 vid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.playing)) herRotate(); });
+gvid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.playing)) rotateCaller(); });
 // watchdog: never let an idle cam sit paused
 setInterval(function(){
   if(typeof lab!=='undefined' && lab.playing) return;
-  if(current>-1 && vid.getAttribute('src') && vid.paused){ vid.muted=true; vid.play().catch(function(){}); }
-  if(gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
+  if(current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=true; vid.play().catch(function(){}); }
+  if(gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && gvid.currentTime < (isFinite(gvid.duration)?gvid.duration:1e9)-0.35 && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
 }, 1500);
 
 // ---- host controls ----
@@ -1344,6 +1343,7 @@ var autoPos=0, autoRotTimer=null;
 function callerIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==='caller' && !clips[i].removed) a.push(i); return a; }
 function showSpin(on,msg){ var el=document.getElementById('gspin'); if(!el) return; el.className='gspin'+(on?' on':''); if(on&&msg){ var m=el.querySelector('.spinmsg'); if(m) m.innerHTML=msg; } }
 function rotateCaller(){
+  if(autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; }
   if(typeof lab!=='undefined' && lab.playing){ autoRotTimer=setTimeout(rotateCaller,2500); return; }
   var idxs=callerIdxs();
   if(!idxs.length){ autoRotTimer=setTimeout(rotateCaller,2000); return; }
@@ -1358,10 +1358,10 @@ function rotateCaller(){
   setTimeout(function(){
     if(typeof lab!=='undefined' && lab.playing){ showSpin(false); return; }
     showSpin(false);
-    gMaxPlay = (clips[idx] && CALLER_MAX[clips[idx].name]) || 0;
+    gMaxPlay = 0;
     playClip(idx,'guest');
-    var playMs=(4+Math.random()*4)*1000;
-    autoRotTimer=setTimeout(rotateCaller, playMs);
+    gvid.loop=false;                       // never repeat — play once then next
+    autoRotTimer=setTimeout(rotateCaller, 20000);   // safety only; normally advances on 'ended'
   }, connectMs);
 }
 setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
