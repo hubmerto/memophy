@@ -1377,6 +1377,7 @@ setInterval(function(){
 
 // ---- preloaded clips ----
 for(var pi=0;pi<PRELOADED.length;pi++) mphAddUrl(PRELOADED[pi], 'host');
+if(location.search.indexOf('only=reveal')>-1){ PRELOADED_GUEST=['clips/caller_reveal.mp4']; }
 for(var gi=0;gi<PRELOADED_GUEST.length;gi++) mphAddUrl(PRELOADED_GUEST[gi], 'guest');
 
 // ---- auto-rotate the guys on the caller cam: play a few seconds, spinner, next ----
