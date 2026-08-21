@@ -64,7 +64,7 @@ a:hover{text-decoration:underline;}
 #subject .st span{font-weight:bold;}
 #subject .jp{color:#d2287f;font-weight:normal;}
 .camstage{position:relative;width:100%;background:#000;overflow:hidden;border:1px solid #b9b9b9;height:calc(100vh - 402px);min-height:300px;}
-.camstage video{width:100%;height:100%;background:#000;display:block;object-fit:contain;}
+.camstage video{width:100%;height:100%;background:#000;display:block;object-fit:cover;}
 .camdz{position:absolute;top:0;left:0;width:100%;height:100%;cursor:pointer;box-sizing:border-box;background:#111;}
 .camdz .nosig{margin:12% auto 0;width:auto;text-align:center;font:bold 28px Arial;color:#fff;letter-spacing:4px;}
 .camdz .cammsg{text-align:center;font:bold 14px Arial;color:#ddd;margin-top:8px;}
@@ -895,12 +895,23 @@ function markCells(){
     if(el) el.className = 'clip'+(k===current?' playing':'')+(k===gcurrent?' playingg':'');
   }
 }
-vid.addEventListener('ended', function(){
-  if(!vid.loop && clips.length) playClip((current+1)%clips.length, 'host');
-});
-gvid.addEventListener('ended', function(){
-  if(!gvid.loop && clips.length) playClip((gcurrent+1)%clips.length, 'guest');
-});
+// her cam auto-plays her clips in turns and keeps itself alive
+var herPos=0;
+function herIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==='her') a.push(i); return a; }
+function herRotate(){
+  if(typeof lab!=='undefined' && lab.playing) return;
+  var idxs=herIdxs(); if(!idxs.length) return;
+  var idx=idxs[herPos%idxs.length]; herPos++;
+  playClip(idx,'host'); vid.loop=false; vid.muted=true;
+  var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); });
+}
+vid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.playing)) herRotate(); });
+// watchdog: never let an idle cam sit paused
+setInterval(function(){
+  if(typeof lab!=='undefined' && lab.playing) return;
+  if(current>-1 && vid.getAttribute('src') && vid.paused){ vid.muted=true; vid.play().catch(function(){}); }
+  if(gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
+}, 1500);
 
 // ---- host controls ----
 function ctl(a){
@@ -1239,6 +1250,7 @@ function rotateCaller(){
   }, connectMs);
 }
 setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
+setTimeout(function(){ if(typeof herRotate==='function' && herIdxs().length) herRotate(); }, 400);
 
 // ---- age gate ----
 function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); }
