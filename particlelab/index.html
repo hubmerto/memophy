@@ -157,10 +157,10 @@ const P={
   // depth
   depthSize:378, depthDtype:'fp32', depthSmooth:0.55, depthScale:0.9, depthCurve:1.0, depthNear:0.0, depthFar:1.0, depthInvert:false, depthLive:true,
   // particles
-  density:120, size:1.0, shape:'glyph', glyphs:'ascii', custom:'MEMPHY', gamma:1.0, lift:0.2, lumaCull:0.0, brightness:1.0, blend:'normal', jitter:0, edgeFade:0.0,
+  density:120, size:1.0, shape:'glyph', glyphs:'ascii', custom:'MEMPHY', gamma:1.0, contrast:1.0, detail:0.6, detailRad:1.5, bw:0.0, lift:0.2, lumaCull:0.0, brightness:1.0, blend:'normal', jitter:0, edgeFade:0.0,
   volume:4, volDepth:1.0, volFade:0.75, volJitter:0.6,
   // style
-  tint:'#7cff9a', tintAmt:0.0, rain:0.0, rainSpeed:1.0, rainTrail:8, holoScan:0.0, scanFreq:380, flicker:0.0, rgbSplit:0.0, sweep:0.0, sweepSpeed:0.6, echo:0.0, echoOff:0.06,
+  tint:'#7cff9a', tintAmt:0.0, rain:0.0, rainSpeed:1.0, rainTrail:14, holoScan:0.0, scanFreq:380, flicker:0.0, rgbSplit:0.0, sweep:0.0, sweepSpeed:0.6, echo:0.0, echoOff:0.06,
   // fx
   wave:0.0, waveFreq:12, waveSpeed:2.0, glitch:0.0, glitchRate:6, glitchChance:0.3, uvGlitch:0.0, block:0.0, chroma:0.0, dropout:0.0, scatter:0.0, scatterSpeed:0.6, explode:0.0, burst:0.0, burstRate:0.25, shake:0.0,
   // audio
@@ -182,7 +182,7 @@ const GLYPH_SETS={
 };
 const PRESETS={
   ASCII:{shape:'glyph',glyphs:'ascii',tintAmt:0,rain:0,jitter:0,holoScan:0,glitch:0,wave:0,bloom:0.2,gamma:1.0,density:120,blend:'normal',bg:'#000000',lift:0.2},
-  MATRIX:{shape:'glyph',glyphs:'matrix',tint:'#39ff6a',tintAmt:0.75,lift:0.3,rain:0.85,rainSpeed:1.0,rainTrail:7,jitter:8,gamma:0.7,lumaCull:0,bloom:0.45,bloomThr:0.4,density:110,blend:'additive',brightness:1.3,holoScan:0,glitch:0,wave:0,bg:'#000000'},
+  MATRIX:{shape:'glyph',glyphs:'matrix',tint:'#39ff6a',tintAmt:0.8,lift:0.25,rain:0.9,rainSpeed:1.0,rainTrail:16,jitter:6,bw:0.5,gamma:0.7,lumaCull:0,bloom:0.45,bloomThr:0.4,density:110,blend:'additive',brightness:1.3,holoScan:0,glitch:0,wave:0,bg:'#000000'},
   DOTS:{shape:'dot',size:0.55,tintAmt:0,rain:0,jitter:0,holoScan:0,glitch:0,wave:0,bloom:0.35,density:180,blend:'additive',gamma:0.9,bg:'#000000',lift:0.2},
   HOLOGRAM:{shape:'glyph',glyphs:'ascii_lite',tint:'#4fd9ff',tintAmt:0.7,lift:0.3,holoScan:0.8,scanFreq:420,flicker:0.35,rgbSplit:0.2,jitter:0,rain:0,glitch:0.15,glitchRate:4,uvGlitch:0.2,chroma:0.25,dropout:0.15,sweep:0.6,sweepSpeed:0.5,echo:0.55,echoOff:0.05,burst:0.15,burstRate:0.2,shake:0.2,block:0,bloom:0.7,bloomThr:0.3,density:140,blend:'additive',gamma:0.85,bg:'#00040a',glitchChance:0.25},
   GLITCH:{shape:'square',size:0.9,tintAmt:0,glitch:0.6,glitchRate:8,uvGlitch:0.6,block:0.4,chroma:0.6,dropout:0.2,rgbSplit:0.6,jitter:0,rain:0,holoScan:0,wave:0.1,burst:0.2,burstRate:0.35,shake:0.4,echo:0,sweep:0,bloom:0.2,density:130,blend:'normal',gamma:1,bg:'#000000',lift:0.2,glitchChance:0.45},
@@ -222,6 +222,10 @@ select(gP,'shape','shape',[['glyph','glyph'],['dot','dot'],['square','square']])
 select(gP,'glyphs','glyph set',[['ascii','ascii dense'],['ascii_lite','ascii light'],['matrix','matrix katakana'],['binary','binary'],['hex','hex'],['blocks','blocks ░▒▓█'],['dots','dots ·•●'],['custom','custom text']],()=>buildAtlas());
 text(gP,'custom','custom text',()=>{if(P.glyphs==='custom')buildAtlas();});
 slider(gP,'gamma','gamma',0.2,3,0.01);
+slider(gP,'contrast','contrast',0.3,3,0.01);
+slider(gP,'detail','detail (local contrast)',0,3,0.01);
+slider(gP,'detailRad','detail radius',0.5,6,0.1);
+slider(gP,'bw','b&w mask',0,1,0.01);
 slider(gP,'lift','shadow lift',0,1,0.01);
 slider(gP,'lumaCull','cull dark',0,0.9,0.01);
 slider(gP,'brightness','brightness',0,3,0.01);
@@ -237,7 +241,7 @@ color(gS,'tint','tint');
 slider(gS,'tintAmt','tint amount',0,1,0.01);
 slider(gS,'rain','matrix rain',0,1,0.01);
 slider(gS,'rainSpeed','rain speed',0,4,0.01);
-slider(gS,'rainTrail','rain trail',1,30,0.5);
+slider(gS,'rainTrail','rain trail (rows)',2,60,1);
 slider(gS,'holoScan','holo scanlines',0,1,0.01);
 slider(gS,'scanFreq','scan freq',40,1200,1);
 slider(gS,'flicker','flicker',0,1,0.01);
@@ -311,19 +315,20 @@ const U={
   uColor:{value:colorTex}, uDepth:{value:depthTex}, uAtlas:{value:null},
   uTime:{value:0}, uAspect:{value:16/9}, uGrid:{value:new THREE.Vector2(1,1)}, uProj:{value:1}, uSize:{value:1},
   uDepthScale:{value:1}, uDepthCurve:{value:1}, uNear:{value:0}, uFar:{value:1}, uInvert:{value:0},
-  uShape:{value:0}, uGlyphCount:{value:1}, uAtlasCols:{value:16}, uAtlasRows:{value:1}, uGamma:{value:1}, uLift:{value:0}, uLumaCull:{value:0}, uSlices:{value:1}, uAdditive:{value:0}, uVolDepth:{value:1}, uVolFade:{value:0}, uVolJitter:{value:0}, uBrightness:{value:1}, uJitter:{value:0}, uEdgeFade:{value:0},
+  uShape:{value:0}, uGlyphCount:{value:1}, uAtlasCols:{value:16}, uAtlasRows:{value:1}, uGamma:{value:1}, uContrast:{value:1}, uDetail:{value:0}, uDetailRad:{value:1.5}, uBW:{value:0}, uLift:{value:0}, uLumaCull:{value:0}, uSlices:{value:1}, uAdditive:{value:0}, uVolDepth:{value:1}, uVolFade:{value:0}, uVolJitter:{value:0}, uBrightness:{value:1}, uJitter:{value:0}, uEdgeFade:{value:0},
   uTint:{value:new THREE.Color(P.tint)}, uTintAmt:{value:0}, uRain:{value:0}, uRainSpeed:{value:1}, uRainTrail:{value:8}, uHoloScan:{value:0}, uScanFreq:{value:380}, uFlick:{value:1}, uRgbSplit:{value:0},
   uWave:{value:0}, uWaveFreq:{value:12}, uWaveSpeed:{value:2}, uGlitch:{value:0}, uGlitchRate:{value:6}, uScatter:{value:0}, uScatterSpeed:{value:0.6}, uExplode:{value:0},
   uUvGlitch:{value:0}, uGlitchChance:{value:0.3}, uBlock:{value:0}, uChroma:{value:0}, uDropout:{value:0}, uBurst:{value:0}, uBurstRate:{value:0.25}, uSweep:{value:0}, uSweepSpeed:{value:0.6}, uAudio:{value:new THREE.Vector3()}, uAudioAmt:{value:0}, uEcho:{value:0}, uEchoOff:{value:0.06},
 };
 const VERT=/* glsl */`
 uniform sampler2D uColor, uDepth;
-uniform float uTime,uAspect,uProj,uSize,uDepthScale,uDepthCurve,uNear,uFar,uInvert,uJitter,uRain,uRainSpeed,uRainTrail,uWave,uWaveFreq,uWaveSpeed,uGlitch,uGlitchRate,uScatter,uScatterSpeed,uExplode,uEdgeFade,uUvGlitch,uGlitchChance,uBlock,uAudioAmt,uChroma,uDropout,uBurst,uBurstRate,uSweep,uSweepSpeed,uEcho,uEchoOff;
+uniform float uTime,uAspect,uProj,uSize,uDepthScale,uDepthCurve,uNear,uFar,uInvert,uJitter,uRain,uRainSpeed,uRainTrail,uWave,uWaveFreq,uWaveSpeed,uGlitch,uGlitchRate,uScatter,uScatterSpeed,uExplode,uEdgeFade,uUvGlitch,uGlitchChance,uBlock,uAudioAmt,uContrast,uDetail,uDetailRad,uBW,uChroma,uDropout,uBurst,uBurstRate,uSweep,uSweepSpeed,uEcho,uEchoOff;
 attribute float aSlice; attribute float aEcho;
 uniform float uSlices,uVolDepth,uVolFade,uVolJitter,uAdditive;
 uniform vec2 uGrid; uniform vec3 uAudio;
 varying vec3 vColor; varying float vLuma; varying float vVis; varying vec2 vUv; varying float vRain; varying float vHead; varying float vGlitch; varying float vRand; varying float vEcho; varying float vSweep; varying float vFlash; varying float vVol;
 float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
+float lumaAt(vec2 q){vec3 c=texture2D(uColor,q).rgb;return pow(max(dot(c,vec3(0.299,0.587,0.114)),0.0),0.4545);}
 vec3 hash3(vec2 p){return vec3(hash(p),hash(p+vec2(1.3,7.1)),hash(p+vec2(5.2,2.9)));}
 void main(){
   vec2 uv=uv;
@@ -346,7 +351,15 @@ void main(){
   d=mix(d,1.0-d,uInvert);
   d=pow(clamp(d,0.0,1.0),uDepthCurve);
   float vis=step(uNear,d)*step(d,uFar);
-  float luma=pow(dot(col,vec3(0.299,0.587,0.114)),0.4545);
+  float luma=pow(max(dot(col,vec3(0.299,0.587,0.114)),0.0),0.4545);
+  if(uDetail>0.0){
+    vec2 rr=vec2(uDetailRad/uGrid.x,uDetailRad/uGrid.y); float m=0.0;
+    m+=lumaAt(suv+vec2(rr.x,0.0)); m+=lumaAt(suv-vec2(rr.x,0.0)); m+=lumaAt(suv+vec2(0.0,rr.y)); m+=lumaAt(suv-vec2(0.0,rr.y));
+    m+=lumaAt(suv+rr*0.707); m+=lumaAt(suv-rr*0.707); m+=lumaAt(suv+vec2(rr.x,-rr.y)*0.707); m+=lumaAt(suv+vec2(-rr.x,rr.y)*0.707);
+    m/=8.0; luma=luma+(luma-m)*uDetail;
+  }
+  luma=clamp((luma-0.5)*uContrast+0.5,0.0,1.0);
+  col=mix(col,vec3(pow(luma,2.2)),uBW);
   // volume: extrude each surface point back toward the far plane in slices
   float K=max(1.0,uSlices); float fr=(K>1.0)?aSlice/(K-1.0):0.0;
   float dsc=uDepthScale*(1.0+uAudio.x*uAudioAmt*0.35);
@@ -385,13 +398,24 @@ void main(){
   // ghost echo layer
   vEcho=aEcho;
   if(aEcho>0.5){ p.x+=uEchoOff*(1.0+0.4*sin(uTime*1.7)); p.y+=uEchoOff*0.3*sin(uTime*1.1); p.z-=uEchoOff*1.5; vis*=step(0.01,uEcho); }
-  // matrix rain
-  float h1=hash(vec2(cell.x,1.7));
-  float head=1.0-fract(uTime*uRainSpeed*0.12*(0.5+h1*0.9)+h1*13.1);
-  float behind=fract(uv.y-head);
-  float trail=exp(-behind*uRainTrail);
-  vRain=mix(1.0,0.28+0.9*trail,uRain);
-  vHead=smoothstep(0.03,0.0,behind)*uRain;
+  // matrix rain: up to 3 discrete code drops per column, stepping one row per tick
+  float rows=uGrid.y; float yTop=(1.0-uv.y)*rows; float trailLen=uRainTrail;
+  float bright=0.0; float headHit=0.0;
+  for(int k=0;k<3;k++){
+    float fk=float(k);
+    float hk=hash(vec2(cell.x,1.7+fk*3.3));
+    float act=(k==0)?1.0:step(1.0-uRain*0.9,hash(vec2(cell.x,11.0+fk)));
+    float spd=uRainSpeed*(4.0+hk*9.0); // rows per second
+    float cyc=rows+trailLen+hk*rows;
+    float headRow=floor(mod(uTime*spd+hk*cyc*3.7,cyc))-trailLen*0.5;
+    float behind=headRow-floor(yTop);
+    float inTrail=step(0.0,behind)*step(behind,trailLen);
+    float tr=pow(max(0.0,1.0-behind/trailLen),1.4)*inTrail*act;
+    bright=max(bright,tr);
+    headHit=max(headHit,step(behind,0.5)*inTrail*act);
+  }
+  vRain=mix(1.0,0.22+1.1*bright,uRain);
+  vHead=headHit*uRain;
   // edge fade
   vec2 e=abs(uv-0.5)*2.0; float ef=1.0-smoothstep(1.0-uEdgeFade,1.0,max(e.x,e.y));
   vis*=step(0.001,ef+ (1.0-sign(uEdgeFade)));
@@ -697,7 +721,7 @@ $('#bPng').onclick=()=>{ renderFrame(0); const a=document.createElement('a'); a.
 const clock=new THREE.Clock(); let fps=0,fc=0,ft=performance.now(); let thumbT=0;
 function syncUniforms(t){
   U.uTime.value=t; U.uDepthScale.value=P.depthScale; U.uDepthCurve.value=P.depthCurve; U.uNear.value=P.depthNear; U.uFar.value=P.depthFar; U.uInvert.value=P.depthInvert?1:0;
-  U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
+  U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=P.contrast; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
   U.uTint.value.set(P.tint); U.uTintAmt.value=P.tintAmt; U.uRain.value=P.rain; U.uRainSpeed.value=P.rainSpeed; U.uRainTrail.value=P.rainTrail; U.uHoloScan.value=P.holoScan; U.uScanFreq.value=P.scanFreq; U.uRgbSplit.value=P.rgbSplit;
   U.uFlick.value=1-(P.flicker>0&&Math.random()<0.12?Math.random()*0.7*P.flicker:0);
   U.uWave.value=P.wave; U.uWaveFreq.value=P.waveFreq; U.uWaveSpeed.value=P.waveSpeed; U.uGlitch.value=P.glitch; U.uGlitchRate.value=P.glitchRate; U.uScatter.value=P.scatter; U.uScatterSpeed.value=P.scatterSpeed; U.uExplode.value=P.explode;
