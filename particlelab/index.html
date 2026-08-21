@@ -104,7 +104,7 @@
 <main id="stage">
   <canvas id="gl"></canvas>
   <div id="hud"></div>
-  <div id="hint">drag orbit · scroll fly in · <kbd>F</kbd> front view · <kbd>R</kbd> reset · <kbd>space</kbd> play</div>
+  <div id="hint">hold to zoom · drag orbit · scroll fly in · <kbd>F</kbd> front view · <kbd>R</kbd> reset · <kbd>space</kbd> play</div>
   <div id="drop">DROP VIDEO / IMAGE</div>
 </main>
 </div>
@@ -169,7 +169,7 @@ const P={
   // audio
   audio:false, audioAmt:0.6, audioSrc:'video', audioVol:0.8,
   // camera
-  fov:40, orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
+  fov:40, clickZoom:true, zoomAmt:0.65, zoomSpeed:0.08, zoomBack:0.06, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
   // render
   bg:'#000000', bloom:0.25, bloomThr:0.55, bloomRad:0.4, ratio:'source', recScale:1, recLoop:true,
 };
@@ -290,6 +290,11 @@ check(gA,'audio','audio react',(v)=>setAudio(v));
 slider(gA,'audioAmt','amount',0,2,0.01);
 slider(gA,'audioVol','volume',0,1,0.01,(v)=>{if(gainNode)gainNode.gain.value=v;});
 select(gA,'audioSrc','source',[['video','video track'],['file','audio file'],['mic','microphone']],(v)=>{if(P.audio)connectAudio();});
+check(gC,'clickZoom','press-hold zoom');
+slider(gC,'zoomAmt','zoom amount',0,0.95,0.01);
+slider(gC,'zoomSpeed','zoom speed',0.01,0.4,0.005);
+slider(gC,'zoomBack','release speed',0.01,0.4,0.005);
+select(gC,'zoomTarget','zoom toward',[['surface','surface under cursor'],['plane','mid plane']]);
 slider(gC,'fov','fov',15,100,1,()=>{camera.fov=P.fov;camera.updateProjectionMatrix();});
 check(gC,'orbit','auto orbit');
 slider(gC,'orbitAmt','orbit amount',0,1.5,0.01);
@@ -683,7 +688,27 @@ function resetView(){
   camera.position.set(0,0,baseDist); controls.target.set(0,0,0); controls.update();
 }
 $('#bReset').onclick=()=>{resetView();};
-function frontView(){ flyT=-1; P.orbit=false; ctls.orbit.set(false); camera.zoom=1; camera.updateProjectionMatrix(); resetView(); }
+/* press-and-hold zoom toward cursor */
+const pz={down:false,active:false,e:0,x0:0,y0:0,base:new THREE.Vector3(),baseT:new THREE.Vector3(),hit:new THREE.Vector3(),ray:new THREE.Raycaster(),ndc:new THREE.Vector2(),plane:new THREE.Plane(new THREE.Vector3(0,0,1),0)};
+function cursorHit(cx,cy){
+  const r=canvas.getBoundingClientRect(); pz.ndc.set(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+  pz.ray.setFromCamera(pz.ndc,camera); const p=new THREE.Vector3(); if(!pz.ray.ray.intersectPlane(pz.plane,p))return null;
+  let z=0; if(P.zoomTarget==='surface'&&dU8){ const a=U.uAspect.value; const u=p.x/a+0.5, v=p.y+0.5; if(u>=0&&u<=1&&v>=0&&v<=1){ const ix=Math.min(dW-1,Math.floor(u*dW)), iy=Math.min(dH-1,Math.floor((1-v)*dH)); let d=dU8[iy*dW+ix]/255; if(P.depthInvert)d=1-d; d=Math.pow(d,P.depthCurve); z=(d-0.5)*P.depthScale; } }
+  p.z=z; return p;
+}
+canvas.addEventListener('pointerdown',e=>{ if(e.button!==0||!P.clickZoom)return; pz.down=true; pz.x0=e.clientX; pz.y0=e.clientY; const h=cursorHit(e.clientX,e.clientY); if(!h)return; pz.hit.copy(h); if(!pz.active){pz.base.copy(camera.position);pz.baseT.copy(controls.target);} pz.active=true; });
+window.addEventListener('pointermove',e=>{ if(pz.down&&pz.active&&Math.hypot(e.clientX-pz.x0,e.clientY-pz.y0)>8){ pz.down=false; } });
+window.addEventListener('pointerup',()=>{ pz.down=false; });
+function tickPressZoom(){
+  if(!pz.active)return;
+  const goal=pz.down?1:0; const sp=pz.down?P.zoomSpeed:P.zoomBack;
+  pz.e+=(goal-pz.e)*sp; if(!pz.down&&pz.e<0.002){pz.e=0;pz.active=false;camera.position.copy(pz.base);controls.target.copy(pz.baseT);return;}
+  const k=pz.e*P.zoomAmt;
+  camera.position.lerpVectors(pz.base,pz.hit,k);
+  controls.target.lerpVectors(pz.baseT,pz.hit,k*0.9);
+}
+// (dragging >8px releases the zoom — handled in pointermove; OrbitControls 'start' fires on plain press so it is not used here)
+function frontView(){ flyT=-1; pz.active=false; pz.down=false; pz.e=0; P.orbit=false; ctls.orbit.set(false); camera.zoom=1; camera.updateProjectionMatrix(); resetView(); }
 $('#bFront').onclick=frontView;
 let flyT=-1;
 $('#bFly').onclick=()=>{ flyT=0; P.orbit=false; ctls.orbit.set(false); };
@@ -785,7 +810,7 @@ function syncUniforms(t){
 }
 function renderFrame(dt){
   const t=clock.getElapsedTime();
-  autoCam(t,dt); controls.update(); applyShake(t); tickAudio();
+  autoCam(t,dt); tickPressZoom(); controls.update(); applyShake(t); tickAudio();
   syncUniforms(t);
   if(P.audio&&curNode){ bloomPass.strength=P.bloom*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
   if(P.bloom>0.001)composer.render(); else renderer.render(scene,camera);
