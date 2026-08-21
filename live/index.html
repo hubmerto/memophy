@@ -832,7 +832,8 @@ var PRELOADED_GUEST = [
   'clips/caller_extra_01.mp4',
   'clips/caller_extra_02.mp4',
   'clips/caller_jeans_v2.mp4',
-  'clips/caller_standup.mp4'
+  'clips/caller_standup.mp4',
+  'clips/caller_reveal.mp4'
 ];   // caller cams in rotation
 var CALLER_MAX = {};   // cap playback (seconds) for specific caller clips
 var gMaxPlay = 0;
@@ -999,6 +1000,7 @@ function herIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==
 var herFirst=true;
 function herRotate(){
   if(typeof lab!=='undefined' && lab.playing) return;
+  if(vid._hold) return;
   var idxs=herIdxs(); if(!idxs.length) return;
   var idx;
   if(herFirst){ herFirst=false; idx=idxs[0]; lastHer=idx; }   // memphy_03 default on entry
@@ -1011,8 +1013,8 @@ gvid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.
 // watchdog: never let an idle cam sit paused
 setInterval(function(){
   if(typeof lab!=='undefined' && lab.playing) return;
-  if(current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=true; vid.play().catch(function(){}); }
-  if(gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && gvid.currentTime < (isFinite(gvid.duration)?gvid.duration:1e9)-0.35 && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
+  if(!vid._hold && current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=true; vid.play().catch(function(){}); }
+  if(!gvid._hold && gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && gvid.currentTime < (isFinite(gvid.duration)?gvid.duration:1e9)-0.35 && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
 }, 1500);
 
 // ---- host controls ----
@@ -1398,6 +1400,7 @@ function showSpin(on,msg){ var el=document.getElementById('gspin'); if(!el) retu
 function rotateCaller(){
   if(autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; }
   if(typeof lab!=='undefined' && lab.playing){ autoRotTimer=setTimeout(rotateCaller,2500); return; }
+  if(gvid._hold){ autoRotTimer=setTimeout(rotateCaller,1500); return; }
   var idxs=callerIdxs();
   if(!idxs.length){ autoRotTimer=setTimeout(rotateCaller,2000); return; }
   currentCaller = queue.length ? queue.shift().name : ('guest'+(1000+Math.floor(Math.random()*8999)));
@@ -1670,8 +1673,32 @@ document.addEventListener('keydown',function(e){
   if(e.code!=='Space' && e.key!==' ') return;
   var t=(e.target&&e.target.tagName||'').toLowerCase();
   if(t==='input'||t==='textarea'||t==='select'||t==='button') return;   // don't hijack typing
-  var pv=$id(activePrev==='guest'?'labGuestPrev':'labHerPrev');
-  if(pv && (pv.currentSrc||pv.src)){ e.preventDefault(); if(pv.paused) pv.play().catch(function(){}); else pv.pause(); }
+  if(typeof lab!=='undefined' && lab.playing) return;
+  var cam = activePrev==='guest' ? 'guest' : 'host';
+  var pv=$id(cam==='guest'?'labGuestPrev':'labHerPrev');
+  if(!pv || !(pv.currentSrc||pv.src)) return;
+  e.preventDefault();
+  var v=(cam==='guest')?gvid:vid;
+  var zone=(cam==='guest')?gdz:dz;
+  var badge=$id(cam==='guest'?'glive':'livebadge');
+  var selIdx=parseInt($id(cam==='guest'?'labGuest':'labHer').value,10);
+  // make sure the live stream cam is showing the clip you're selecting
+  if(selIdx>-1 && clips[selIdx] && v.getAttribute('data-labidx')!==String(selIdx)){
+    v.setAttribute('data-labidx',String(selIdx)); v.src=clips[selIdx].url; v.load();
+    zone.style.display='none'; if(badge) badge.style.display='block';
+  }
+  var willPlay = pv.paused;   // spacebar toggles
+  if(willPlay){
+    pv.play().catch(function(){});
+    v._hold=false; v.muted=true;
+    var go=function(){ try{ v.currentTime=pv.currentTime; }catch(_){}; v.play().catch(function(){}); };
+    if(v.readyState>=1) go(); else v.addEventListener('loadedmetadata',go,{once:true});
+  } else {
+    pv.pause();
+    v._hold=true;   // hold so auto-rotation/watchdog don't resume it
+    var st=function(){ try{ v.currentTime=pv.currentTime; }catch(_){}; v.pause(); };
+    if(v.readyState>=1) st(); else v.addEventListener('loadedmetadata',st,{once:true});
+  }
 });
 $id('labHerIn').oninput=labApplyToStream; $id('labGuestIn').oninput=labApplyToStream;
 $id("labHerIn").addEventListener("input",function(){labTL("her");}); $id("labGuestIn").addEventListener("input",function(){labTL("guest");});
