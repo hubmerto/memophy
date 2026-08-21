@@ -1654,6 +1654,25 @@ function labApplyToStream(){
 }
 function labChanged(){ labPreview(); labApplyToStream(); }
 $id('labHer').onchange=labChanged; $id('labGuest').onchange=labChanged;
+// spacebar pauses/plays the preview you're working with
+var activePrev='her';
+$id('labHer').addEventListener('focus',function(){activePrev='her';});
+$id('labGuest').addEventListener('focus',function(){activePrev='guest';});
+$id('labHer').addEventListener('change',function(){activePrev='her';});
+$id('labGuest').addEventListener('change',function(){activePrev='guest';});
+['her','guest'].forEach(function(cam){
+  var pv=$id(cam==='her'?'labHerPrev':'labGuestPrev');
+  var tl=$id(cam==='her'?'labHerTL':'labGuestTL');
+  if(pv){ pv.addEventListener('pointerdown',function(){activePrev=cam;}); pv.addEventListener('play',function(){activePrev=cam;}); }
+  if(tl){ tl.addEventListener('pointerdown',function(){activePrev=cam;}); }
+});
+document.addEventListener('keydown',function(e){
+  if(e.code!=='Space' && e.key!==' ') return;
+  var t=(e.target&&e.target.tagName||'').toLowerCase();
+  if(t==='input'||t==='textarea'||t==='select'||t==='button') return;   // don't hijack typing
+  var pv=$id(activePrev==='guest'?'labGuestPrev':'labHerPrev');
+  if(pv && (pv.currentSrc||pv.src)){ e.preventDefault(); if(pv.paused) pv.play().catch(function(){}); else pv.pause(); }
+});
 $id('labHerIn').oninput=labApplyToStream; $id('labGuestIn').oninput=labApplyToStream;
 $id("labHerIn").addEventListener("input",function(){labTL("her");}); $id("labGuestIn").addEventListener("input",function(){labTL("guest");});
 function labSetIn2(){}
