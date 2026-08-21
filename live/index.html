@@ -255,7 +255,8 @@ a:hover{text-decoration:underline;}
   #tabs{height:46px;min-height:0;padding:0 0 0 116px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;border-bottom:1px solid #f0cfe0;}
   #logo3d{width:104px;height:40px;top:2px;left:2px;}
   /* single-line nav: compact tabs, no wrapping (scrolls sideways) */
-  #tabs{height:42px;min-height:0;padding:0 0 0 96px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;}
+  #tabs{height:42px;min-height:0;padding:0 0 0 96px;overflow-x:auto;overflow-y:hidden;white-space:nowrap;scrollbar-width:none;-ms-overflow-style:none;}
+  #tabs::-webkit-scrollbar{display:none;width:0;height:0;}
   #logo3d{width:90px;height:36px;top:3px;left:2px;}
   .tab{display:inline-block;font-size:12px;padding:0 11px;height:30px;line-height:30px;margin-top:6px;margin-right:4px;background:#fdeef6;border-color:#f0cfe0;color:#b0106a;box-shadow:none;opacity:1;vertical-align:top;}
   .tab .jp{display:none;}       /* drop the JP subtext so the row stays a single line */
