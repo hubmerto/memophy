@@ -104,7 +104,7 @@
 <main id="stage">
   <canvas id="gl"></canvas>
   <div id="hud"></div>
-  <div id="hint">hold to zoom · drag orbit · scroll fly in · <kbd>F</kbd> front view · <kbd>R</kbd> reset · <kbd>space</kbd> play</div>
+  <div id="hint">hold = zoom through · drag / arrows = rotate · right-drag = pan · scroll = dolly · <kbd>F</kbd> front view · <kbd>R</kbd> reset · <kbd>space</kbd> play</div>
   <div id="drop">DROP VIDEO / IMAGE</div>
 </main>
 </div>
@@ -169,7 +169,7 @@ const P={
   // audio
   audio:false, audioAmt:0.6, audioSrc:'video', audioVol:0.8,
   // camera
-  fov:40, clickZoom:true, zoomAmt:0.65, zoomSpeed:0.08, zoomBack:0.06, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
+  fov:40, clickZoom:true, zoomAmt:1.8, zoomSpeed:0.05, zoomBack:0.05, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
   // render
   bg:'#000000', bloom:0.25, bloomThr:0.55, bloomRad:0.4, ratio:'source', recScale:1, recLoop:true,
 };
@@ -291,7 +291,7 @@ slider(gA,'audioAmt','amount',0,2,0.01);
 slider(gA,'audioVol','volume',0,1,0.01,(v)=>{if(gainNode)gainNode.gain.value=v;});
 select(gA,'audioSrc','source',[['video','video track'],['file','audio file'],['mic','microphone']],(v)=>{if(P.audio)connectAudio();});
 check(gC,'clickZoom','press-hold zoom');
-slider(gC,'zoomAmt','zoom amount',0,0.95,0.01);
+slider(gC,'zoomAmt','zoom amount (>1 = through)',0,3,0.01);
 slider(gC,'zoomSpeed','zoom speed',0.01,0.4,0.005);
 slider(gC,'zoomBack','release speed',0.01,0.4,0.005);
 select(gC,'zoomTarget','zoom toward',[['surface','surface under cursor'],['plane','mid plane']]);
@@ -599,7 +599,8 @@ function togglePlay(){ if(src.kind!=='video')return; if(video.paused){video.play
 ['dragenter','dragover'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.add('drag');}));
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.remove('drag');}));
 stage.addEventListener('drop',e=>{const f=e.dataTransfer.files[0]; if(f)loadFile(f);});
-document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT')return; if(e.code==='Space'){e.preventDefault();togglePlay();} if(e.key==='r'||e.key==='R')resetView(); if(e.key==='f'||e.key==='F')frontView(); });
+document.addEventListener('keydown',e=>{ if(e.target.tagName==='INPUT')return; if(e.code==='Space'){e.preventDefault();togglePlay();} if(e.key==='r'||e.key==='R')resetView(); if(e.key==='f'||e.key==='F')frontView();
+  if(e.key.startsWith('Arrow')){ e.preventDefault(); const off=camera.position.clone().sub(controls.target); const sph=new THREE.Spherical().setFromVector3(off); const st=e.shiftKey?0.25:0.08; if(e.key==='ArrowLeft')sph.theta-=st; if(e.key==='ArrowRight')sph.theta+=st; if(e.key==='ArrowUp')sph.phi=Math.max(0.05,sph.phi-st); if(e.key==='ArrowDown')sph.phi=Math.min(Math.PI-0.05,sph.phi+st); camera.position.copy(controls.target).add(off.setFromSpherical(sph)); camera.lookAt(controls.target); P.orbit=false; ctls.orbit.set(false); } });
 
 /* ───────────── depth worker ───────────── */
 let worker=null, workerReady=false, inflight=false, frameId=0, depthMs=0, depthFps=0, depthCount=0, depthT0=performance.now();
@@ -705,7 +706,8 @@ function tickPressZoom(){
   pz.e+=(goal-pz.e)*sp; if(!pz.down&&pz.e<0.002){pz.e=0;pz.active=false;camera.position.copy(pz.base);controls.target.copy(pz.baseT);return;}
   const k=pz.e*P.zoomAmt;
   camera.position.lerpVectors(pz.base,pz.hit,k);
-  controls.target.lerpVectors(pz.baseT,pz.hit,k*0.9);
+  // target stays ahead of the camera along the dive direction so we look forward while passing through
+  controls.target.lerpVectors(pz.baseT,pz.hit,k*0.9+0.35);
 }
 // (dragging >8px releases the zoom — handled in pointermove; OrbitControls 'start' fires on plain press so it is not used here)
 function frontView(){ flyT=-1; pz.active=false; pz.down=false; pz.e=0; P.orbit=false; ctls.orbit.set(false); camera.zoom=1; camera.updateProjectionMatrix(); resetView(); }
