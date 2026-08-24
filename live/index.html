@@ -1240,7 +1240,7 @@ function pushLyricLine(L, dur){
   while(l.children.length>40) l.removeChild(l.firstChild);
   l.scrollTop=l.scrollHeight;
   var span=d.querySelector(".typing"), txt=L[1], i=0;
-  var step=Math.max(24, Math.min(95, (dur*600)/Math.max(1,txt.length)));
+  var step=Math.max(16, Math.min(55, 1000/Math.max(1,txt.length)));   // full line typed in ~1s
   typingSpan=span; typingTxt=txt;
   typingTimer=setInterval(function(){
     i++;
@@ -1253,7 +1253,8 @@ setInterval(function(){
   if(typeof current==="undefined" || current<0 || vid.paused || !clips[current]) return;
   var name=clips[current].name;
   var arr=LYRICS_BY_CLIP[name]; if(!arr) return;
-  var t=vid.currentTime;
+  var LEAD=1.2;                       // start typing early so the full line lands on the vocal
+  var t=vid.currentTime + LEAD;
   if(name!==lyrClip){ lyrClip=name; lyrIdx=-1; }
   var idx=-1;
   for(var i=0;i<arr.length;i++){ if(t>=arr[i][0]) idx=i; else break; }
@@ -1264,7 +1265,7 @@ setInterval(function(){
     var L=arr[idx], dur=(idx+1<arr.length ? arr[idx+1][0]-L[0] : 4);
     pushLyricLine(L, Math.max(1.5,Math.min(8,dur)));
   }
-}, 300);
+}, 150);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
   stopCallChat();   // transcript panel is lyrics-only (lyric video style)
