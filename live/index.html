@@ -49,7 +49,7 @@ body.pshow #gcol,body.pshow #callpanel,body.pshow #adstrip{display:none !importa
 
 body.pshow #left{width:calc(73% - 8px);}
 body.pshow #hcol{width:100%;margin-right:0;}
-body.pshow #hcol .camstage{height:calc(var(--fh) - 178px);}        /* her screen takes the full height */
+body.pshow #hcol .camstage{height:calc(var(--fh) - 244px);}        /* her screen takes the full height */
 body.pshow #chatbox{position:absolute;top:56px;right:0;float:none;width:27%;height:calc(var(--fh) - 334px);margin-top:0;}
 body.pshow #tabprivate{background:#fff;color:#ff3fa4;}
 /* google adsense link unit (period ~2009) */
@@ -59,28 +59,21 @@ body.pshow #tabprivate{background:#fff;color:#ff3fa4;}
 #adstrip .adlbl{position:absolute;right:8px;top:5px;font:normal 11px Arial;color:#6F6F6F;}
 /* private show ad units: leaderboard over her screen + 1:1 square under the chat */
 #adbanner,#adsquare{display:none;}
-body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:1px solid #333;background:#000;}
-#adbanner .bn{position:relative;height:62px;line-height:62px;text-align:center;white-space:nowrap;overflow:hidden;
-  background:radial-gradient(circle at 54% 30%, rgba(90,210,255,.38), transparent 32%),
-             radial-gradient(circle at 14% 90%, rgba(150,70,20,.55), transparent 45%),
-             radial-gradient(circle at 88% 10%, rgba(70,40,120,.5), transparent 40%),
-             linear-gradient(to bottom,#1c1220,#04060c);
-  font:900 30px 'Arial Rounded MT Bold',Verdana,'Arial Black',Arial;letter-spacing:0;}
-#adbanner .nx{color:#3fd9ff;text-shadow:2px 2px 0 #2a0a3c,-2px 2px 0 #2a0a3c,2px -2px 0 #2a0a3c,-2px -2px 0 #2a0a3c,0 0 10px rgba(70,210,255,.95),0 0 24px rgba(60,180,255,.7);}
-#adbanner .wx{color:#fff;font-size:24px;text-shadow:2px 2px 0 #2a0a3c,-2px 2px 0 #2a0a3c,2px -2px 0 #2a0a3c,-2px -2px 0 #2a0a3c,0 0 12px rgba(255,255,255,.8);}
-#adbanner .fr{font-size:18px;opacity:.9;}
-#adbanner .clip{margin-right:-34px;}
-#adbanner .jar{display:inline-block;vertical-align:middle;position:relative;width:34px;height:48px;margin:0 14px;background:#0d0d10;border-radius:7px;box-shadow:0 0 16px rgba(90,210,255,.8),0 0 34px rgba(90,210,255,.45);}
-#adbanner .jar .cap{position:absolute;top:-7px;left:3px;right:3px;height:9px;background:#e9e9e9;border-radius:3px;}
-#adbanner .jar .gum{position:absolute;left:0;right:0;top:6px;font-size:22px;line-height:36px;color:#ff5f9e;text-shadow:0 0 8px rgba(255,95,158,.95),0 0 16px rgba(255,95,158,.7);}
-body.pshow .ctab{font-size:12px;padding:0 8px;height:27px;line-height:27px;}
-body.pshow .ctabs .jp{display:none;}
+body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:1px solid #222;background:#000;}
+#adbanner .bn{position:relative;height:120px;background:#000;overflow:hidden;display:flex;align-items:center;padding:0 0 0 22px;}
+#adbanner .btxt{display:flex;flex-direction:column;justify-content:center;line-height:1.12;}
+#adbanner .t1{font:bold 30px Arial,Helvetica,sans-serif;color:#fff;}
+#adbanner .t2{font:bold 16px Arial;color:#fff;letter-spacing:3px;}
+#adbanner .t3{font:bold 34px Arial,'Arial Black';color:#e30613;border-bottom:4px solid #e30613;padding-bottom:1px;letter-spacing:1px;}
+#adbanner .btri{height:74px;margin-left:26px;}
+#adbanner .bpf{height:62px;margin-left:14px;}
+#adbanner .bgum{height:120px;margin-left:auto;}
 #adsquare{position:absolute;right:0;bottom:8px;width:27%;border:1px solid #9CC1E7;background:#fff;z-index:4;}
 body.pshow #adsquare{display:block;}
 #adsquare .sq{height:258px;box-sizing:border-box;display:flex;background:#fff;}
 #adsquare .sqimg{width:44%;background:url('assets/memphy_ad.jpg') center top/cover no-repeat;border-right:2px solid #111;}
 #adsquare .sqtxt{flex:1;min-width:0;padding:10px 8px 8px;text-align:center;color:#000;font:bold 12px Arial;line-height:1.35;}
-#adsquare .sqtxt b{display:block;font:bold 30px 'Arial Black',Impact,Arial;line-height:.95;letter-spacing:-1px;margin-bottom:6px;}
+#adsquare .sqtxt b{display:block;font:bold 21px 'Arial Black',Impact,Arial;line-height:1.05;letter-spacing:-1px;margin-bottom:6px;white-space:nowrap;}
 #adsquare .sqtxt .l1{display:block;font:bold 13px Arial;margin-bottom:3px;}
 #adsquare .sqtxt .l2{display:block;font:bold 12px Georgia,'Times New Roman',serif;font-style:italic;line-height:1.3;margin-bottom:6px;}
 #adsquare .cta2{display:block;font:bold 20px 'Arial Black',Impact,Arial;letter-spacing:.5px;}
@@ -565,11 +558,11 @@ html,body{overflow:auto;}
   </div>
 
   <div id="stagearea">
-    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="sqimg"></div><div class="sqtxt"><b>MY DL<br>TRADE<br>A BOTTOM</b><span class="l1">I don't want to remarry.</span><span class="l2">I only want <i>a literal dork</i> to explain <i>chrome pendants</i> to me for over 4 hours</span><span class="cta2">CLICK HERE</span></div></div></div>
+    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="sqimg"></div><div class="sqtxt"><b>MY DL TRADE<br>A BOTTOM</b><span class="l1">I don't want to remarry.</span><span class="l2">I only want <i>a literal dork</i> to explain <i>chrome pendants</i> to me for over 4 hours</span><span class="cta2">CLICK HERE</span></div></div></div>
 
     <!-- ===== left: the two screens ===== -->
     <div id="left">
-      <div id="adbanner"><span class="adlbl2">Advertisement</span><div class="bn"><span class="nx">SEX</span> <span class="wx">LASTS</span> <span class="wx fr">FOR</span> <span class="nx">HOURS!</span><span class="jar"><span class="cap"></span><span class="gum">&#10084;</span></span><span class="nx clip">JUST CLICK</span></div></div>
+      <div id="adbanner"><span class="adlbl2">Advertisement</span><div class="bn"><div class="btxt"><span class="t1">Only 1 gummy</span><span class="t2">and my trade goes</span><span class="t3">ALL NIGHT!</span></div><img class="btri" src="assets/ad_tri.jpg" alt=""><img class="bpf" src="assets/ad_pf.jpg" alt=""><img class="bgum" src="assets/ad_gummy.jpg" alt=""></div></div>
       <div id="camrow">
         <div class="camcol" id="hcol">
           <div id="subject" class="box">
