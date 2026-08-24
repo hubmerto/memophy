@@ -180,7 +180,7 @@ a:hover{text-decoration:underline;}
 #chatbox{float:right;width:calc(50% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:238px;overflow-y:auto;padding:8px 14px 260px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog{height:238px;overflow-y:auto;padding:260px 14px 14px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
 #calllog .lyr{font:bold 21px Arial,Helvetica,sans-serif;line-height:1.35;margin:0 0 14px;color:#d9c2cf;
   -webkit-transition:color .35s,opacity .35s,-webkit-transform .35s;transition:color .35s,opacity .35s,transform .35s;
   -webkit-transform-origin:left center;transform-origin:left center;}
@@ -393,6 +393,9 @@ body{font-size:17px;}
 .crtrow label span{color:#b0006e;font-weight:bold;}
 #crtpanel{display:none;}
 #crtpanel.on{display:block;}
+/* while recording: pin the frame at top-left and lock scroll so nothing can move it out of the capture region */
+body.reccap{overflow:hidden !important;}
+body.reccap #wrap{position:fixed !important;top:0 !important;left:0 !important;margin:0 !important;box-shadow:none !important;}
 .blink{}
 #fileinput{display:none;}
 #hidden{display:none;}
@@ -1346,7 +1349,7 @@ setInterval(function(){
   l.appendChild(d);
   while(l.children.length>40) l.removeChild(l.firstChild);
   if(!L[3]) typeActiveRow(d.querySelector(".lt"), L);
-  lyrScrollTarget=Math.max(0, d.offsetTop - 34);
+  lyrScrollTarget=Math.max(0, d.offsetTop + d.offsetHeight - l.clientHeight + 14);  // sung line rides the BOTTOM, rises up
 }, 120);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
@@ -1835,11 +1838,12 @@ function startRecorder(){
     a.href=u; a.download=fname;
     a.style.display='inline-block'; a.innerHTML='&#11015; download recording ('+(b.size/1048576).toFixed(1)+' MB)';
     try{ var td=document.createElement('a'); td.href=u; td.download=fname; document.body.appendChild(td); td.click(); td.remove(); }catch(e){}
-    setRecStatus('saved Ã¢ÂÂ click download'); if(lab.stream){ lab.stream.getTracks().forEach(function(t){ t.stop(); }); lab.stream=null; } lab.rec=null;
+    setRecStatus('saved Ã¢ÂÂ click download'); if(lab.stream){ lab.stream.getTracks().forEach(function(t){ t.stop(); }); lab.stream=null; } lab.rec=null; document.body.classList.remove('reccap');
   };
+  document.body.classList.add('reccap'); window.scrollTo(0,0);
   lab.rec.start(250); setRecStatus('Ã¢ÂÂ recording');
 }
-function labStopRec(){ if(lab.rec && lab.rec.state!=='inactive') lab.rec.stop(); labPause(); setCount('&#9632;'); }
+function labStopRec(){ if(lab.rec && lab.rec.state!=='inactive') lab.rec.stop(); document.body.classList.remove('reccap'); labPause(); setCount('&#9632;'); }
 document.addEventListener('keydown', function(e){
   if(e.key==='F8'){ e.preventDefault(); acceptNext(); }
   if(e.key==='F10'){ e.preventDefault(); endCall(); }
