@@ -1160,9 +1160,9 @@ var MEM_LINES = [
 ];
 // per-caller connection quality: rolled fresh each time a guy connects
 var GPROFILES=[
-  {name:"good", pixw:400, fps:18, gapMin:14000, gapMax:26000, lenMin:500,  lenMax:1100},
-  {name:"ok",   pixw:320, fps:15, gapMin:6000,  gapMax:15000, lenMin:800,  lenMax:1800},
-  {name:"bad",  pixw:230, fps:11, gapMin:3500,  gapMax:8000,  lenMin:1200, lenMax:3000}
+  {name:"good", pixw:400, fps:18, gapMin:14000, gapMax:26000, lenMin:120,  lenMax:260},
+  {name:"ok",   pixw:320, fps:15, gapMin:5000,  gapMax:12000, lenMin:160,  lenMax:350},
+  {name:"bad",  pixw:230, fps:11, gapMin:2500,  gapMax:6500,  lenMin:200,  lenMax:600}
 ];
 var gProfile=GPROFILES[1];
 function rollProfile(){
@@ -1766,9 +1766,10 @@ var gBufReset=null;
     requestAnimationFrame(draw);
     var Pfps=Math.min(gProfile.fps, isMob?12:60);
     if(!buffering && t>nextStall && gvid.videoWidth && !gvid.paused){
-      setBuf(true);
-      setTimeout(function(){ setBuf(false); nextStall=performance.now()+gProfile.gapMin+Math.random()*(gProfile.gapMax-gProfile.gapMin); },
-                 gProfile.lenMin+Math.random()*(gProfile.lenMax-gProfile.lenMin));
+      var len=gProfile.lenMin+Math.random()*(gProfile.lenMax-gProfile.lenMin);
+      buffering=true;
+      if(len>600 && buf) buf.className='gbuffer on';   // spinner only on the rare long stall
+      setTimeout(function(){ setBuf(false); nextStall=performance.now()+gProfile.gapMin+Math.random()*(gProfile.gapMax-gProfile.gapMin); }, len);
     }
     if(buffering) return;                 // canvas holds the last frame = freeze
     if(t-last<1000/Pfps) return; last=t;
