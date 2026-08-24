@@ -94,12 +94,14 @@ button:disabled{opacity:.5;cursor:default;}
     <div class="row">
       <button class="prev" id="btnPrev_room">&#9202; ARM</button>
       <button class="rec" id="btnRec_room">&#9679; RENDER CHAT ROOM</button>
+      <button id="btnTab_room" title="opens the armed take alone in a tab — click in it to roll, screen-record it">&#8599; OPEN IN TAB</button>
     </div>
     <h3 style="margin-top:14px">Private show <span class="hint">(her screen + chat + ads)</span></h3>
     <div class="stage" id="stage_pshow"><div class="idle">arm to load the take</div></div>
     <div class="row">
       <button class="prev" id="btnPrev_pshow">&#9202; ARM</button>
       <button class="rec" id="btnRec_pshow">&#9679; RENDER PRIVATE SHOW</button>
+      <button id="btnTab_pshow" title="opens the armed take alone in a tab — click in it to roll, screen-record it">&#8599; OPEN IN TAB</button>
     </div>
     <h3 style="margin-top:16px">Recordings</h3>
     <div id="recs"></div>
@@ -166,6 +168,13 @@ function init(){
   $('btnPrev_pshow').onclick=function(){ previewTake('pshow'); };
   $('btnRec_room').onclick=function(){ recordTake('room'); };
   $('btnRec_pshow').onclick=function(){ recordTake('pshow'); };
+  function openTab(view){
+    var sp=takeSpec(); sp.view=view;
+    var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:sp.caller,clip:sp.clip,start:sp.start,zoomat:sp.zoomAt==null?'':sp.zoomAt,calin:sp.calIn==null?'':sp.calIn,len:sp.len==null?'':sp.len,view:view});
+    window.open((API||'')+'/index.html?'+q.toString(),'_blank');
+  }
+  $('btnTab_room').onclick=function(){ openTab('room'); };
+  $('btnTab_pshow').onclick=function(){ openTab('pshow'); };
   onCaller(); onClip(); refreshRecs();
 }
 

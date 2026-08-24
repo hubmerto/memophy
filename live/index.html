@@ -445,6 +445,7 @@ body{font-size:17px;}
 #inside{position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:5000;}   /* transparent so the UI shows through until her video grows to cover it (no black flash) */
 #inside video{width:100%;height:100%;object-fit:cover;display:block;}
 #inside{cursor:none;}   /* mouse vanishes once her screen takes over */
+body.inside, body.inside *{cursor:none !important;}
 #cursorglitch{position:fixed;z-index:6000;pointer-events:none;width:36px;height:36px;margin:-18px 0 0 -18px;image-rendering:pixelated;mix-blend-mode:screen;
   background:linear-gradient(90deg,#ff00d4 0 34%,transparent 0),linear-gradient(90deg,transparent 33%,#00fff2 0 67%,transparent 0),linear-gradient(90deg,transparent 66%,#faff00 0);
   -webkit-animation:curglitch .40s steps(7,end) forwards;animation:curglitch .40s steps(7,end) forwards;}
@@ -683,6 +684,46 @@ html,body{overflow:auto;}
 
 <input type="file" id="fileinput" accept="video/*" multiple>
 
+<script>
+/* offline-render virtual clock: page timers advance in take-time (33ms/frame), not wall time —
+   keeps chat, tips, hearts and typing at the show's real pace inside rendered mp4s */
+if(/[?&]renderjob/.test(location.search)){
+(function(){
+  var rt = { st: window.setTimeout.bind(window), si: window.setInterval.bind(window),
+             ct: window.clearTimeout.bind(window), ci: window.clearInterval.bind(window) };
+  window.__rt = rt;
+  var vnow = 0, seq = 1, q = {};   // id -> {at, fn, every}
+  window.setTimeout  = function(fn, ms){ var id=seq++; q[id]={at:vnow+(+ms||0), fn:fn, every:0}; return id; };
+  window.setInterval = function(fn, ms){ var id=seq++; var e=Math.max(1,+ms||1); q[id]={at:vnow+e, fn:fn, every:e}; return id; };
+  window.clearTimeout = window.clearInterval = function(id){ delete q[id]; };
+  window.__advanceVirtual = function(ms){
+    var target = vnow + ms;
+    for(var guard=0; guard<10000; guard++){
+      var bestId=null, bestAt=Infinity;
+      for(var id in q){ if(q[id].at<=target && q[id].at<bestAt){ bestAt=q[id].at; bestId=id; } }
+      if(bestId===null) break;
+      var t=q[bestId]; vnow=t.at;
+      if(t.every) t.at=vnow+t.every; else delete q[bestId];
+      try{ t.fn(); }catch(e){}
+    }
+    vnow = target;
+  };
+  // stepped CSS animations: pause everything and drive progress with negative delays per frame
+  var born = new WeakMap();
+  window.__cssAnimPass = function(takeT){
+    var els=document.body ? document.body.getElementsByTagName('*') : [];
+    for(var i=0;i<els.length;i++){
+      var el=els[i], cs;
+      try{ cs=getComputedStyle(el); }catch(e){ continue; }
+      if(!cs.animationName || cs.animationName==='none') continue;
+      var t0=born.get(el); if(t0===undefined){ t0=takeT; born.set(el,t0); }
+      el.style.animationPlayState='paused';
+      el.style.animationDelay=(-(takeT-t0)).toFixed(3)+'s';
+    }
+  };
+})();
+}
+</script>
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
             "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
@@ -1375,7 +1416,7 @@ setInterval(function(){
   var arr=LYRICS_BY_CLIP[name];
   if(!arr){ return; }
   if(name!==lyrClip){ lyrClip=name; lyrIdx=-1; renderLyricSheet(name); }
-  if(vid.paused) return;
+  if(vid.paused && !window._recjobMode) return;
   var t=vid.currentTime + 0.15;
   var idx=-1;
   for(var i=0;i<arr.length;i++){ if(t>=arr[i][0]) idx=i; else break; }
@@ -2149,7 +2190,7 @@ function herCenterDesign(){ var hs=document.getElementById('hstage'), wrap=docum
 function commitInside(){
   insideMode=true;
   if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
-  document.body.style.cursor='none';   // mouse stays hidden once her screen has taken over
+  document.body.style.cursor='none'; document.body.classList.add('inside');   // mouse gone once her screen takes over
   // capture her cam's CURRENT (zoomed) on-screen rect so the footage picks up exactly
   // where the dive left off — no hard cut / sudden jump into the video
   var hs=document.getElementById('hstage');
@@ -2210,7 +2251,7 @@ function exitInside(){
   if(layer && layer.parentNode) layer.parentNode.removeChild(layer);
   var w=document.getElementById('wrap'); if(w){ w.style.display=''; w.style.transition=''; w.style.opacity=''; }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='';
-  pressOn=false; window._diving=false; window._autoDive=false; window._autoZmax=null; window._herC=null; document.body.style.cursor=''; document.body.classList.remove('diving');
+  pressOn=false; window._diving=false; window._autoDive=false; window._autoZmax=null; window._herC=null; document.body.style.cursor=''; document.body.classList.remove('diving'); document.body.classList.remove('inside');
   zoomP=0; zoomTarget=0; applyZoom(0);
   try{ if(typeof rotateCaller==='function') rotateCaller(); }catch(e){}
 }
@@ -2359,7 +2400,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
                   fin(); };
                 gvid.addEventListener('seeked',gs);
                 try{ gvid.currentTime=R.calIn||0.001; }catch(e){ gs(); }
-                setTimeout(function(){ gvid.removeEventListener('seeked',gs); if(!rr.connected){ rr.connected=true; fin(); } },2500);
+                ((window.__rt&&window.__rt.st)||setTimeout)(function(){ gvid.removeEventListener('seeked',gs); if(!rr.connected){ rr.connected=true; fin(); } },2500);
               });
             }catch(e){}
           }
@@ -2377,12 +2418,13 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
             var sk=function(){ vid.removeEventListener('seeked',sk); fin(); };
             vid.addEventListener('seeked',sk);
             try{ vid.currentTime=R.start; }catch(e){ sk(); }
-            setTimeout(function(){ vid.removeEventListener('seeked',sk); fin(); },2500);   // safety
+            ((window.__rt&&window.__rt.st)||setTimeout)(function(){ vid.removeEventListener('seeked',sk); fin(); },2500);   // safety
           });
           vid.load();
         }
       });
     };
+    var rST=(window.__rt&&window.__rt.st)||window.setTimeout;
     function seekTo(v,t){
       return new Promise(function(res){
         t=Math.max(0,Math.min(t,(v.duration||1e9)-0.05));
@@ -2391,7 +2433,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
         var h=function(){ if(done) return; done=true; v.removeEventListener('seeked',h); res(); };
         v.addEventListener('seeked',h);
         try{ v.currentTime=t; }catch(e){ h(); }
-        setTimeout(h,900);
+        rST(h,900);
       });
     }
     window.__renderStep=function(t){
@@ -2423,6 +2465,8 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
             }
           }catch(e){}
         }
+        try{ if(window.__advanceVirtual) __advanceVirtual(1000/R.fps); }catch(e){}
+        try{ if(window.__cssAnimPass) __cssAnimPass(t); }catch(e){}
         Promise.all(ps).then(function(){
           requestAnimationFrame(function(){ requestAnimationFrame(function(){ res('ok'); }); });
         });
@@ -2473,6 +2517,13 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           window.addEventListener('message',function onGo(ev){
             if(ev.data && ev.data.memphyTake==='go'){ window.removeEventListener('message',onGo); showtime(calIdx, null); }
           });
+          if(window.parent===window){
+            // opened standalone (manual screen recording): any click or key rolls the take
+            var kick2=function(){ document.removeEventListener('pointerdown',kick2); document.removeEventListener('keydown',kick2); showtime(calIdx, null); };
+            document.addEventListener('pointerdown',kick2);
+            document.addEventListener('keydown',kick2);
+            document.title='ARMED — click to roll';
+          }
           return;
         }
         // 2) capture (auto-accepted by --auto-accept-this-tab-capture); retry until the window has focus
