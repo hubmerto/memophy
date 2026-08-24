@@ -46,11 +46,11 @@ body.pshow .cpane{bottom:56px;}
 /* #plyr overlay disabled — lyrics live in the transcript box under her screen */
 /* ===== PRIVATE SHOW view: her screen big, chat as sidebar ===== */
 body.pshow #gcol,body.pshow #callpanel,body.pshow #adstrip{display:none !important;}   /* no transcript — her screen + chat only */
-body.pshow #stagearea{position:relative;}
+
 body.pshow #left{width:calc(73% - 8px);}
 body.pshow #hcol{width:100%;margin-right:0;}
-body.pshow #hcol .camstage{height:calc(var(--fh) - 250px);}        /* her screen takes the full height */
-body.pshow #chatbox{position:absolute;top:0;right:0;float:none;width:27%;height:calc(var(--fh) - 470px);margin-top:0;}
+body.pshow #hcol .camstage{height:calc(var(--fh) - 178px);}        /* her screen takes the full height */
+body.pshow #chatbox{position:absolute;top:56px;right:0;float:none;width:27%;height:calc(var(--fh) - 334px);margin-top:0;}
 body.pshow #tabprivate{background:#fff;color:#ff3fa4;}
 /* google adsense link unit (period ~2009) */
 #adstrip{position:relative;margin:6px 0 2px;padding:4px 96px 4px 10px;background:#fff;border:1px solid #9CC1E7;white-space:nowrap;overflow:hidden;}
@@ -64,14 +64,17 @@ body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:1px s
   background:#ffe95c;background:-webkit-linear-gradient(top,#fff6a8,#ffd400);background:linear-gradient(to bottom,#fff6a8,#ffd400);
   font:bold 22px Impact,'Arial Black',Arial;color:#111;letter-spacing:.5px;}
 #adbanner .cta{color:#c00;text-decoration:blink;animation:adblink 1s steps(2) infinite;}
-#adsquare{position:absolute;right:0;top:calc(var(--fh) - 462px);width:27%;border:1px solid #9CC1E7;background:#fff;z-index:4;}
+body.pshow .ctab{font-size:12px;padding:0 8px;height:27px;line-height:27px;}
+body.pshow .ctabs .jp{display:none;}
+#adsquare{position:absolute;right:0;bottom:8px;width:27%;border:1px solid #9CC1E7;background:#fff;z-index:4;}
 body.pshow #adsquare{display:block;}
-#adsquare .sq{aspect-ratio:1/1;box-sizing:border-box;padding:26px 18px;text-align:center;
-  background:#d8f0ff;background:-webkit-linear-gradient(top,#f4fbff,#bfe2ff);background:linear-gradient(to bottom,#f4fbff,#bfe2ff);
-  font:bold 17px Arial;color:#123;line-height:1.6;}
-#adsquare .sq b{font:bold 26px Impact,'Arial Black',Arial;color:#b0006e;}
-#adsquare .cta{display:inline-block;margin-top:8px;padding:6px 16px;background:#2fa515;color:#fff;font:bold 15px Arial;animation:adblink 1.1s steps(2) infinite;}
-#adsquare .url{color:#007000;font:normal 12px Arial;}
+#adsquare .sq{height:258px;box-sizing:border-box;display:flex;background:#fff;}
+#adsquare .sqimg{width:44%;background:url('assets/memphy_girl.png') center 8%/170% no-repeat;background-color:#1a2a5e;border-right:2px solid #111;}
+#adsquare .sqtxt{flex:1;min-width:0;padding:10px 8px 8px;text-align:center;color:#000;font:bold 12px Arial;line-height:1.35;}
+#adsquare .sqtxt b{display:block;font:bold 30px 'Arial Black',Impact,Arial;line-height:.95;letter-spacing:-1px;margin-bottom:6px;}
+#adsquare .sqtxt .l1{display:block;font:bold 13px Arial;margin-bottom:3px;}
+#adsquare .sqtxt .l2{display:block;font:bold 12px Georgia,'Times New Roman',serif;font-style:italic;line-height:1.3;margin-bottom:6px;}
+#adsquare .cta2{display:block;font:bold 20px 'Arial Black',Impact,Arial;letter-spacing:.5px;}
 .adlbl2{position:absolute;right:4px;top:2px;font:normal 10px Arial;color:#6F6F6F;z-index:2;}
 @keyframes adblink{50%{opacity:.25;}}
 #pagetex{position:fixed;inset:0;pointer-events:none;z-index:2500;transition:opacity 1.1s ease;
@@ -553,7 +556,7 @@ html,body{overflow:auto;}
   </div>
 
   <div id="stagearea">
-    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><b>1 WEIRD PENDANT</b><br>Milano jewelers FURIOUS at this chrome trick<br><span class="cta">CLICK HERE &#9658;&#9658;</span><br><span class="url">www.memphy-pendants.co</span></div></div>
+    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="sqimg"></div><div class="sqtxt"><b>MY DL<br>TRADE<br>A BOTTOM</b><span class="l1">I don't want to remarry.</span><span class="l2">I only want <i>a literal dork</i> to explain <i>chrome pendants</i> to me for over 4 hours</span><span class="cta2">CLICK HERE</span></div></div></div>
 
     <!-- ===== left: the two screens ===== -->
     <div id="left">
@@ -665,6 +668,7 @@ html,body{overflow:auto;}
     <span class="labbtn rec" onclick="labArmRec()">&#9679; Rec &mdash; frame only, one click</span>
   </div>
   <div class="labrow"><b>Portal (hold her screen):</b>
+    <label style="font:bold 13px Arial"><input type="checkbox" id="pzOn"> enable zoom</label> &nbsp;
     zoom <input id="pzZoom" type="number" value="2.4" min="1.4" max="5" step="0.1" style="width:56px">
     speed <input id="pzSpeed" type="number" value="0.05" min="0.01" max="0.2" step="0.01" style="width:56px">
     fisheye <input id="pzFish" type="number" value="0.35" min="0" max="1" step="0.05" style="width:56px">
@@ -2215,6 +2219,7 @@ function exitInside(){
   // PRESS-AND-HOLD -> cursor-following loupe that keeps zooming; her screen enters her video, elsewhere just magnifies
   w.addEventListener('pointerdown', function(e){
     if(insideMode) return;
+    var pz=document.getElementById('pzOn'); if(!pz || !pz.checked) return;   // zoom stays inactive until armed in the lab
     if(!(e.button===0||e.pointerType!=='mouse')) return;
     var d=toDesign(e.clientX,e.clientY);
     mZ.x=d.x; mZ.y=d.y; mZ.sx=d.x; mZ.sy=d.y;
