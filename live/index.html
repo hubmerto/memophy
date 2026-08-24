@@ -1808,25 +1808,15 @@ function labStop(silent){
 function labArmRec(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ setRecStatus('screen capture not supported here'); return; }
   setRecStatus('pick what to captureÃ¢ÂÂ¦');
+  // reset any active zoom so the frame records straight, not mid-dive/skewed
+  try{ pressOn=false; window._diving=false; document.body.classList.remove('diving'); if(typeof zoomP!=='undefined'){ zoomP=0; if(typeof applyZoom==='function') applyZoom(0); } }catch(e){}
   var opts={ video:{frameRate:{ideal:30,max:30}}, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', surfaceSwitching:'exclude', monitorTypeSurfaces:'exclude' };
   navigator.mediaDevices.getDisplayMedia(opts).then(function(s){
     lab.recAuto=true; lab.stream=s;
     var vt=s.getVideoTracks()[0];
     vt.addEventListener('ended', function(){ if(lab.rec && lab.rec.state!=='inactive') lab.rec.stop(); });
-    // Region Capture: crop the recording to EXACTLY the 16:9 frame — no white padding, no lab,
-    // no browser chrome. You never have to line anything up or stay in place.
-    var target=document.getElementById('wrap');
-    var go=function(msg){ setRecStatus(msg||'armed - recording just the frame'); labPlay(true); };
-    try{
-      if(target && window.CropTarget && CropTarget.fromElement && vt.cropTo){
-        CropTarget.fromElement(target).then(function(ct){ return vt.cropTo(ct); })
-          .then(function(){ go('armed - frame cropped'); })
-          .catch(function(){ go('armed - (crop n/a, full tab)'); });
-      } else if(target && window.RestrictionTarget && RestrictionTarget.fromElement && vt.restrictTo){
-        RestrictionTarget.fromElement(target).then(function(rt){ return vt.restrictTo(rt); })
-          .then(function(){ go('armed - frame isolated'); }).catch(function(){ go(); });
-      } else { go('armed - (crop n/a, full tab)'); }
-    }catch(e){ go(); }
+    // record the tab straight — both cams as they play; no region-capture crop (that came out crooked)
+    setRecStatus('armed - recording both screens'); labPlay(true);
   }).catch(function(){ setRecStatus('capture cancelled'); });
 }
 function startRecorder(){
