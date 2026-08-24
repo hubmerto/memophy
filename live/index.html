@@ -378,6 +378,21 @@ body{font-size:17px;}
 
 #inside{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:5000;}
 #inside video{width:100%;height:100%;object-fit:cover;display:block;}
+/* ===== CRT overlay layers (children of #wrap, clipped to the 16:9 frame) ===== */
+.crtl{position:absolute;inset:0;pointer-events:none;z-index:1400;}
+#crtScan{mix-blend-mode:multiply;}
+#crtMask{mix-blend-mode:multiply;}
+#crtVig{mix-blend-mode:multiply;}
+#crtRoll{mix-blend-mode:screen;}
+#crtLeak{mix-blend-mode:screen;}
+#crtGrain{mix-blend-mode:overlay;}
+#crtFlick{background:#000;mix-blend-mode:multiply;}
+#crtGrain canvas{width:100%;height:100%;display:block;}
+.crtrow input[type=range]{vertical-align:middle;width:98px;}
+.crtrow label{display:inline-block;margin:0 12px 6px 0;font:bold 12px Arial;white-space:nowrap;}
+.crtrow label span{color:#b0006e;font-weight:bold;}
+#crtpanel{display:none;}
+#crtpanel.on{display:block;}
 .blink{}
 #fileinput{display:none;}
 #hidden{display:none;}
@@ -588,6 +603,13 @@ html,body{overflow:auto;}
     fisheye <input id="pzFish" type="number" value="0.35" min="0" max="1" step="0.05" style="width:56px">
     <a id="labDl" href="#">download</a>
   </div>
+  <div class="labrow"><b>CRT / video FX (over the whole UI):</b>
+    <label style="font:bold 13px Arial"><input type="checkbox" id="crtOn"> ON</label>
+    &nbsp; look <select id="crtPreset" style="font:bold 12px Arial"></select>
+    &nbsp; intensity <input id="crtAmt" type="range" min="0" max="1" step="0.01" value="1" style="width:120px;vertical-align:middle">
+    <span style="color:#888;font-weight:normal">— fades out as you dive into her cam</span>
+  </div>
+  <div id="crtpanel" class="labrow"></div>
   <div class="labrow big"><span id="labCount">&mdash;</span><span id="labElapsed">00:00.0</span><span id="labRecStatus"></span></div>
   <div class="labrow tips">Drop videos on either cam (top) and they appear in the dropdowns. Play resets both cams, counts 3-2-1 with beeps, then starts each clip at its time. Rec asks Chrome which screen/tab to capture (pick <b>This Tab</b>), then runs the same countdown and saves a .webm of the chosen length. Hotkeys: F8 accept &middot; F9 skip &middot; F10 end &middot; <code>?nogate&amp;nopop</code> for clean takes.</div>
 </div>
@@ -596,6 +618,22 @@ html,body{overflow:auto;}
   <filter id="fisheyeF" x="0" y="0" width="100%" height="100%" primitiveUnits="objectBoundingBox">
     <feImage id="fimg" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/>
     <feDisplacementMap id="fdisp" in="SourceGraphic" in2="map" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+  <!-- CRT geometry+chroma+bloom (curvature via same radial map, RGB split, glow) -->
+  <filter id="crtGeo" x="-6%" y="-6%" width="112%" height="112%" color-interpolation-filters="sRGB">
+    <feImage id="crtMapImg" x="0" y="0" width="100%" height="100%" preserveAspectRatio="none" result="cmap"/>
+    <feDisplacementMap id="crtDisp" in="SourceGraphic" in2="cmap" scale="0" xChannelSelector="R" yChannelSelector="G" result="warp"/>
+    <feGaussianBlur id="crtBleed" in="warp" stdDeviation="0" result="warpB"/>
+    <feOffset id="crtAberR" in="warpB" dx="0" dy="0" result="oR"/>
+    <feColorMatrix in="oR" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cR"/>
+    <feOffset id="crtAberB" in="warpB" dx="0" dy="0" result="oB"/>
+    <feColorMatrix in="oB" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="cB"/>
+    <feColorMatrix in="warpB" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="cG"/>
+    <feBlend in="cR" in2="cG" mode="screen" result="rg"/>
+    <feBlend in="rg" in2="cB" mode="screen" result="rgb"/>
+    <feGaussianBlur id="crtBloom" in="rgb" stdDeviation="0" result="bloom"/>
+    <feComponentTransfer in="bloom" result="bloomBright"><feFuncA id="crtBloomA" type="linear" slope="0"/></feComponentTransfer>
+    <feBlend in="rgb" in2="bloomBright" mode="screen"/>
   </filter>
 </svg>
 <input type="file" id="fileinput" accept="video/*" multiple>
@@ -1972,7 +2010,7 @@ function portalParams(){
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
-  if(p<=0){ w.style.transform=''; w.style.willChange=''; w.style.filter=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); return; }
+  if(p<=0){ w.style.transform=''; w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
   var S=1+p*(PORTAL.zmax-1);
   // her cam center stays pinned, gliding to the viewport center as we dive
   var tx=(zc.cx - zc.cx*S) + (zc.vx - zc.cx)*p;
@@ -1985,8 +2023,10 @@ function applyZoom(p){
   if(fd){
     var amt = p*PORTAL.fish*0.12;
     fd.setAttribute('scale', String(amt));
-    w.style.filter = amt>0.004 ? 'url(#fisheyeF)' : '';
+    window._portalFish = amt;
   }
+  if(typeof updateCRT==='function') updateCRT();   // CRT fades as the dive deepens
+  composeWrapFilter();
 }
 function ensureZoomLoop(){
   if(zoomAnim) return;
@@ -2055,6 +2095,179 @@ function exitInside(){
   addEventListener('pointercancel', endZoom);
   addEventListener('blur', endZoom);
 })();
+
+/* ===================== CRT / VIDEO FX over the whole UI ===================== */
+window._portalFish = window._portalFish || 0;
+window._crtGeoStr = ''; window._crtColorStr = '';
+function composeWrapFilter(){
+  var w=document.getElementById('wrap'); if(!w) return;
+  var parts=[];
+  if(window._crtGeoStr) parts.push(window._crtGeoStr);
+  if(window._crtColorStr) parts.push(window._crtColorStr);
+  if(window._portalFish>0.004) parts.push('url(#fisheyeF)');
+  w.style.filter = parts.join(' ');
+}
+(function(){
+  // crt-lab control set (key,label,min,max,step,default) — the DOM-reproducible effects
+  var GROUPS=[
+    ['Geometry',[['curv','curvature',0,1,.01,.35],['corner','corner',0,.5,.01,.12],['vig','vignette',0,1,.01,.5]]],
+    ['Signal',[['scan','scanlines',0,1,.01,.45],['scanCount','line count',60,700,1,300],['bleed','bleed',0,6,.05,1],['aber','aberration',0,6,.05,1.2]]],
+    ['Mask',[['maskInt','mask',0,1,.01,.5],['maskScale','triad',1,16,.5,2]]],
+    ['Glow',[['glow','glow',0,1.5,.01,.35],['glowSize','radius',1,6,.1,3]]],
+    ['Damage',[['noise','noise',0,1,.01,.06],['flicker','flicker',0,1,.01,.05],['jitter','jitter',0,1,.01,0],['roll','roll bar',0,1,.01,.1],['track','vhs track',0,1,.01,0]]],
+    ['Film',[['grain','grain',0,1,.01,0],['leak','light leak',0,1,.01,0],['burn','film burn',0,1,.01,0],['dust','dust',0,1,.01,0]]],
+    ['Color',[['bright','bright',.3,1.8,.01,1.05],['contrast','contrast',.5,1.8,.01,1.05],['sat','sat',0,2.2,.01,1.1],['tint','warm/cool',-1,1,.01,0]]]
+  ];
+  var DEF={maskType:0}; GROUPS.forEach(function(g){g[1].forEach(function(p){DEF[p[0]]=p[5];});});
+  var PRESETS={
+    'Clean (off)':{scan:0,maskInt:0,glow:0,aber:0,curv:0,vig:0,noise:0,flicker:0,roll:0,bleed:0,bright:1,contrast:1,sat:1,tint:0,grain:0,leak:0,burn:0,dust:0,corner:0,track:0,jitter:0},
+    'CRT default':{},
+    'Arcade':{curv:.55,scan:.6,scanCount:240,maskInt:.65,maskScale:3,glow:.5,glowSize:3.5,aber:1.5,bleed:1.5,flicker:.08,roll:.15,vig:.65,corner:.18,sat:1.25,bright:1.1},
+    'Video game':{curv:.5,scan:.55,scanCount:220,maskInt:.6,maskScale:3,glow:.55,glowSize:3.5,aber:1.4,bleed:1,sat:1.35,vig:.6,corner:.16,bright:1.1},
+    'Broken':{curv:.45,scan:.5,jitter:.8,noise:.35,flicker:.5,roll:.6,aber:3.5,bleed:2,glow:.4,vig:.6,corner:.15,contrast:1.15},
+    'Monitor 1980s':{curv:.6,scan:.55,scanCount:220,maskInt:.55,maskScale:2.5,glow:.45,aber:2,bleed:2.5,noise:.12,flicker:.12,roll:.25,vig:.7,corner:.2,sat:.9,tint:.35,bright:.95},
+    'Monitor 1990s':{curv:.4,scan:.45,scanCount:320,maskInt:.5,maskScale:2,glow:.3,aber:1,bleed:1.2,noise:.07,flicker:.06,roll:.08,vig:.55,corner:.14},
+    'Monitor 2000s':{curv:.15,scan:.3,scanCount:420,maskInt:.4,maskScale:1.5,glow:.2,aber:.5,bleed:.6,noise:.04,flicker:.03,roll:0,vig:.35,corner:.08},
+    'Degraded':{curv:.5,scan:.4,bleed:4,glow:.5,glowSize:4.5,noise:.2,aber:2.5,sat:.8,bright:.9,flicker:.15,vig:.75,corner:.16},
+    'Rave':{curv:.4,scan:.5,sat:1.9,glow:.8,glowSize:3,aber:2.5,contrast:1.2,flicker:.1,maskInt:.5,vig:.5,corner:.14},
+    'Tired':{curv:.45,scan:.4,tint:.8,bright:.8,sat:.75,glow:.3,noise:.08,vig:.8,corner:.16},
+    'Webrip':{curv:.1,scan:.25,scanCount:420,maskInt:.3,maskScale:1.5,glow:.25,aber:.4,bleed:.5,noise:.04,corner:.06,vig:.3,roll:0,flicker:.02},
+    'Super 8':{grain:.7,dust:.6,leak:.35,burn:.35,scan:0,maskInt:0,curv:.04,corner:.05,vig:.65,tint:.45,sat:.85,glow:.25,bleed:.5,aber:.3,noise:0,roll:0,flicker:.09,bright:1.05,contrast:1.1},
+    'VHS 1994':{track:.7,jitter:.15,noise:.1,bleed:2.5,aber:1.8,sat:.85,scan:.3,scanCount:240,curv:.35,roll:.12,vig:.55,corner:.14,tint:.15,flicker:.06}
+  };
+  var P={}; for(var k in DEF) P[k]=DEF[k];
+  var crtOn=false, crtAmt=1, inputs={};
+
+  function clone(o){var r={};for(var k in DEF)r[k]=DEF[k];for(var k2 in o)r[k2]=o[k2];return r;}
+
+  // radial displacement map for barrel curvature (shared by crtGeo)
+  (function buildMap(){
+    try{
+      var c=document.createElement('canvas');c.width=c.height=256;var x=c.getContext('2d'),im=x.createImageData(256,256);
+      for(var j=0;j<256;j++)for(var i=0;i<256;i++){
+        var nx=(i-128)/128,ny=(j-128)/128,r=Math.sqrt(nx*nx+ny*ny);
+        var k=r*r;                       // barrel: push outward, growing to the edges
+        var o=(j*256+i)*4;
+        im.data[o]=Math.round(128+nx*k*127);
+        im.data[o+1]=Math.round(128+ny*k*127);
+        im.data[o+2]=128;im.data[o+3]=255;
+      }
+      x.putImageData(im,0,0);var u=c.toDataURL();
+      var mi=document.getElementById('crtMapImg');
+      if(mi){mi.setAttribute('href',u);mi.setAttributeNS('http://www.w3.org/1999/xlink','xlink:href',u);}
+    }catch(e){}
+  })();
+
+  var LAYERS=['crtVig','crtMask','crtScan','crtRoll','crtLeak','crtGrain','crtFlick'];
+  var grainCv,grainCtx;
+  function ensureLayers(){
+    var w=document.getElementById('wrap'); if(!w||document.getElementById('crtScan')) return;
+    LAYERS.forEach(function(id){var d=document.createElement('div');d.className='crtl';d.id=id;w.appendChild(d);});
+    grainCv=document.createElement('canvas');document.getElementById('crtGrain').appendChild(grainCv);grainCtx=grainCv.getContext('2d');
+  }
+
+  function lerp(a,b,t){return a+(b-a)*t;}
+
+  function updateCRT(){
+    ensureLayers();
+    var zp=(typeof zoomP!=='undefined')?zoomP:0;
+    var zk=1-Math.min(1,zp*1.7); if(zk<0)zk=0;         // effects melt away as the dive deepens
+    var m=(crtOn?1:0)*crtAmt*zk;
+    // --- SVG geo/chroma/bloom ---
+    var disp=document.getElementById('crtDisp'), bleed=document.getElementById('crtBleed'),
+        aR=document.getElementById('crtAberR'), aB=document.getElementById('crtAberB'),
+        bloom=document.getElementById('crtBloom'), bloomA=document.getElementById('crtBloomA');
+    if(disp) disp.setAttribute('scale', String(P.curv*46*m));
+    if(bleed) bleed.setAttribute('stdDeviation', String(P.bleed*0.5*m));
+    if(aR){var a=P.aber*m; aR.setAttribute('dx',String(a)); aB.setAttribute('dx',String(-a));}
+    if(bloom) bloom.setAttribute('stdDeviation', String(P.glowSize*m));
+    if(bloomA) bloomA.setAttribute('slope', String(P.glow*m));
+    window._crtGeoStr = (m>0 && (P.curv>0||P.aber>0||P.bleed>0||P.glow>0)) ? 'url(#crtGeo)' : '';
+    // --- color grade ---
+    if(m>0){
+      var br=lerp(1,P.bright,m),co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
+      var warm=tn>=0?tn:0, cool=tn<0?-tn:0;
+      window._crtColorStr='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')'
+        + (warm>0?(' sepia('+(warm*0.5).toFixed(3)+') hue-rotate('+(-12*warm).toFixed(1)+'deg)'):'')
+        + (cool>0?(' hue-rotate('+(200*cool).toFixed(1)+'deg) saturate('+(1+0.15*cool).toFixed(3)+')'):'');
+    } else window._crtColorStr='';
+    composeWrapFilter();
+    // --- overlay layers ---
+    var w=document.getElementById('wrap'); var H=w?w.clientHeight:900;
+    var vg=document.getElementById('crtVig');
+    if(vg){ var inner=Math.max(8,62-P.corner*90); vg.style.background='radial-gradient(ellipse '+ (108-P.corner*30) +'% '+(108-P.corner*30)+'% at 50% 50%, transparent '+inner+'%, rgba(0,0,0,'+(0.9*P.vig)+') 100%)'; vg.style.opacity=m; }
+    var mk=document.getElementById('crtMask');
+    if(mk){ var t=Math.max(1,P.maskScale); mk.style.background='repeating-linear-gradient(90deg, rgba(255,0,60,'+P.maskInt+') 0 '+t+'px, rgba(0,255,120,'+P.maskInt+') '+t+'px '+(2*t)+'px, rgba(40,80,255,'+P.maskInt+') '+(2*t)+'px '+(3*t)+'px)'; mk.style.opacity=m*0.9; }
+    var sc=document.getElementById('crtScan');
+    if(sc){ var per=Math.max(2,Math.round(H/Math.max(60,P.scanCount))); sc.style.background='repeating-linear-gradient(to bottom, rgba(0,0,0,0.9) 0 1px, transparent 1px '+per+'px)'; sc.style.opacity=m*P.scan; }
+    var rl=document.getElementById('crtRoll');
+    if(rl){ rl.style.background='linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.10) 46%, rgba(255,255,255,0.16) 50%, transparent 54%)'; rl.style.opacity=m*Math.max(P.roll,P.track*0.6); rl.style.animation=(rl.style.opacity>0? 'crtRollA '+(2.6-P.roll*1.6).toFixed(2)+'s linear infinite':'none'); }
+    var lk=document.getElementById('crtLeak');
+    if(lk){ var li=Math.max(P.leak,P.burn); lk.style.background='radial-gradient(circle at 84% 12%, rgba(255,170,80,'+(0.6*li)+') 0%, transparent 42%), radial-gradient(circle at 12% 92%, rgba(255,90,40,'+(0.4*P.burn)+') 0%, transparent 40%)'; lk.style.opacity=m; }
+    var fl=document.getElementById('crtFlick'); if(fl){ fl.style.opacity=0; } // driven per-frame in loop
+    // --- animated bits ---
+    var wantLoop = crtOn && m>0 && (P.noise>0||P.grain>0||P.dust>0||P.jitter>0||P.flicker>0);
+    if(wantLoop) startFxLoop(); else stopFxLoop();
+    if(!wantLoop && w) w.style.transform=w.style.transform.replace(/ crtj\([^)]*\)/,''); // (no-op guard)
+  }
+  window.updateCRT=updateCRT;
+
+  var fxRAF=null;
+  function startFxLoop(){ if(fxRAF) return; var tick=function(){ fxRAF=requestAnimationFrame(tick); drawFx(); }; fxRAF=requestAnimationFrame(tick); }
+  function stopFxLoop(){ if(fxRAF){cancelAnimationFrame(fxRAF);fxRAF=null;} if(grainCtx&&grainCv) grainCtx.clearRect(0,0,grainCv.width,grainCv.height); var g=document.getElementById('crtGrain'); if(g)g.style.opacity=0; var fl=document.getElementById('crtFlick'); if(fl)fl.style.opacity=0; }
+  function drawFx(){
+    var zp=(typeof zoomP!=='undefined')?zoomP:0; var zk=1-Math.min(1,zp*1.7); if(zk<0)zk=0; var m=(crtOn?1:0)*crtAmt*zk;
+    var g=document.getElementById('crtGrain'); if(grainCv&&g){
+      var W=Math.max(2,Math.floor((grainCv.parentNode.clientWidth||640)/3)), Hh=Math.max(2,Math.floor((grainCv.parentNode.clientHeight||360)/3));
+      if(grainCv.width!==W){grainCv.width=W;grainCv.height=Hh;}
+      var amt=Math.max(P.noise,P.grain); var im=grainCtx.createImageData(W,Hh),d=im.data;
+      for(var i=0;i<d.length;i+=4){var v=Math.random()*255;d[i]=d[i+1]=d[i+2]=v;d[i+3]=255;}
+      // dust specks
+      if(P.dust>0){var n=Math.floor(P.dust*W*Hh*0.004);for(var s=0;s<n;s++){var px=(Math.floor(Math.random()*W*Hh))*4;d[px]=d[px+1]=d[px+2]=Math.random()<0.5?255:0;}}
+      grainCtx.putImageData(im,0,0); g.style.opacity=Math.min(0.85, amt*m*0.9);
+    }
+    var fl=document.getElementById('crtFlick'); if(fl){ fl.style.opacity = P.flicker>0 ? (Math.random()*P.flicker*0.5*m) : 0; }
+    var w=document.getElementById('wrap');
+    if(w && P.jitter>0 && (typeof zoomP==='undefined'||zoomP<0.02)){ var jx=(Math.random()-0.5)*P.jitter*6*m, jy=(Math.random()-0.5)*P.jitter*3*m; w.style.transform='translate('+jx.toFixed(1)+'px,'+jy.toFixed(1)+'px)'; }
+  }
+
+  // ---- lab panel ----
+  function buildPanel(){
+    var host=document.getElementById('crtpanel'); if(!host||host.dataset.built) return; host.dataset.built='1';
+    GROUPS.forEach(function(g){
+      var row=document.createElement('div'); row.className='crtrow'; row.style.margin='4px 0';
+      var h=document.createElement('b'); h.textContent=g[0]+':  '; h.style.cssText='color:#b0006e;margin-right:8px'; row.appendChild(h);
+      g[1].forEach(function(p){
+        var lab=document.createElement('label'); var val=document.createElement('span');
+        var inp=document.createElement('input'); inp.type='range'; inp.min=p[1]<0?p[1]:p[2]; // placeholder
+        inp.min=p[2]; inp.max=p[3]; inp.step=p[4]; inp.value=P[p[0]];
+        val.textContent=(+P[p[0]]).toFixed(p[4]<1?2:0);
+        inp.addEventListener('input',function(){ P[p[0]]=parseFloat(inp.value); val.textContent=(+inp.value).toFixed(p[4]<1?2:0); updateCRT(); });
+        inputs[p[0]]=inp;
+        lab.appendChild(document.createTextNode(p[1]+' ')); lab.appendChild(inp); lab.appendChild(document.createTextNode(' ')); lab.appendChild(val);
+        row.appendChild(lab);
+      });
+      host.appendChild(row);
+    });
+  }
+  function syncInputs(){ for(var k in inputs){ if(inputs[k]){ inputs[k].value=P[k]; var sp=inputs[k].parentNode.querySelector('span'); if(sp) sp.textContent=(+P[k]).toFixed((''+inputs[k].step).indexOf('.')<0?0:2);} } }
+
+  function init(){
+    var sel=document.getElementById('crtPreset'); var on=document.getElementById('crtOn'); var amt=document.getElementById('crtAmt'); var pan=document.getElementById('crtpanel');
+    if(!sel||!on) return;
+    Object.keys(PRESETS).forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
+    sel.value='CRT default';
+    buildPanel();
+    on.addEventListener('change',function(){ crtOn=on.checked; if(pan)pan.className='labrow'+(crtOn?' on':''); updateCRT(); });
+    amt.addEventListener('input',function(){ crtAmt=parseFloat(amt.value); updateCRT(); });
+    sel.addEventListener('change',function(){ P=clone(PRESETS[sel.value]||{}); syncInputs(); updateCRT(); });
+    updateCRT();
+  }
+  if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
+})();
+
+/* roll-bar keyframes */
+(function(){ if(document.getElementById('crtKF'))return; var st=document.createElement('style'); st.id='crtKF'; st.textContent='@keyframes crtRollA{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}'; document.head.appendChild(st); })();
 
 </script>
 </body>
