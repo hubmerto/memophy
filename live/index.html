@@ -34,12 +34,15 @@ a:hover{text-decoration:underline;}
 .rt{float:right;}
 #framewrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#fff;}   /* locked 16:9, no padding */
 #wrap{position:absolute;top:0;left:0;width:1280px;height:720px;padding:0;overflow:hidden;box-sizing:border-box;transform-origin:0 0;background:#fff;}
-/* permanent page texture — scanlines + phosphor grille baked into the UI (not a toggle/mask) */
-#pagetex{position:absolute;inset:0;pointer-events:none;z-index:1460;transition:opacity 1.1s ease;
+/* permanent page texture — scanlines + phosphor grille, ALWAYS on (login too), a fixed screen texture */
+#pagetex{position:fixed;inset:0;pointer-events:none;z-index:2500;transition:opacity 1.1s ease;
   background-image:
     repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0px, rgba(0,0,0,.06) 1px, transparent 1px, transparent 3px),
     repeating-linear-gradient(90deg, rgba(255,40,90,.055) 0px, rgba(40,255,120,.055) 1.5px, rgba(60,90,255,.055) 3px, transparent 4.5px);}
-body.diving #pagetex{opacity:0;}   /* fades off slowly as her screen takes over */
+body.diving #pagetex{opacity:0;}   /* the ONLY time it fades: her screen taking over */
+/* the overlays ON her cam fade out as her screen takes over (not a sudden disappear) */
+.hearts,.wmark,.livebadge,.tiptotal{transition:opacity .9s ease;}
+body.diving .hearts,body.diving .wmark,body.diving .livebadge,body.diving .tiptotal{opacity:0;}
 
 /* pink tab-style buttons (reference: cam-site tabs, made pink) */
 .pbtn,.tab,.ctab,.cbtn,#callsend,#chatsend,#tokenbar .tipbtn,#tabs .rt a.nxt,#mpop .go,#gate .enter,#gate .exit,.bigbtn{
@@ -487,9 +490,9 @@ html,body{overflow:auto;}
   </div>
 </div>
 
+<div id="pagetex" aria-hidden="true"></div>
 <div id="framewrap">
 <div id="wrap">
-  <div id="pagetex" aria-hidden="true"></div>
 
   <!-- ================= logo row + tab strip (her site only) ================= -->
   <div id="tabs">
@@ -2062,6 +2065,7 @@ function loopStep(){
   var onHer = !!window._overHer;
   if(pressOn && onHer) window._autoDive=true;              // once you zoom ON her screen, the transition takes over automatically
   var auto = !!window._autoDive;
+  if(auto) document.body.style.cursor='none';              // mouse disappears the moment we start transitioning into her frame
   var goHer = auto || onHer;
   window._commitAllowed = goHer;
   var target = (pressOn || auto) ? 1 : 0;                  // auto keeps diving smoothly even after you release — no over-zooming needed
@@ -2072,7 +2076,9 @@ function loopStep(){
   zc.vx += (dx-zc.vx)*0.12; zc.vy += (dy-zc.vy)*0.12;
   var sp = auto ? 0.022 : PORTAL.speed;                    // auto takeover eases in slowly and smoothly
   zoomP += (target-zoomP)*sp;
-  if(goHer && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
+  // commit once her cam fills the frame height (S~1.7); her video then GROWS the last bit to fill width
+  // — one continuous camera move into her frame, no separate takeover
+  if(goHer && auto && zoomP>0.52){ zoomAnim=null; commitInside(); return; }
   applyZoom(zoomP);
   if(!pressOn && !auto && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
   zoomAnim=requestAnimationFrame(loopStep);
@@ -2090,12 +2096,7 @@ function herCenterDesign(){ var hs=document.getElementById('hstage'), wrap=docum
 function commitInside(){
   insideMode=true;
   if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
-  document.body.style.cursor='none';   // hide the OS cursor everywhere once her screen takes over
-  // mouse vanishes in a fast pixelated glitch as her screen takes over
-  try{ var lp=window._lastPtr||{x:window.innerWidth/2,y:window.innerHeight/2};
-    var g=document.createElement('div'); g.id='cursorglitch'; g.style.left=lp.x+'px'; g.style.top=lp.y+'px';
-    document.body.appendChild(g); setTimeout(function(){ if(g.parentNode) g.parentNode.removeChild(g); }, 460);
-  }catch(e){}
+  document.body.style.cursor='none';   // mouse stays hidden once her screen has taken over
   // capture her cam's CURRENT (zoomed) on-screen rect so the footage picks up exactly
   // where the dive left off — no hard cut / sudden jump into the video
   var hs=document.getElementById('hstage');
@@ -2161,7 +2162,7 @@ function exitInside(){
     window._diving=true; document.body.classList.add('diving');   // CRT fades off slowly as the zoom deepens
     startLoop();
   });
-  var release=function(){ pressOn=false; window._diving=false; document.body.classList.remove('diving'); };
+  var release=function(){ pressOn=false; window._diving=false; document.body.classList.remove('diving'); if(!window._autoDive && !insideMode) document.body.style.cursor=''; };
   addEventListener('pointerup', release);
   addEventListener('pointercancel', release);
   addEventListener('blur', release);
