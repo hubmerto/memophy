@@ -22,7 +22,8 @@
 /* ============ MEMPHY.TV Ã¢ÂÂ cam-site register ÃÂ· two equal screens ÃÂ· pink tab buttons ÃÂ· EN + Ã£ÂÂ©Ã£ÂÂ³Ã£ÂÂÃ£ÂÂ Ã¦ÂÂ¥Ã¦ÂÂ¬Ã¨ÂªÂ ============ */
 :root{--fw:100vw;--fh:100vh;}
 html,body{margin:0;padding:0;height:100%;}
-body{overflow:auto;background:#fff;font:bold 14px Arial,Helvetica,sans-serif;color:#222;}
+body{overflow:auto;background:#fff;font:bold 14px Arial,Helvetica,sans-serif;color:#222;-webkit-user-select:none;-moz-user-select:none;user-select:none;-webkit-touch-callout:none;}
+input,textarea,select{-webkit-user-select:text;-moz-user-select:text;user-select:text;}
 ::-webkit-scrollbar{width:12px;height:12px;}
 ::-webkit-scrollbar-track{background:#fdf2f8;}
 ::-webkit-scrollbar-thumb{background:#f6c2df;border:2px solid #fdf2f8;border-radius:6px;}
@@ -50,8 +51,8 @@ a:hover{text-decoration:underline;}
 @keyframes logobreathe{0%,100%{transform:scale(0.94);}50%{transform:scale(1.04);}}
 
 /* ---- tab strip ---- */
-#tabs{height:44px;border-bottom:1px solid #e8a3c8;position:relative;margin-top:4px;padding-left:210px;box-sizing:border-box;}
-.tab{float:left;height:36px;line-height:36px;margin-top:7px;padding:0 18px;margin-right:5px;font:bold 15px Arial;border-bottom:none;border-radius:6px 6px 0 0;}
+#tabs{height:44px;border-bottom:1px solid #e8a3c8;position:relative;margin-top:4px;padding:0 122px 0 184px;box-sizing:border-box;white-space:nowrap;overflow:hidden;}
+.tab{display:inline-block;float:none;vertical-align:top;height:36px;line-height:36px;margin-top:7px;padding:0 11px;margin-right:3px;font:bold 14px Arial;border-bottom:none;border-radius:6px 6px 0 0;}
 .jp{font-weight:bold;color:#ff2ea6;-webkit-text-stroke:2px #ffe600;paint-order:stroke fill;text-shadow:-2px -2px 0 #ffe600,2px -2px 0 #ffe600,-2px 2px 0 #ffe600,2px 2px 0 #ffe600,0 0 6px rgba(255,230,0,.9);letter-spacing:.5px;}
 .tab .jp{font-size:13px;margin-left:4px;text-transform:none;}
 .tab.me{background:#fff;color:#ff3fa4;font:bold italic 22px "Brush Script MT","Snell Roundhand","Comic Sans MS",cursive;text-transform:none;height:34px;position:relative;top:1px;border-bottom:1px solid #fff;padding:0 22px;text-shadow:0 1px 0 #ffd6ec;box-shadow:none;}
