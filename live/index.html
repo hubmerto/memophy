@@ -179,7 +179,7 @@ a:hover{text-decoration:underline;}
 #chatbox{float:right;width:calc(50% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:238px;overflow-y:auto;padding:104px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;scroll-behavior:smooth;}
+#calllog{height:238px;overflow-y:auto;padding:104px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
 #calllog div{-webkit-animation:lyrup .38s ease-out;animation:lyrup .38s ease-out;}
 @-webkit-keyframes lyrup{from{opacity:0;-webkit-transform:translateY(16px);}to{opacity:1;-webkit-transform:none;}}
 @keyframes lyrup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
@@ -1224,21 +1224,29 @@ function rollProfile(){
   if(typeof gBufReset==="function") gBufReset();
 }
 // ---- GO ALL NIGHT: lyric-video transcript — each clip has its own exact timeline ----
-var LYRICS_BY_CLIP={"memphy_01.mp4":[[10.472,"All of you"],[12.972,"You want it too"],[19.372,"(one, two)",1],[23.172,"I see it through, let's make a move"],[31.372,"We keep the groove, it fits us 2"],[37.972,"Dancing to the sound of you, you, you (of you, of you…)"],[45.272,"Lalalalalalalala"],[52.272,"Lalalalalalalala"],[59.272,"Lalalalalalalala"],[66.172,"Lalalalalalalala"],[69.972,"Lalalalalalalala"],[72.872,"Mini skirt, I'm such a flirt"],[79.372,"Take off the shirt, get straight to work"],[86.872,"I make it hurt, you go bezerk"],[93.872,"I put it down, flip and reverse"],[97.372,"(reverse, reverse, reverse, reverse)",1],[101.072,"Take your jeans off, we can go all night"],[107.972,"Take your jeans off, we can go all night"],[114.872,"Take your jeans off, we can go all night"],[121.772,"Take your jeans off, we can go all night"],[128.672,"Take your jeans off, we can go all night"],[135.572,"Take your jeans off, we can go all night"],[141.572,"All night, all night"],[148.772,"All night, all night"],[155.672,"(break — on me, on me, on me…)",1],[169.772,"T-T-Take your jeans off, we can go all night"],[177.472,"Take your jeans off, we can go all night"],[184.572,"Take your jeans off, we can go all night"],[191.472,"Take your jeans off, we can go all night"],[198.472,"(outro)",1],[211.172,"You"]],"memphy_02.mp4":[[0.441,"Take your jeans off, we can go all night"],[7.341,"Take your jeans off, we can go all night"],[14.241,"Take your jeans off, we can go all night"],[21.141,"Take your jeans off, we can go all night"],[28.041,"Take your jeans off, we can go all night"],[34.041,"All night, all night"],[41.241,"All night, all night"],[48.141,"(break — on me, on me, on me…)",1],[62.241,"T-T-Take your jeans off, we can go all night"],[69.941,"Take your jeans off, we can go all night"],[77.041,"Take your jeans off, we can go all night"],[83.941,"Take your jeans off, we can go all night"],[90.941,"(outro)",1]],"memphy_03.mp4":[[15.941,"(intro — la-la vocal chops)",1],[36.941,"All of you"],[39.441,"You want it too"],[45.841,"(one, two)",1],[49.641,"I see it through, let's make a move"],[57.841,"We keep the groove, it fits us 2"],[64.441,"Dancing to the sound of you, you, you (of you, of you…)"],[71.741,"Lalalalalalalala"],[78.741,"Lalalalalalalala"],[85.741,"Lalalalalalalala"],[92.641,"Lalalalalalalala"],[96.441,"Lalalalalalalala"],[99.341,"Mini skirt, I'm such a flirt"],[105.841,"Take off the shirt, get straight to work"],[113.341,"I make it hurt, you go bezerk"],[120.341,"I put it down, flip and reverse"],[123.841,"(reverse, reverse, reverse, reverse)",1],[127.541,"Take your jeans off, we can go all night"],[134.441,"Take your jeans off, we can go all night"],[141.341,"Take your jeans off, we can go all night"],[148.241,"Take your jeans off, we can go all night"],[155.141,"Take your jeans off, we can go all night"],[162.041,"Take your jeans off, we can go all night"],[168.041,"All night, all night"],[175.241,"All night, all night"],[182.141,"(break — on me, on me, on me…)",1],[196.241,"T-T-Take your jeans off, we can go all night"],[203.941,"Take your jeans off, we can go all night"],[211.041,"Take your jeans off, we can go all night"],[217.941,"Take your jeans off, we can go all night"],[224.941,"(outro)",1],[237.641,"You"]]};
+var LYRICS_BY_CLIP={"memphy_01.mp4":[[10.472,2.45,"All of you"],[12.972,6.35,"You want it too"],[19.372,3.75,"(one, two)",1],[23.172,8.15,"I see it through, let's make a move"],[31.372,6.55,"We keep the groove, it fits us 2"],[37.972,7.25,"Dancing to the sound of you, you, you (of you, of you…)"],[45.272,6.95,"Lalalalalalalala"],[52.272,6.95,"Lalalalalalalala"],[59.272,6.85,"Lalalalalalalala"],[66.172,3.75,"Lalalalalalalala"],[69.972,2.85,"Lalalalalalalala"],[72.872,6.45,"Mini skirt, I'm such a flirt"],[79.372,7.45,"Take off the shirt, get straight to work"],[86.872,6.95,"I make it hurt, you go bezerk"],[93.872,3.45,"I put it down, flip and reverse"],[97.372,3.65,"(reverse, reverse, reverse, reverse)",1],[101.072,6.85,"Take your jeans off, we can go all night"],[107.972,6.85,"Take your jeans off, we can go all night"],[114.872,6.85,"Take your jeans off, we can go all night"],[121.772,6.85,"Take your jeans off, we can go all night"],[128.672,6.85,"Take your jeans off, we can go all night"],[135.572,5.95,"Take your jeans off, we can go all night"],[141.572,7.15,"All night, all night"],[148.772,6.85,"All night, all night"],[155.672,14.05,"(break — on me, on me, on me…)",1],[169.772,7.65,"T-T-Take your jeans off, we can go all night"],[177.472,7.05,"Take your jeans off, we can go all night"],[184.572,6.85,"Take your jeans off, we can go all night"],[191.472,6.95,"Take your jeans off, we can go all night"],[198.472,12.65,"(outro)",1],[211.172,1.243,"You"]],"memphy_02.mp4":[[0.441,6.85,"Take your jeans off, we can go all night"],[7.341,6.85,"Take your jeans off, we can go all night"],[14.241,6.85,"Take your jeans off, we can go all night"],[21.141,6.85,"Take your jeans off, we can go all night"],[28.041,5.95,"Take your jeans off, we can go all night"],[34.041,7.15,"All night, all night"],[41.241,6.85,"All night, all night"],[48.141,14.05,"(break — on me, on me, on me…)",1],[62.241,7.65,"T-T-Take your jeans off, we can go all night"],[69.941,7.05,"Take your jeans off, we can go all night"],[77.041,6.85,"Take your jeans off, we can go all night"],[83.941,6.95,"Take your jeans off, we can go all night"],[90.941,3.0,"(outro)",1]],"memphy_03.mp4":[[15.941,20.95,"(intro — la-la vocal chops)",1],[36.941,2.45,"All of you"],[39.441,6.35,"You want it too"],[45.841,3.75,"(one, two)",1],[49.641,8.15,"I see it through, let's make a move"],[57.841,6.55,"We keep the groove, it fits us 2"],[64.441,7.25,"Dancing to the sound of you, you, you (of you, of you…)"],[71.741,6.95,"Lalalalalalalala"],[78.741,6.95,"Lalalalalalalala"],[85.741,6.85,"Lalalalalalalala"],[92.641,3.75,"Lalalalalalalala"],[96.441,2.85,"Lalalalalalalala"],[99.341,6.45,"Mini skirt, I'm such a flirt"],[105.841,7.45,"Take off the shirt, get straight to work"],[113.341,6.95,"I make it hurt, you go bezerk"],[120.341,3.45,"I put it down, flip and reverse"],[123.841,3.65,"(reverse, reverse, reverse, reverse)",1],[127.541,6.85,"Take your jeans off, we can go all night"],[134.441,6.85,"Take your jeans off, we can go all night"],[141.341,6.85,"Take your jeans off, we can go all night"],[148.241,6.85,"Take your jeans off, we can go all night"],[155.141,6.85,"Take your jeans off, we can go all night"],[162.041,5.95,"Take your jeans off, we can go all night"],[168.041,7.15,"All night, all night"],[175.241,6.85,"All night, all night"],[182.141,14.05,"(break — on me, on me, on me…)",1],[196.241,7.65,"T-T-Take your jeans off, we can go all night"],[203.941,7.05,"Take your jeans off, we can go all night"],[211.041,6.85,"Take your jeans off, we can go all night"],[217.941,6.95,"Take your jeans off, we can go all night"],[224.941,12.65,"(outro)",1],[237.641,3.0,"You"]]};
 var lyrIdx=-1, lyrClip="", typingTimer=null, typingSpan=null, typingTxt="";
 function finishTyping(){
   if(typingTimer){ clearInterval(typingTimer); typingTimer=null; }
   if(typingSpan){ typingSpan.textContent=typingTxt; typingSpan=null; }
 }
+var lyrScrollTarget=null;
 function centerLyric(el){
   var l=document.getElementById("calllog"); if(!l||!el) return;
-  l.scrollTop = el.offsetTop - l.clientHeight/2 + el.offsetHeight/2;
+  lyrScrollTarget = el.offsetTop - l.clientHeight/2 + el.offsetHeight/2;
 }
-function pushLyricLine(L, dur){
+setInterval(function(){   // teleprompter glide: constant gentle drift toward the current line
+  var l=document.getElementById("calllog");
+  if(!l || lyrScrollTarget===null) return;
+  var d=lyrScrollTarget - l.scrollTop;
+  if(Math.abs(d)<1){ return; }
+  l.scrollTop += d*0.10;
+}, 50);
+function pushLyricLine(L){
   var l=document.getElementById("calllog"); if(!l) return;
   finishTyping();
-  if(L[2]){
-    var sd=document.createElement("div"); sd.className="sys"; sd.innerHTML="\u266a "+esc(L[1]);
+  if(L[3]){
+    var sd=document.createElement("div"); sd.className="sys"; sd.innerHTML="\u266a "+esc(L[2]);
     l.appendChild(sd); while(l.children.length>40) l.removeChild(l.firstChild); centerLyric(sd); return;
   }
   var d=document.createElement("div");
@@ -1247,8 +1255,9 @@ function pushLyricLine(L, dur){
   l.appendChild(d);
   while(l.children.length>40) l.removeChild(l.firstChild);
   centerLyric(d);
-  var span=d.querySelector(".typing"), txt=L[1], i=0;
-  var step=Math.max(16, Math.min(55, 1000/Math.max(1,txt.length)));   // full line typed in ~1s
+  var span=d.querySelector(".typing"), txt=L[2], i=0;
+  // karaoke pacing: the line types across its actual sung duration
+  var step=Math.max(30, Math.min(260, (L[1]*920)/Math.max(1,txt.length)));
   typingSpan=span; typingTxt=txt;
   typingTimer=setInterval(function(){
     i++;
@@ -1259,10 +1268,9 @@ function pushLyricLine(L, dur){
 }
 setInterval(function(){
   if(vid.paused) return;
-  // key the timeline off the file actually playing — works for rotation, lab selects, spacebar, everything
   var name=(vid.currentSrc||"").split("/").pop().split("?")[0];
   var arr=LYRICS_BY_CLIP[name]; if(!arr) return;
-  var LEAD=1.2;                       // start typing early so the full line lands on the vocal
+  var LEAD=0.15;
   var t=vid.currentTime + LEAD;
   if(name!==lyrClip){ lyrClip=name; lyrIdx=-1; }
   var idx=-1;
@@ -1270,11 +1278,8 @@ setInterval(function(){
   if(idx===lyrIdx) return;
   if(idx<lyrIdx){ lyrIdx=idx; return; }
   lyrIdx=idx;
-  if(idx>-1){
-    var L=arr[idx], dur=(idx+1<arr.length ? arr[idx+1][0]-L[0] : 4);
-    pushLyricLine(L, Math.max(1.5,Math.min(8,dur)));
-  }
-}, 150);
+  if(idx>-1) pushLyricLine(arr[idx]);
+}, 120);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
   stopCallChat();   // transcript panel is lyrics-only (lyric video style)
