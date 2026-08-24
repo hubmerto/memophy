@@ -595,7 +595,7 @@ html,body{overflow:auto;}
   <div class="labrow"><b>Caller line (off-frame):</b>
     <span class="labbtn" onclick="acceptNext()">&#9742; Accept next</span><span class="labbtn" onclick="skipCaller()">&#9658;&#9658; Skip</span><span class="labbtn" onclick="endCall()">&#10006; End</span>
     &nbsp; Play length <input id="labLen" type="number" value="30" min="0" step="1"> s <span style="color:#888">(Rec ignores this &mdash; it auto-stops when the shortest clip ends)</span> &nbsp;
-    <span class="labbtn rec" onclick="labArmRec()">&#9679; Rec &mdash; capture this tab</span>
+    <span class="labbtn rec" onclick="labArmRec()">&#9679; Rec &mdash; frame only, one click</span>
   </div>
   <div class="labrow"><b>Portal (hold her screen):</b>
     zoom <input id="pzZoom" type="number" value="2.4" min="1.4" max="5" step="0.1" style="width:56px">
@@ -611,7 +611,7 @@ html,body{overflow:auto;}
   </div>
   <div id="crtpanel" class="labrow"></div>
   <div class="labrow big"><span id="labCount">&mdash;</span><span id="labElapsed">00:00.0</span><span id="labRecStatus"></span></div>
-  <div class="labrow tips">Drop videos on either cam (top) and they appear in the dropdowns. Play resets both cams, counts 3-2-1 with beeps, then starts each clip at its time. Rec asks Chrome which screen/tab to capture (pick <b>This Tab</b>), then runs the same countdown and saves a .webm of the chosen length. Hotkeys: F8 accept &middot; F9 skip &middot; F10 end &middot; <code>?nogate&amp;nopop</code> for clean takes.</div>
+  <div class="labrow tips">Drop videos on either cam (top) and they appear in the dropdowns. Play resets both cams, counts 3-2-1 with beeps, then starts each clip at its time. Rec pops one Chrome prompt (pick <b>This Tab</b> / <b>Share</b>) &mdash; it then records <b>only the 16:9 frame</b> (auto-cropped, no padding or lab), with the song audio, runs the 3-2-1 countdown, and auto-downloads a .webm of the chosen length. No lining-up, no staying in place. Hotkeys: F8 accept &middot; F9 skip &middot; F10 end &middot; <code>?nogate&amp;nopop</code> for clean takes.</div>
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -1803,20 +1803,39 @@ function labStop(silent){
 function labArmRec(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ setRecStatus('screen capture not supported here'); return; }
   setRecStatus('pick what to captureÃ¢ÂÂ¦');
-  navigator.mediaDevices.getDisplayMedia({video:{frameRate:60},audio:false}).then(function(s){
-    lab.recAuto=true; lab.stream=s; s.getVideoTracks()[0].addEventListener('ended', function(){ if(lab.rec && lab.rec.state!=='inactive') lab.rec.stop(); });
-    setRecStatus('armed'); labPlay(true);
+  var opts={ video:{frameRate:60}, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', surfaceSwitching:'exclude', monitorTypeSurfaces:'exclude' };
+  navigator.mediaDevices.getDisplayMedia(opts).then(function(s){
+    lab.recAuto=true; lab.stream=s;
+    var vt=s.getVideoTracks()[0];
+    vt.addEventListener('ended', function(){ if(lab.rec && lab.rec.state!=='inactive') lab.rec.stop(); });
+    // Region Capture: crop the recording to EXACTLY the 16:9 frame — no white padding, no lab,
+    // no browser chrome. You never have to line anything up or stay in place.
+    var target=document.getElementById('wrap');
+    var go=function(msg){ setRecStatus(msg||'armed - recording just the frame'); labPlay(true); };
+    try{
+      if(target && window.CropTarget && CropTarget.fromElement && vt.cropTo){
+        CropTarget.fromElement(target).then(function(ct){ return vt.cropTo(ct); })
+          .then(function(){ go('armed - frame cropped'); })
+          .catch(function(){ go('armed - (crop n/a, full tab)'); });
+      } else if(target && window.RestrictionTarget && RestrictionTarget.fromElement && vt.restrictTo){
+        RestrictionTarget.fromElement(target).then(function(rt){ return vt.restrictTo(rt); })
+          .then(function(){ go('armed - frame isolated'); }).catch(function(){ go(); });
+      } else { go('armed - (crop n/a, full tab)'); }
+    }catch(e){ go(); }
   }).catch(function(){ setRecStatus('capture cancelled'); });
 }
 function startRecorder(){
   lab.chunks=[];
-  var mime = (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) ? 'video/webm;codecs=vp9' : 'video/webm';
-  lab.rec=new MediaRecorder(lab.stream,{mimeType:mime,videoBitsPerSecond:14000000});
+  var mime = (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) ? 'video/webm;codecs=vp9,opus'
+           : (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) ? 'video/webm;codecs=vp9' : 'video/webm';
+  lab.rec=new MediaRecorder(lab.stream,{mimeType:mime,videoBitsPerSecond:24000000,audioBitsPerSecond:192000});
   lab.rec.ondataavailable=function(e){ if(e.data && e.data.size) lab.chunks.push(e.data); };
   lab.rec.onstop=function(){
     var b=new Blob(lab.chunks,{type:'video/webm'}), u=URL.createObjectURL(b), a=$id('labDl');
-    a.href=u; a.download='memphy-lab-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';
+    var fname='memphy-lab-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';
+    a.href=u; a.download=fname;
     a.style.display='inline-block'; a.innerHTML='&#11015; download recording ('+(b.size/1048576).toFixed(1)+' MB)';
+    try{ var td=document.createElement('a'); td.href=u; td.download=fname; document.body.appendChild(td); td.click(); td.remove(); }catch(e){}
     setRecStatus('saved Ã¢ÂÂ click download'); if(lab.stream){ lab.stream.getTracks().forEach(function(t){ t.stop(); }); lab.stream=null; } lab.rec=null;
   };
   lab.rec.start(250); setRecStatus('Ã¢ÂÂ recording');
