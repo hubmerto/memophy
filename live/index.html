@@ -1808,7 +1808,7 @@ function labStop(silent){
 function labArmRec(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ setRecStatus('screen capture not supported here'); return; }
   setRecStatus('pick what to captureÃ¢ÂÂ¦');
-  var opts={ video:{frameRate:60}, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', surfaceSwitching:'exclude', monitorTypeSurfaces:'exclude' };
+  var opts={ video:{frameRate:{ideal:30,max:30}}, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', surfaceSwitching:'exclude', monitorTypeSurfaces:'exclude' };
   navigator.mediaDevices.getDisplayMedia(opts).then(function(s){
     lab.recAuto=true; lab.stream=s;
     var vt=s.getVideoTracks()[0];
@@ -1831,13 +1831,17 @@ function labArmRec(){
 }
 function startRecorder(){
   lab.chunks=[];
-  var mime = (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) ? 'video/webm;codecs=vp9,opus'
-           : (window.MediaRecorder && MediaRecorder.isTypeSupported('video/webm;codecs=vp9')) ? 'video/webm;codecs=vp9' : 'video/webm';
-  lab.rec=new MediaRecorder(lab.stream,{mimeType:mime,videoBitsPerSecond:24000000,audioBitsPerSecond:192000});
+  // prefer a HARDWARE-friendly codec so a busy page doesn't drop frames: h264/mp4 (Mac HW) -> vp8 (fast) -> vp9
+  var list=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4','video/webm;codecs=h264,opus','video/webm;codecs=vp8,opus','video/webm;codecs=vp8','video/webm;codecs=vp9,opus','video/webm'];
+  var mime=''; for(var i=0;i<list.length;i++){ if(window.MediaRecorder && MediaRecorder.isTypeSupported(list[i])){ mime=list[i]; break; } }
+  var ext = mime.indexOf('mp4')>-1 ? 'mp4' : 'webm';
+  lab.recExt=ext; lab.recType = mime.split(';')[0] || (ext==='mp4'?'video/mp4':'video/webm');
+  var recOpts = mime ? {mimeType:mime, videoBitsPerSecond:12000000, audioBitsPerSecond:160000} : {videoBitsPerSecond:12000000};
+  try{ lab.rec=new MediaRecorder(lab.stream, recOpts); }catch(e){ lab.rec=new MediaRecorder(lab.stream); }
   lab.rec.ondataavailable=function(e){ if(e.data && e.data.size) lab.chunks.push(e.data); };
   lab.rec.onstop=function(){
-    var b=new Blob(lab.chunks,{type:'video/webm'}), u=URL.createObjectURL(b), a=$id('labDl');
-    var fname='memphy-lab-'+new Date().toISOString().replace(/[:.]/g,'-')+'.webm';
+    var b=new Blob(lab.chunks,{type:lab.recType||'video/webm'}), u=URL.createObjectURL(b), a=$id('labDl');
+    var fname='memphy-lab-'+new Date().toISOString().replace(/[:.]/g,'-')+'.'+(lab.recExt||'webm');
     a.href=u; a.download=fname;
     a.style.display='inline-block'; a.innerHTML='&#11015; download recording ('+(b.size/1048576).toFixed(1)+' MB)';
     try{ var td=document.createElement('a'); td.href=u; td.download=fname; document.body.appendChild(td); td.click(); td.remove(); }catch(e){}
@@ -2059,21 +2063,27 @@ function ensureZoomLoop(){
   if(zoomAnim) return;
   var step=function(){
     zoomP += (zoomTarget-zoomP)*PORTAL.speed;
-    if(zoomTarget===1 && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
+    if(zoomTarget===1 && zoomP>ZTHRESH && window._commitAllowed){ zoomAnim=null; commitInside(); return; }
+    if(zoomTarget===1 && zoomP>0.999) zoomP=0.999;   // not her screen: hold at max magnify, don't enter video
     if(zoomTarget===0 && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
     applyZoom(zoomP);
     zoomAnim=requestAnimationFrame(step);
   };
   zoomAnim=requestAnimationFrame(step);   // rAF = smoother, GPU-synced
 }
-function startZoom(){
+function startZoom(onHer, px, py){
   if(insideMode) return;
   if(zoomP<0.02){
-    var r=document.getElementById('hstage').getBoundingClientRect();
     var w=document.getElementById('wrap'), wr=w.getBoundingClientRect();
     zc.wl=wr.left; zc.wt=wr.top;                         // frame origin (accounts for white-padding offset)
-    zc.cx=r.left+r.width/2; zc.cy=r.top+r.height/2;      // ALWAYS her cam center, not the press point
+    if(onHer){
+      var r=document.getElementById('hstage').getBoundingClientRect();
+      zc.cx=r.left+r.width/2; zc.cy=r.top+r.height/2;    // dive centers on her cam
+    } else {
+      zc.cx=(px!=null?px:window.innerWidth/2); zc.cy=(py!=null?py:window.innerHeight/2);  // magnify toward the press point
+    }
     zc.vx=window.innerWidth/2; zc.vy=window.innerHeight/2;
+    window._commitAllowed = !!onHer;                     // only her screen transitions INTO her video
   }
   window._diving=true; document.body.classList.add('diving');   // CSS fades the CRT out cheaply
   portalParams();
@@ -2121,8 +2131,14 @@ function exitInside(){
   try{ if(typeof rotateCaller==='function') rotateCaller(); }catch(e){}
 }
 (function(){
-  var hs=document.getElementById('hstage'); if(!hs) return;
-  hs.addEventListener('pointerdown', function(e){ if(e.button===0||e.pointerType!=='mouse') startZoom(); });
+  var w=document.getElementById('wrap'); if(!w) return;
+  w.addEventListener('pointerdown', function(e){
+    if(insideMode) return;
+    if(!(e.button===0||e.pointerType!=='mouse')) return;
+    var hs=document.getElementById('hstage');
+    var onHer = !!(hs && (e.target===hs || (hs.contains && hs.contains(e.target))));
+    startZoom(onHer, e.clientX, e.clientY);   // zoom anywhere in the frame; only her screen enters her video
+  });
   addEventListener('pointerup', endZoom);
   addEventListener('pointercancel', endZoom);
   addEventListener('blur', endZoom);
