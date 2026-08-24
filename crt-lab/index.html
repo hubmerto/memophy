@@ -125,16 +125,6 @@ const GROUPS = [
     ["burn",     "film burn",   0, 1,   .01, 0],
     ["dust",     "dust",        0, 1,   .01, 0],
   ]],
-  ["Screen", [
-    ["margin",   "margin px",   0, 200,  1,   48],
-    ["fit",      "fit",         0, 1,    1,   1, "select", ["Cover","Contain"]],
-    ["cursor",   "cursor",      0, 1,    1,   1, "select", ["Hidden","Shown"]],
-    ["tiltX",    "tilt v",    -45, 45,   .5,  0],
-    ["tiltY",    "tilt h",    -60, 60,   .5,  0],
-    ["curv",     "curvature",   0, 1,    .01, .35],
-    ["corner",   "corner",      0, .35,  .005,.12],
-    ["vig",      "vignette",    0, 1.5,  .01, .5 ],
-  ]],
   ["Signal", [
     ["scan",     "scanlines",   0, 1,    .01, .45],
     ["scanCount","line count",  60, 700, 1,   300],
@@ -740,27 +730,21 @@ function frame(){
   if(animateTC){ drawTestCard(t); uploadFrame(); }
   else if(srcIsVideo){ uploadFrame(); }
 
-  // frame margin (padding around the CRT)
-  const pad = Math.round(P.margin)+"px";
-  if(stage.style.padding!==pad) stage.style.padding = pad;
+  // canvas box tracks the source aspect (recording locks it to the export ratio)
+  if(!recorder) lockCanvasToSource(false);
 
-  // cursor visibility over the screen
-  const cur = P.cursor<0.5 ? "none" : "";
-  if(canvas.style.cursor!==cur) canvas.style.cursor = cur;
-
-  // fit uv transform: cover crops, contain letterboxes
+  // contain fit (aspects match outside recording, so this is 1:1)
   const ca = canvas.width/canvas.height, ta = srcW/srcH;
   let sx=1, sy=1;
-  if(P.fit<0.5){ if(ta>ca) sx = ca/ta; else sy = ta/ca; }
-  else         { if(ta>ca) sy = ta/ca; else sx = ca/ta; }
+  if(ta>ca) sy = ta/ca; else sx = ca/ta;
   gl.viewport(0,0,canvas.width,canvas.height);
   gl.uniform1i(U.uTex,0);
   gl.uniform2f(U.uRes,canvas.width,canvas.height);
   gl.uniform1f(U.uTime,t);
   gl.uniform2f(U.uUVScale,sx,sy);
   gl.uniform2f(U.uUVOff,(1-sx)/2,(1-sy)/2);
-  gl.uniform1f(U.uCurv,P.curv);       gl.uniform1f(U.uCorner,P.corner);
-  gl.uniform1f(U.uVig,P.vig);         gl.uniform1f(U.uScan,P.scan);
+  gl.uniform1f(U.uCurv,0);            gl.uniform1f(U.uCorner,0.001);
+  gl.uniform1f(U.uVig,0);             gl.uniform1f(U.uScan,P.scan);
   gl.uniform1f(U.uScanCount,P.scanCount); gl.uniform1f(U.uBleed,P.bleed);
   gl.uniform1f(U.uAber,P.aber);       gl.uniform1f(U.uMaskType,P.maskType);
   gl.uniform1f(U.uMaskScale,P.maskScale*Math.min(devicePixelRatio||1,2));
@@ -779,8 +763,8 @@ function frame(){
   gl.uniform1f(U.uZoom,P.loupeZoom);
   gl.uniform1f(U.uZoomAmt,Math.max(loupeAmt-0.01,0));
   gl.uniform1f(U.uFish,P.zoomFish);
-  gl.uniform1f(U.uTiltX,P.tiltX*Math.PI/180);
-  gl.uniform1f(U.uTiltY,P.tiltY*Math.PI/180);
+  gl.uniform1f(U.uTiltX,0);
+  gl.uniform1f(U.uTiltY,0);
   gl.uniform1f(U.uComp,P.comp);
   gl.uniform1f(U.uCsub,P.csub);
   gl.uniform1f(U.uWave,P.wave);
@@ -855,8 +839,7 @@ Object.keys(PRESETS).forEach(name=>{
   b.textContent = name;
   b.onclick = ()=>{
     const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, zoomFish:P.zoomFish,
-                  cursor:P.cursor, audioAmt:P.audioAmt, exportRatio:P.exportRatio,
-                  margin:P.margin, fit:P.fit, tiltX:P.tiltX, tiltY:P.tiltY};
+                  audioAmt:P.audioAmt, exportRatio:P.exportRatio};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
     clearPresetHi(); b.classList.add("on");
@@ -878,24 +861,28 @@ function recMime(){
           "video/webm;codecs=h264","video/webm;codecs=vp9","video/webm"]
          .find(t=>MediaRecorder.isTypeSupported(t)) || "";
 }
-function lockCanvasToSource(){
-  // shrink the canvas to the source's aspect ratio so the export has no letterbox
-  const pad = Math.round(P.margin);
-  const availW = stage.clientWidth-2*pad, availH = stage.clientHeight-2*pad;
-  if(availW<50||availH<50) return;           // layout not ready / hidden — keep full size
-  const ratios = [srcW/Math.max(srcH,1), 16/9, 9/16, 1, 4/3, 4/5];
-  const sa = ratios[Math.round(P.exportRatio)] || ratios[0];
+let lastLock = "";
+function lockCanvasToSource(useExportRatio){
+  // canvas box always matches the source aspect (or the export ratio while recording)
+  const PAD = 32;
+  const availW = stage.clientWidth-2*PAD, availH = stage.clientHeight-2*PAD;
+  if(availW<50||availH<50) return;           // layout not ready / hidden — keep as is
+  const srcA = srcW/Math.max(srcH,1);
+  const ratios = [srcA, 16/9, 9/16, 1, 4/3, 4/5];
+  const sa = useExportRatio ? (ratios[Math.round(P.exportRatio)] || srcA) : srcA;
   let w,h;
   if(availW/availH > sa){ h=availH; w=Math.round(h*sa); } else { w=availW; h=Math.round(w/sa); }
+  const key = w+"x"+h;
+  if(key===lastLock) return;
+  lastLock = key;
   canvas.style.width=w+"px"; canvas.style.height=h+"px";
   resize();                                  // sync the GL buffer to the new box now
 }
-function unlockCanvas(){ canvas.style.width="100%"; canvas.style.height="100%"; }
 
 bRec.onclick = ()=>{
   if(recorder){ recorder.stop(); return; }
   if(video && !video.srcObject){ video.currentTime = 0; video.play(); }   // file videos restart
-  lockCanvasToSource();
+  lockCanvasToSource(true);
   {
     const mime = recMime();
     recorder = new MediaRecorder(canvas.captureStream(60),
@@ -909,7 +896,7 @@ bRec.onclick = ()=>{
       a.download = "crt_capture."+ext; a.click();
       recorder = null; clearInterval(recTimer);
       bRec.textContent = "Record"; bRec.classList.remove("rec");
-      unlockCanvas();
+      lastLock = "";                    // let the frame loop re-lock to the source aspect
       if(recCleanup){ recCleanup(); recCleanup = null; }
     };
     // file videos: stop automatically when one full loop completes
