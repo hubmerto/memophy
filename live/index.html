@@ -2166,7 +2166,7 @@ function composeWrapFilter(){
     ['Glow',[['glow','glow',0,1.5,.01,.35],['glowSize','radius',1,6,.1,3]]],
     ['Damage',[['noise','noise',0,1,.01,.06],['flicker','flicker',0,1,.01,.05],['jitter','jitter',0,1,.01,0],['roll','roll bar',0,1,.01,.1],['track','vhs track',0,1,.01,0]]],
     ['Film',[['grain','grain',0,1,.01,0],['leak','light leak',0,1,.01,0],['burn','film burn',0,1,.01,0],['dust','dust',0,1,.01,0]]],
-    ['Color',[['bright','bright',.3,1.8,.01,.70],['contrast','contrast',.5,1.8,.01,1.00],['sat','sat',0,2.2,.01,1.00],['tint','warm/cool',-1,1,.01,0]]]
+    ['Color',[['bright','bright',.3,1.8,.01,1.00],['contrast','contrast',.5,1.8,.01,1.00],['sat','sat',0,2.2,.01,1.00],['tint','warm/cool',-1,1,.01,0]]]
   ];
   var DEF={maskType:0}; GROUPS.forEach(function(g){g[1].forEach(function(p){DEF[p[0]]=p[5];});});
   var PRESETS={
@@ -2235,7 +2235,9 @@ function composeWrapFilter(){
     window._crtGeoStr = (m>0 && (P.curv>0||P.aber>0||P.bleed>0||P.glow>0)) ? 'url(#crtGeo)' : '';
     // --- color grade ---
     if(m>0){
-      var br=lerp(1,P.bright,m),co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
+      // offset the light the multiply mask/scanlines eat so the UI doesn't darken
+      var comp=1 + (P.maskInt*1.9 + P.scan*0.55 + P.vig*0.2 + P.noise*0.6)*m;
+      var br=lerp(1,P.bright,m)*comp,co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
       var warm=tn>=0?tn:0, cool=tn<0?-tn:0;
       window._crtColorStr='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')'
         + (warm>0?(' sepia('+(warm*0.5).toFixed(3)+') hue-rotate('+(-12*warm).toFixed(1)+'deg)'):'')
