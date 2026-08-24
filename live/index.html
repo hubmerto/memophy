@@ -380,7 +380,8 @@ body{font-size:17px;}
 #inside{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:5000;}
 #inside video{width:100%;height:100%;object-fit:cover;display:block;}
 /* ===== CRT overlay layers (children of #wrap, clipped to the 16:9 frame) ===== */
-.crtl{position:absolute;inset:0;pointer-events:none;z-index:1400;}
+.crtl{position:absolute;inset:0;pointer-events:none;z-index:1400;transition:opacity .28s ease;}
+body.diving .crtl{opacity:0 !important;}   /* fade CRT out cheaply during the portal dive (no per-frame JS) */
 #crtScan{mix-blend-mode:multiply;}
 #crtMask{mix-blend-mode:multiply;}
 #crtVig{mix-blend-mode:multiply;}
@@ -591,7 +592,7 @@ html,body{overflow:auto;}
   <table class="labgrid">
     <tr><th></th><th>clip</th><th>starts at (s into timeline)</th><th>in-point (s into clip)</th><th>loop</th><th>preview &mdash; scrub to find your in-point</th></tr>
     <tr><td>MEMPHY CAM</td><td><select id="labHer"></select></td><td><input id="labHerOff" type="number" value="0" step="0.5" min="0"></td><td><input id="labHerIn" type="number" value="0" step="0.5" min="0"></td><td><input id="labHerLoop" type="checkbox" checked></td><td><video id="labHerPrev" class="labprev" controls muted playsinline></video><div class="labtl" id="labHerTL"><div class="labtl-region" id="labHerRegion"></div><div class="labtl-head" id="labHerHead"></div><div class="labtl-inmark" id="labHerInMark"></div></div><span class="labmini" onclick="labSetIn('her')">&#8592; set in-point here</span></td></tr>
-    <tr><td>CALLER CAM</td><td><select id="labGuest"></select></td><td><input id="labGuestOff" type="number" value="4" step="0.5" min="0"></td><td><input id="labGuestIn" type="number" value="0" step="0.5" min="0"></td><td><input id="labGuestLoop" type="checkbox" checked></td><td><video id="labGuestPrev" class="labprev" controls muted playsinline></video><div class="labtl" id="labGuestTL"><div class="labtl-region" id="labGuestRegion"></div><div class="labtl-head" id="labGuestHead"></div><div class="labtl-inmark" id="labGuestInMark"></div></div><span class="labmini" onclick="labSetIn('guest')">&#8592; set in-point here</span></td></tr>
+    <tr><td>CALLER CAM</td><td><select id="labGuest"></select></td><td><input id="labGuestOff" type="number" value="0" step="0.5" min="0"></td><td><input id="labGuestIn" type="number" value="0" step="0.5" min="0"></td><td><input id="labGuestLoop" type="checkbox" checked></td><td><video id="labGuestPrev" class="labprev" controls muted playsinline></video><div class="labtl" id="labGuestTL"><div class="labtl-region" id="labGuestRegion"></div><div class="labtl-head" id="labGuestHead"></div><div class="labtl-inmark" id="labGuestInMark"></div></div><span class="labmini" onclick="labSetIn('guest')">&#8592; set in-point here</span></td></tr>
   </table>
   <div class="labrow">
     <span class="labbtn play" onclick="labPlay(false)">&#9654; Play (3s countdown)</span><span class="labbtn" onclick="labPause()">&#10074;&#10074; Pause</span><span class="labbtn" onclick="labStop(false)">&#9632; Stop / reset</span>
@@ -1246,7 +1247,7 @@ function connectCaller(){
     var gi = (forcedGuestIdx>-1) ? forcedGuestIdx : (gcurrent+1)%clips.length; forcedGuestIdx = -1;
     playClip(gi, 'guest');
     if(typeof lab!=='undefined' && lab.gStarted){ if(lab.gIn>0) gvid.currentTime = lab.gIn; gvid.loop = lab.gLoop; }
-  }, 900);
+  }, 450);
 }
 function endCall(){
   gvid.pause(); gcurrent = -1;
@@ -1703,7 +1704,7 @@ for(var ti=0;ti<ctabs.length;ti++) ctabs[ti].onclick = function(){
 
 // ======================= LAB Ã¢ÂÂ timeline + tab recording =======================
 var forcedGuestIdx = -1, lastHostAdd = -1, lastGuestAdd = -1;
-var lab = {herIdx:-1,gIdx:-1,herOff:0,gOff:4,herIn:0,gIn:0,herLoop:true,gLoop:true,recLen:30,t0:null,elapsedBase:0,timers:[],playing:false,paused:false,herStarted:false,gStarted:false,rec:null,stream:null,chunks:[],cd:null,tick:null};
+var lab = {herIdx:-1,gIdx:-1,herOff:0,gOff:0,herIn:0,gIn:0,herLoop:true,gLoop:true,recLen:30,t0:null,elapsedBase:0,timers:[],playing:false,paused:false,herStarted:false,gStarted:false,rec:null,stream:null,chunks:[],cd:null,tick:null};
 function $id(i){ return document.getElementById(i); }
 function labRefreshSelects(){
   var pairs=[['labHer',lastHostAdd],['labGuest',lastGuestAdd]];
@@ -2038,11 +2039,13 @@ function portalParams(){
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
-  if(p<=0){ w.style.transform=''; w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
+  if(p<=0){ w.style.transform=''; w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; window._diving=false; document.body.classList.remove('diving'); if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
   var S=1+p*(PORTAL.zmax-1);
-  // her cam center stays pinned, gliding to the viewport center as we dive
-  var tx=(zc.cx - zc.cx*S) + (zc.vx - zc.cx)*p;
-  var ty=(zc.cy - zc.cy*S) + (zc.vy - zc.cy)*p;
+  // her cam center glides to the viewport center as we dive — computed in #wrap-local
+  // coords (origin 0,0 = wrap top-left) so the centered/padded 16:9 frame offset is accounted for
+  var lx=zc.cx-zc.wl, ly=zc.cy-zc.wt;
+  var tx=lx*(1-S) + (zc.vx - zc.cx)*p;
+  var ty=ly*(1-S) + (zc.vy - zc.cy)*p;
   w.style.willChange='transform';
   w.style.transformOrigin='0 0';
   w.style.transform='translate('+tx+'px,'+ty+'px) scale('+S+')';
@@ -2053,32 +2056,36 @@ function applyZoom(p){
     fd.setAttribute('scale', String(amt));
     window._portalFish = amt;
   }
-  if(typeof updateCRT==='function') updateCRT();   // CRT fades as the dive deepens
-  composeWrapFilter();
+  composeWrapFilter();   // cheap: CRT is faded out via CSS (.diving), no per-frame recompute
 }
 function ensureZoomLoop(){
   if(zoomAnim) return;
-  zoomAnim=setInterval(function(){
+  var step=function(){
     zoomP += (zoomTarget-zoomP)*PORTAL.speed;
-    if(zoomTarget===1 && zoomP>ZTHRESH){ commitInside(); return; }
-    if(zoomTarget===0 && zoomP<0.004){ zoomP=0; applyZoom(0); clearInterval(zoomAnim); zoomAnim=null; return; }
+    if(zoomTarget===1 && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
+    if(zoomTarget===0 && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
     applyZoom(zoomP);
-  }, 16);
+    zoomAnim=requestAnimationFrame(step);
+  };
+  zoomAnim=requestAnimationFrame(step);   // rAF = smoother, GPU-synced
 }
 function startZoom(){
   if(insideMode) return;
   if(zoomP<0.02){
     var r=document.getElementById('hstage').getBoundingClientRect();
-    zc.cx=r.left+r.width/2; zc.cy=r.top+r.height/2;
+    var w=document.getElementById('wrap'), wr=w.getBoundingClientRect();
+    zc.wl=wr.left; zc.wt=wr.top;                         // frame origin (accounts for white-padding offset)
+    zc.cx=r.left+r.width/2; zc.cy=r.top+r.height/2;      // ALWAYS her cam center, not the press point
     zc.vx=window.innerWidth/2; zc.vy=window.innerHeight/2;
   }
+  window._diving=true; document.body.classList.add('diving');   // CSS fades the CRT out cheaply
   portalParams();
   zoomTarget=1; ensureZoomLoop();
 }
 function endZoom(){ if(!insideMode) zoomTarget=0; }
 function commitInside(){
   insideMode=true;
-  if(zoomAnim){ clearInterval(zoomAnim); zoomAnim=null; }
+  if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
   // capture her cam's CURRENT (zoomed) on-screen rect so the footage picks up exactly
   // where the dive left off — no hard cut / sudden jump into the video
   var hs=document.getElementById('hstage');
@@ -2130,8 +2137,10 @@ window._crtGeoStr = ''; window._crtColorStr = '';
 function composeWrapFilter(){
   var w=document.getElementById('wrap'); if(!w) return;
   var parts=[];
-  if(window._crtGeoStr) parts.push(window._crtGeoStr);
-  if(window._crtColorStr) parts.push(window._crtColorStr);
+  if(!window._diving){                                  // during the dive, drop the heavy SVG CRT filter
+    if(window._crtGeoStr) parts.push(window._crtGeoStr);
+    if(window._crtColorStr) parts.push(window._crtColorStr);
+  }
   if(window._portalFish>0.004) parts.push('url(#fisheyeF)');
   w.style.filter = parts.join(' ');
 }
@@ -2214,7 +2223,7 @@ function composeWrapFilter(){
     // --- color grade ---
     if(m>0){
       // compensate for the light the multiply mask/scanlines/vignette eat, so the picture doesn't go dark
-      var comp=1 + (P.maskInt*0.55 + P.scan*0.45 + P.vig*0.18)*m;
+      var comp=1 + (P.maskInt*1.7 + P.scan*0.55 + P.vig*0.2 + P.noise*0.6)*m;
       var br=lerp(1,P.bright,m)*comp,co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
       var warm=tn>=0?tn:0, cool=tn<0?-tn:0;
       window._crtColorStr='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')'
