@@ -1735,11 +1735,11 @@ labPreview();
 
 // videos fill the frame (object-fit cover + slight overscan); no pan/zoom
 
-// 240p-style pixelation for the caller cam: draw the video tiny, stretch it up
+// datamosh-style caller cam: soft blocks + ghost smear + drifting macroblocks
 (function(){
   var cv=document.getElementById('gpix'); if(!cv||!cv.getContext) return;
   var ctx=cv.getContext('2d');
-  var PIXW=150, fps=(window.innerWidth<=820)?12:15, last=0;
+  var PIXW=320, fps=(window.innerWidth<=820)?12:15, last=0, freeze=0;
   function draw(t){
     requestAnimationFrame(draw);
     if(t-last<1000/fps) return; last=t;
@@ -1747,12 +1747,28 @@ labPreview();
     var st=document.getElementById('gstage');
     var cw=st.clientWidth||16, ch=st.clientHeight||9;
     var W=PIXW, H=Math.max(2,Math.round(PIXW*ch/cw));
-    if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+    if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); }
     var vw=gvid.videoWidth, vh=gvid.videoHeight;
     var arC=cw/ch, arV=vw/vh, sx,sy,sw,sh;
-    if(arV>arC){ sh=vh; sw=vh*arC; sx=(vw-sw)/2; sy=0; }
-    else { sw=vw; sh=vw/arC; sx=0; sy=(vh-sh)/2; }
-    try{ ctx.drawImage(gvid, sx,sy,sw,sh, 0,0,W,H); }catch(e){}
+    if(arV>arC){ sh=vh; sw=vh*arC; sx=(vw-sw)/2; sy=0; } else { sw=vw; sh=vw/arC; sx=0; sy=(vh-sh)/2; }
+    // new frame blends over the old — ghost trails that move with the motion
+    if(freeze>0){ freeze--; }
+    else {
+      ctx.globalAlpha=0.65;
+      try{ ctx.drawImage(gvid, sx,sy,sw,sh, 0,0,W,H); }catch(e){}
+      ctx.globalAlpha=1;
+    }
+    // macroblock displacement: smear random blocks of the canvas onto itself
+    var blocks=2+((Math.random()*4)|0);
+    for(var i=0;i<blocks;i++){
+      var bw=8+((Math.random()*26)|0), bh=6+((Math.random()*12)|0);
+      var bx=(Math.random()*(W-bw))|0, by=(Math.random()*(H-bh))|0;
+      var dx=Math.max(0,Math.min(W-bw,bx+(((Math.random()*10)|0)-5)));
+      var dy=Math.max(0,Math.min(H-bh,by+(((Math.random()*6)|0)-3)));
+      try{ ctx.drawImage(cv, bx,by,bw,bh, dx,dy,bw,bh); }catch(e){}
+    }
+    // occasional dropped I-frame: hold the smeared image for a few ticks
+    if(Math.random()<0.02) freeze=2+((Math.random()*4)|0);
   }
   requestAnimationFrame(draw);
 })();
