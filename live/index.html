@@ -110,7 +110,7 @@ body.diving #pagetex{opacity:0;}   /* fades off slowly as her screen takes over 
 #subject .st{color:#888;font-weight:normal;font-size:12px;}
 #subject .st span{font-weight:bold;}
 #subject .jp{color:#d2287f;font-weight:normal;}
-.camstage{position:relative;width:100%;background:#000;overflow:hidden;border:1px solid #b9b9b9;height:calc(var(--fh) - 370px);min-height:300px;}
+.camstage{position:relative;width:100%;background:#000;overflow:hidden;border:1px solid #b9b9b9;height:calc(var(--fh) - 296px);min-height:300px;}
 .camstage video{width:100%;height:100%;background:#000;display:block;object-fit:cover;transform:scale(1.04);}
 /* caller cams look like a cheap webcam: soft, over-saturated, faint scanlines */
 #gvid{opacity:0;}   /* hidden — #gpix draws it pixelated */
@@ -188,7 +188,7 @@ body.diving #pagetex{opacity:0;}   /* fades off slowly as her screen takes over 
 #chatbox{float:right;width:calc(50% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:238px;box-sizing:border-box;overflow-y:auto;padding:12px 14px 14px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog{height:172px;box-sizing:border-box;overflow-y:auto;padding:12px 14px 14px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
 #calllog .lyr{font:bold 21px Arial,Helvetica,sans-serif;line-height:1.35;margin:0 0 14px;color:#d9c2cf;
   -webkit-transition:color .35s,opacity .35s,-webkit-transform .35s;transition:color .35s,opacity .35s,transform .35s;
   -webkit-transform-origin:left center;transform-origin:left center;}
@@ -219,7 +219,7 @@ body.diving #pagetex{opacity:0;}   /* fades off slowly as her screen takes over 
 #callsend{padding:5px 12px;font-size:12px;}
 
 /* right: chat box with pink tabs */
-#chatbox{position:relative;height:268px;}
+#chatbox{position:relative;height:202px;}
 .ctabs{height:30px;background:#fff;border-bottom:1px solid #e8a3c8;padding:2px 4px 0;box-sizing:border-box;}
 .ctab{float:left;height:27px;line-height:27px;padding:0 12px;margin-right:4px;font:bold 13px Arial;border-bottom:none;border-radius:5px 5px 0 0;}
 .ctab .jp{font-weight:normal;color:#d2287f;text-transform:none;margin-left:4px;}
@@ -2069,12 +2069,14 @@ function loopStep(){
   mZ.sx += (mZ.x-mZ.sx)*0.2; mZ.sy += (mZ.y-mZ.sy)*0.2;    // smoothed cursor follow (crt-lab mouseS)
   var target = pressOn ? 1 : 0;                            // hold to keep zooming; release eases back
   if(pressOn){ zc.cx=mZ.sx; zc.cy=mZ.sy; }                 // anchor follows the cursor while pressing
-  // her screen: glide toward the design center (640,360) so her footage auto-fits/fills the screen; elsewhere: loupe
-  var dx = window._commitAllowed ? 640 : zc.cx;
-  var dy = window._commitAllowed ? 360 : zc.cy;
+  // LIVE: while zooming, the moment the cursor is over her screen it auto-fits her footage to fill the whole screen
+  var onHer = !!window._overHer;
+  window._commitAllowed = onHer;
+  var dx = onHer ? 640 : zc.cx;
+  var dy = onHer ? 360 : zc.cy;
   zc.vx += (dx-zc.vx)*0.2; zc.vy += (dy-zc.vy)*0.2;
   zoomP += (target-zoomP)*PORTAL.speed;                    // ease at zoomSpeed
-  if(pressOn && window._commitAllowed && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
+  if(pressOn && onHer && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
   applyZoom(zoomP);
   if(!pressOn && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
   zoomAnim=requestAnimationFrame(loopStep);
@@ -2107,7 +2109,9 @@ function commitInside(){
   vid.style.width=r.width+'px'; vid.style.height=r.height+'px';
   vid.style.objectFit='cover'; vid.style.transform='none';
   vid.style.transition='left .40s cubic-bezier(.22,.61,.36,1),top .40s cubic-bezier(.22,.61,.36,1),width .40s cubic-bezier(.22,.61,.36,1),height .40s cubic-bezier(.22,.61,.36,1)';
-  var w=document.getElementById('wrap'); if(w){ w.style.display='none'; w.style.transform=''; w.style.filter=''; }
+  // fade the UI out as her video grows to fullscreen (no sudden disappear)
+  var w=document.getElementById('wrap');
+  if(w){ w.style.transition='opacity .45s ease'; w.style.opacity='0'; setTimeout(function(){ if(insideMode){ w.style.display='none'; w.style.transform=''; w.style.filter=''; } }, 480); }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='none';
   // settle to true fullscreen on the next tick (timeout, not rAF — survives throttled frames)
   setTimeout(function(){ if(!insideMode) return; vid.style.left='0px'; vid.style.top='0px'; vid.style.width='100%'; vid.style.height='100%'; }, 24);
@@ -2127,7 +2131,7 @@ function exitInside(){
   vid.style.transition=''; vid.style.position=''; vid.style.left=''; vid.style.top='';
   vid.style.width=''; vid.style.height=''; vid.style.objectFit=''; vid.style.transform='scale(1.04)';
   if(layer && layer.parentNode) layer.parentNode.removeChild(layer);
-  var w=document.getElementById('wrap'); if(w) w.style.display='';
+  var w=document.getElementById('wrap'); if(w){ w.style.display=''; w.style.transition=''; w.style.opacity=''; }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='';
   pressOn=false; window._diving=false; document.body.classList.remove('diving');
   zoomP=0; zoomTarget=0; applyZoom(0);
@@ -2138,6 +2142,11 @@ function exitInside(){
   var hs=document.getElementById('hstage');
   w.addEventListener('pointermove', function(e){ var d=toDesign(e.clientX,e.clientY); mZ.x=d.x; mZ.y=d.y; });   // track cursor (design space)
   addEventListener('pointermove', function(e){ window._lastPtr={x:e.clientX,y:e.clientY}; }, true);   // last cursor pos (viewport) for the takeover glitch
+  if(hs){   // LIVE flag: is the cursor over her screen right now? (drives the auto-fit-to-fullscreen)
+    hs.addEventListener('pointerenter', function(){ window._overHer=true; });
+    hs.addEventListener('pointerover',  function(){ window._overHer=true; });
+    hs.addEventListener('pointerleave', function(){ window._overHer=false; });
+  }
   // PRESS-AND-HOLD -> cursor-following loupe that keeps zooming; her screen enters her video, elsewhere just magnifies
   w.addEventListener('pointerdown', function(e){
     if(insideMode) return;
@@ -2146,6 +2155,7 @@ function exitInside(){
     mZ.x=d.x; mZ.y=d.y; mZ.sx=d.x; mZ.sy=d.y;
     zc.cx=d.x; zc.cy=d.y; zc.vx=d.x; zc.vy=d.y;
     var onHer = !!(hs && (e.target===hs || (hs.contains && hs.contains(e.target))));
+    window._overHer=onHer;                 // seed the live over-her flag from where the press landed
     pressOn=true; window._commitAllowed=onHer;
     window._diving=true; document.body.classList.add('diving');   // CRT fades off slowly as the zoom deepens
     startLoop();
