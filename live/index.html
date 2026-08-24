@@ -1254,8 +1254,9 @@ function pushLyricLine(L, dur){
   }, step);
 }
 setInterval(function(){
-  if(typeof current==="undefined" || current<0 || vid.paused || !clips[current]) return;
-  var name=clips[current].name;
+  if(vid.paused) return;
+  // key the timeline off the file actually playing — works for rotation, lab selects, spacebar, everything
+  var name=(vid.currentSrc||"").split("/").pop().split("?")[0];
   var arr=LYRICS_BY_CLIP[name]; if(!arr) return;
   var LEAD=1.2;                       // start typing early so the full line lands on the vocal
   var t=vid.currentTime + LEAD;
