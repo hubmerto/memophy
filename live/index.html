@@ -35,6 +35,15 @@ a:hover{text-decoration:underline;}
 #framewrap{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#fff;}   /* locked 16:9, no padding */
 #wrap{position:absolute;top:0;left:0;width:1280px;height:720px;padding:0;overflow:hidden;box-sizing:border-box;transform-origin:0 0;background:#fff;}
 /* permanent page texture — scanlines + phosphor grille, ALWAYS on (login too), a fixed screen texture */
+/* private show extras: send box at sidebar bottom + karaoke line on her screen */
+#pchatin{display:none;position:absolute;bottom:0;left:0;right:0;height:56px;padding:8px;box-sizing:border-box;background:#f5f5f5;border-top:1px solid #ddd;align-items:center;z-index:5;}
+#pchatin input{flex:1;min-width:0;font:bold 15px Arial;padding:7px 8px;border:1px solid #ccc;margin-right:6px;}
+#pchatin button{font:bold 14px Arial;padding:7px 14px;}
+body.pshow #pchatin{display:flex;}
+body.pshow .cpane{bottom:56px;}
+#plyr{display:none;position:absolute;left:0;right:0;bottom:44px;text-align:center;pointer-events:none;z-index:6;
+  font:bold 30px Arial,Helvetica,sans-serif;color:#fff;text-shadow:0 2px 6px rgba(0,0,0,.85),0 0 2px #000;padding:0 30px;}
+body.pshow #plyr{display:block;}
 /* ===== PRIVATE SHOW view: her screen big, chat as sidebar ===== */
 body.pshow #gcol,body.pshow #callpanel{display:none !important;}
 body.pshow #left{width:calc(73% - 8px);}
@@ -68,7 +77,7 @@ body.diving .hearts,body.diving .wmark,body.diving .livebadge,body.diving .tipto
 @keyframes logobreathe{0%,100%{transform:scale(0.94);}50%{transform:scale(1.04);}}
 
 /* ---- tab strip ---- */
-#tabs{height:44px;border-bottom:1px solid #e8a3c8;position:relative;margin-top:4px;padding:0 122px 0 184px;box-sizing:border-box;white-space:nowrap;overflow:hidden;}
+#tabs{height:44px;border-bottom:1px solid #e8a3c8;position:relative;margin-top:4px;padding:0 86px 0 184px;box-sizing:border-box;white-space:nowrap;overflow:hidden;}
 .tab{display:inline-block;float:none;vertical-align:top;height:36px;line-height:36px;margin-top:7px;padding:0 11px;margin-right:3px;font:bold 14px Arial;border-bottom:none;border-radius:6px 6px 0 0;}
 .jp{font-weight:bold;color:#ff2ea6;-webkit-text-stroke:2px #ffe600;paint-order:stroke fill;text-shadow:-2px -2px 0 #ffe600,2px -2px 0 #ffe600,-2px 2px 0 #ffe600,2px 2px 0 #ffe600,0 0 6px rgba(255,230,0,.9);letter-spacing:.5px;}
 .tab .jp{font-size:13px;margin-left:4px;text-transform:none;}
@@ -79,6 +88,8 @@ body.diving .hearts,body.diving .wmark,body.diving .livebadge,body.diving .tipto
 .miniplayer canvas{display:block;width:104px;height:22px;}
 .miniplayer .mptitle{font:bold 10px Arial;color:#b0106a;text-transform:uppercase;margin-left:8px;letter-spacing:.5px;white-space:nowrap;}
 #tabs .rt a{color:#b0106a;margin-left:16px;text-transform:uppercase;}
+.navic{font-size:20px;text-decoration:none !important;margin-left:12px;}
+
 #tabs .rt a.nxt{padding:5px 12px;font-size:12px;}
 .nowplaying{float:left;height:28px;line-height:28px;margin-top:11px;margin-left:10px;padding:0 16px 0 12px;font:bold 12px Arial;color:#b0106a;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
   border:1px solid #e8a3c8;border-radius:15px;box-shadow:inset 0 1px 0 #fff;
@@ -509,8 +520,7 @@ html,body{overflow:auto;}
     <span class="tab" id="tabprivate" onclick="togglePrivate()">Private show<span class="jp">&#x30D7;&#x30E9;&#x30A4;&#x30D9;&#x30FC;&#x30C8;</span></span>
     <span class="tab">Shop</span>
     <span class="tab">Schedule<span class="jp">&#x914D;&#x4FE1;&#x4E88;&#x5B9A;</span></span>
-    <span class="tab">Log in</span><span class="tab">Sign up</span>
-    <span class="rt"><a href="#">Join fanclub</a></span>
+    <span class="rt"><a href="#" class="navic" title="Log in">&#128273;</a><a href="#" class="navic" title="Sign up">&#128100;</a></span>
   </div>
 
   <div id="mobilebar">
@@ -536,6 +546,7 @@ html,body{overflow:auto;}
             <video id="vid" playsinline></video>
             <div class="wmark">MEMPHY<span>.TV</span></div>
             <div class="hearts" id="hearts"></div>
+            <div id="plyr"></div>
             <div class="tiptotal" id="tiptotal">â¤ 12.4k</div>
             <div class="livebadge" id="livebadge"><span class="recdot">&#9679;</span> LIVE</div>
             <div class="camdz" id="dropzone">
@@ -588,6 +599,7 @@ html,body{overflow:auto;}
         <div class="ctabs">
           <span class="ctab on" data-pane="chatlog">Chat</span><span class="ctab" data-pane="queue">Users (<span id="linecount">0</span>)<span class="jp">&#x5F85;&#x6A5F;</span></span><span class="ctab" data-pane="playlist">Clips (<span id="clipcount">0</span>)</span><span class="ctab gear">&#9881;</span>
         </div>
+        <div id="pchatin"><input type="text" id="chatmsg" maxlength="120" placeholder="say something to MEMPHY..."><button id="chatsend" onclick="sendChat()">Send</button></div>
         <div id="chatlog" class="cpane on">
           <div class="sys">Connected. &#x63A5;&#x7D9A;&#x3057;&#x307E;&#x3057;&#x305F;</div>
           <div class="sys">Welcome to memphy's room &mdash; she picks who gets to talk.</div>
@@ -1373,6 +1385,13 @@ setInterval(function(){
   lyrScrollTarget=0;  // keep the newest (top) line in view
   l.scrollTop=0;
 }, 120);
+// private show: mirror the sung lyric line onto the bottom of her screen
+setInterval(function(){
+  var pl=document.getElementById('plyr'); if(!pl || !document.body.classList.contains('pshow')) return;
+  var act=document.querySelector('#calllog .lyr.active');
+  var txt = act ? (act.querySelector('.lt') ? act.querySelector('.lt').textContent : act.textContent) : '';
+  if(pl.textContent!==txt) pl.textContent=txt;
+}, 100);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
   stopCallChat();   // transcript panel is lyrics-only (lyric video style)
