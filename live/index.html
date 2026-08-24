@@ -1461,7 +1461,9 @@ function rotateCaller(){
     playClip(idx,'guest');
     var _isLoop = clips[idx] && LOOP_CLIPS[clips[idx].name];
     gvid.loop = !!_isLoop;                  // reveal loops; everything else plays once then next
-    autoRotTimer=setTimeout(rotateCaller, _isLoop ? 30000 : 20000);
+    // safety fallback sized to the clip so it always plays through once; 'ended' advances normally
+    var safeMs = (clips[idx] && clips[idx].seconds) ? (clips[idx].seconds*1000+6000) : 60000;
+    autoRotTimer=setTimeout(rotateCaller, safeMs);
   }, connectMs);
 }
 setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
