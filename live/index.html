@@ -468,7 +468,7 @@ body.reccap #lab{display:none !important;}              /* record the frame only
 /* ---- page scrolls now: first viewport = recorded frame, LAB lives below ---- */
 html,body{overflow:auto;}
 #wrap{height:var(--fh);overflow:hidden;box-sizing:border-box;}
-#lab{max-width:var(--fw);margin:14px auto 60px;padding:14px 16px 18px;background:#f5f5f5;border:1px solid #b9b9b9;font:13px Arial,Helvetica,sans-serif;color:#333;}
+#lab{display:none;max-width:var(--fw);margin:14px auto 60px;padding:14px 16px 18px;background:#f5f5f5;border:1px solid #b9b9b9;font:13px Arial,Helvetica,sans-serif;color:#333;}
 #lab .labhead{font:bold 14px Arial;color:#f47321;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
 #lab .labhead small{color:#888;text-transform:none;letter-spacing:0;font-weight:normal;margin-left:10px;}
 .labgrid{border-collapse:collapse;margin-bottom:12px;}
@@ -544,7 +544,7 @@ html,body{overflow:auto;}
     <span class="tab" onclick="if(document.body.classList.contains('pshow')) togglePrivate();" style="cursor:pointer">Chat room<span class="jp">&#x30C1;&#x30E3;&#x30C3;&#x30C8;</span></span>
     <span class="tab">Fanclub &#9829;</span>
     <span class="tab" id="tabprivate" onclick="togglePrivate()">Private show<span class="jp">&#x30D7;&#x30E9;&#x30A4;&#x30D9;&#x30FC;&#x30C8;</span></span>
-    <span class="tab">Shop</span>
+    <span class="tab" onclick="var l=document.getElementById('lab'); if(l) l.style.display=(l.style.display==='block'?'none':'block');" style="cursor:pointer">Shop</span>
     <span class="tab">Schedule<span class="jp">&#x914D;&#x4FE1;&#x4E88;&#x5B9A;</span></span>
     <span class="rt"><a href="#" class="navtxt">Log in</a><a href="#" class="navtxt">Sign up</a></span>
   </div>
@@ -2069,7 +2069,7 @@ var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
   var s=window._fitS||1;                                  // base fit-scale of the locked 16:9 UI
-  if(p<=0){ w.style.transform='scale('+s+')'; w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; window._diving=false; if(!window._autoDive){window._autoZmax=null; window._herC=null;} document.body.classList.remove('diving'); if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
+  if(p<=0){ w.style.transform='scale('+s+')'; w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; window._diving=false; if(!window._autoDive){window._autoZmax=null; window._herC=null; window._hsH0=null; window._destX=null; var hs0=document.getElementById('hstage'); if(hs0) hs0.style.height='';} document.body.classList.remove('diving'); if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
   var S=1+p*((window._autoZmax||PORTAL.zmax)-1);
   // zoom is computed in the fixed 1280x720 design space (wrap origin 0,0), then the whole thing is fit-scaled
   var lx=zc.cx, ly=zc.cy;
@@ -2159,7 +2159,8 @@ function exitInside(){
   document.removeEventListener('keydown', escInside);
   var layer=document.getElementById('inside');
   var hs=document.getElementById('hstage');
-  if(hs){ hs.insertBefore(vid, hs.firstChild); }
+  if(hs){ hs.insertBefore(vid, hs.firstChild); hs.style.height=''; }
+  window._hsH0=null; window._destX=null;
   vid.style.transition=''; vid.style.position=''; vid.style.left=''; vid.style.top='';
   vid.style.width=''; vid.style.height=''; vid.style.objectFit=''; vid.style.transform='scale(1.04)';
   if(layer && layer.parentNode) layer.parentNode.removeChild(layer);
