@@ -832,7 +832,7 @@ function initMephyBackground({
   let _lastDraw = 0;
   function tick(t) {
     raf = requestAnimationFrame(tick);
-    if (layer && layer.offsetParent === null) return;   // skip render when the mount is hidden (e.g. gate after entering)
+    if (layer && layer.getClientRects().length === 0) return;   // skip render when the mount is hidden (fixed-position safe)
     if (_mobFps && (t - _lastDraw) < (1000 / _mobFps)) return;
     _lastDraw = t;
     const dt = Math.min((t - lastT) / 1000, 0.1);
