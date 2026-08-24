@@ -1209,19 +1209,31 @@ function rollProfile(){
 // ---- GO ALL NIGHT: timed karaoke lyrics, synced to her clip audio ----
 var LYRICS=[[0,"(intro \u2014 la-la vocal chops)",1],[21,"All of you"],[23.5,"You want it too"],[29.9,"(one, two)",1],[33.7,"I see it through, let's make a move"],[41.9,"We keep the groove, it fits us 2"],[48.5,"Dancing to the sound of you, you, you (of you, of you\u2026)"],[55.8,"Lalalalalalalala"],[62.8,"Lalalalalalalala"],[69.8,"Lalalalalalalala"],[76.7,"Lalalalalalalala"],[80.5,"Lalalalalalalala"],[83.4,"Mini skirt, I'm such a flirt"],[89.9,"Take off the shirt, get straight to work"],[97.4,"I make it hurt, you go bezerk"],[104.4,"I put it down, flip and reverse"],[107.9,"(reverse, reverse, reverse, reverse)",1],[111.6,"Take your jeans off, we can go all night"],[118.5,"Take your jeans off, we can go all night"],[125.4,"Take your jeans off, we can go all night"],[132.3,"Take your jeans off, we can go all night"],[139.2,"Take your jeans off, we can go all night"],[146.1,"Take your jeans off, we can go all night"],[152.1,"All night, all night"],[159.3,"All night, all night"],[166.2,"(break \u2014 on me, on me, on me\u2026)",1],[180.3,"T-T-Take your jeans off, we can go all night"],[188.0,"Take your jeans off, we can go all night"],[195.1,"Take your jeans off, we can go all night"],[202.0,"Take your jeans off, we can go all night"],[209,"(outro)",1],[221.7,"You"]];
 var LYRIC_OFFSETS={"memphy_01.mp4":0,"memphy_02.mp4":0,"memphy_03.mp4":0};   // per-clip song offset (s) if a clip doesn't start at 0:00
-var lyrIdx=-1, lyrClip="", lastKaraokeEl=null;
+var lyrIdx=-1, lyrClip="", typingTimer=null, typingSpan=null, typingTxt="";
+function finishTyping(){
+  if(typingTimer){ clearInterval(typingTimer); typingTimer=null; }
+  if(typingSpan){ typingSpan.textContent=typingTxt; typingSpan=null; }
+}
 function pushLyric(idx){
   var L=LYRICS[idx], l=document.getElementById("calllog"); if(!l) return;
-  if(lastKaraokeEl){ lastKaraokeEl.className="klyric done"; }
-  if(L[2]){ pushCall("sys",null,"\u266a "+esc(L[1])); lastKaraokeEl=null; return; }
-  var dur=(idx+1<LYRICS.length ? LYRICS[idx+1][0]-L[0] : 4); dur=Math.max(1.5,Math.min(8,dur));
+  finishTyping();
+  if(L[2]){ pushCall("sys",null,"\u266a "+esc(L[1])); return; }
   var d=document.createElement("div");
-  d.className="klyric";
-  d.innerHTML='<span class="kt" style="-webkit-animation-duration:'+dur+'s;animation-duration:'+dur+'s">\uD83C\uDFB6 '+esc(L[1])+"</span>";
+  d.className="mem";
+  d.innerHTML='<b>memphy:</b> <span class="typing"></span>';
   l.appendChild(d);
   while(l.children.length>50) l.removeChild(l.firstChild);
   l.scrollTop=l.scrollHeight;
-  lastKaraokeEl=d;
+  var span=d.querySelector(".typing"), txt=L[1], i=0;
+  var dur=(idx+1<LYRICS.length ? LYRICS[idx+1][0]-L[0] : 4);
+  var step=Math.max(24, Math.min(95, (dur*600)/Math.max(1,txt.length)));   // typing fits inside the line
+  typingSpan=span; typingTxt=txt;
+  typingTimer=setInterval(function(){
+    i++;
+    span.textContent = txt.slice(0,i) + (i<txt.length ? "\u258c" : "");
+    if(i>=txt.length){ span.textContent=txt; clearInterval(typingTimer); typingTimer=null; typingSpan=null; }
+    l.scrollTop=l.scrollHeight;
+  }, step);
 }
 setInterval(function(){
   if(typeof current==="undefined" || current<0 || vid.paused || !clips[current]) return;
