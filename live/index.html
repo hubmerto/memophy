@@ -61,9 +61,10 @@ a:hover{text-decoration:underline;}
 .miniplayer .mptitle{font:bold 10px Arial;color:#b0106a;text-transform:uppercase;margin-left:8px;letter-spacing:.5px;white-space:nowrap;}
 #tabs .rt a{color:#b0106a;margin-left:16px;text-transform:uppercase;}
 #tabs .rt a.nxt{padding:5px 12px;font-size:12px;}
-.nowplaying{position:absolute;right:160px;top:9px;height:28px;line-height:28px;padding:0 16px 0 12px;font:bold 12px Arial;color:#b0106a;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
+.nowplaying{float:left;height:28px;line-height:28px;margin-top:11px;margin-left:10px;padding:0 16px 0 12px;font:bold 12px Arial;color:#b0106a;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;
   border:1px solid #e8a3c8;border-radius:15px;box-shadow:inset 0 1px 0 #fff;
   background:#f9d3e7;background:-webkit-linear-gradient(top,#fff4fa 0%,#fbd7ea 55%,#f6c2df 100%);background:linear-gradient(to bottom,#fff4fa 0%,#fbd7ea 55%,#f6c2df 100%);}
+@media (max-width:1560px){.nowplaying{display:none;}}   /* hide when the row gets tight — no overlaps */
 .nowplaying .eq{display:inline-block;vertical-align:middle;margin:-3px 8px 0 0;}
 .nowplaying .eq i{display:inline-block;width:3px;margin-right:2px;background:#e6258f;vertical-align:bottom;
   -webkit-animation:eqb 0.9s ease-in-out infinite;animation:eqb 0.9s ease-in-out infinite;}
