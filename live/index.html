@@ -1762,25 +1762,17 @@ function rotateCaller(){
   if(!idxs.length){ autoRotTimer=setTimeout(rotateCaller,2000); return; }
   currentCaller = queue.length ? queue.shift().name : ('guest'+(1000+Math.floor(Math.random()*8999)));
   lineTotal=Math.max(lineTotal-1,queue.length); renderQueue();
-  gvid.pause(); if(dz){} document.getElementById('gdz').style.display='none';
-  document.getElementById('glive').style.display='none';
-  showSpin(true,'connecting '+esc(currentCaller)+'\u2026');
-  document.getElementById('gueststatus').innerHTML='&mdash; connecting\u2026';
+  document.getElementById('gdz').style.display='none';
   var idx=bagNext('caller', idxs);
   if(clips[idx] && NAME_FOR_CLIP[clips[idx].name]) currentCaller = NAME_FOR_CLIP[clips[idx].name];
-  var connectMs=250+Math.random()*300;
-  setTimeout(function(){
-    if(window._recjobMode || window._dlHold){ showSpin(false); return; }
-    if(typeof lab!=='undefined' && lab.playing){ showSpin(false); return; }
-    showSpin(false);
-    gMaxPlay = 0;
-    playClip(idx,'guest');
-    var _isLoop = clips[idx] && LOOP_CLIPS[clips[idx].name];
-    gvid.loop = !!_isLoop;                  // reveal loops; everything else plays once then next
-    // safety fallback sized to the clip so it always plays through once; 'ended' advances normally
-    var safeMs = (clips[idx] && clips[idx].seconds) ? (clips[idx].seconds*1000+6000) : 60000;
-    autoRotTimer=setTimeout(rotateCaller, safeMs);
-  }, connectMs);
+  // hard cut to the next caller — no connecting break, the last frame holds until the new clip paints
+  showSpin(false);
+  gMaxPlay = 0;
+  playClip(idx,'guest');
+  var _isLoop = clips[idx] && LOOP_CLIPS[clips[idx].name];
+  gvid.loop = !!_isLoop;                  // reveal loops; everything else plays once then next
+  var safeMs = (clips[idx] && clips[idx].seconds) ? (clips[idx].seconds*1000+6000) : 60000;
+  autoRotTimer=setTimeout(rotateCaller, safeMs);
 }
 setTimeout(function(){ if(callerIdxs().length) rotateCaller(); }, 1600);
 setTimeout(function(){ if(typeof herRotate==='function' && herIdxs().length) herRotate(); }, 400);
@@ -2221,6 +2213,10 @@ function commitInside(){
   insideMode=true;
   if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
   document.body.style.cursor='none'; document.body.classList.add('inside');   // mouse gone once her screen takes over
+  try{ var lp=window._lastPtr||{x:window.innerWidth/2,y:window.innerHeight/2};   // …with a fast pixel-glitch vanish
+    var cg=document.createElement('div'); cg.id='cursorglitch'; cg.style.left=lp.x+'px'; cg.style.top=lp.y+'px';
+    document.body.appendChild(cg); setTimeout(function(){ if(cg.parentNode) cg.parentNode.removeChild(cg); }, 460);
+  }catch(e){}
   // capture her cam's CURRENT (zoomed) on-screen rect so the footage picks up exactly
   // where the dive left off — no hard cut / sudden jump into the video
   var hs=document.getElementById('hstage');
@@ -2274,20 +2270,27 @@ function exitInside(){
   document.removeEventListener('keydown', escInside);
   var layer=document.getElementById('inside');
   var hs=document.getElementById('hstage');
+  var w=document.getElementById('wrap');
+  var lb=document.getElementById('lab');
+  // Esc = the camera pulls BACK OUT: restore the UI beneath at the committed zoom,
+  // swap her video into the stage (same pixels — invisible), then glide the zoom to rest
+  pressOn=false; window._autoDive=false; window._overHer=false; window._diving=false;
+  if(w){ w.style.display=''; w.style.transition=''; w.style.opacity=''; }
+  if(lb) lb.style.display='';
+  zoomP=Math.max(zoomP||0, 0.985); zoomTarget=0;
+  applyZoom(zoomP);                                  // wrap snaps under the video before the swap
   if(hs){ hs.insertBefore(vid, hs.firstChild); hs.style.height=''; }
   window._hsH0=null; window._destX=null;
   vid.style.transition=''; vid.style.position=''; vid.style.left=''; vid.style.top='';
   vid.style.width=''; vid.style.height=''; vid.style.objectFit=''; vid.style.transform='scale(1.04)';
   if(layer && layer.parentNode) layer.parentNode.removeChild(layer);
-  var w=document.getElementById('wrap'); if(w){ w.style.display=''; w.style.transition=''; w.style.opacity=''; }
-  var lb=document.getElementById('lab'); if(lb) lb.style.display='';
-  pressOn=false; window._diving=false; window._autoDive=false; window._autoZmax=null; window._herC=null; document.body.style.cursor=''; document.body.classList.remove('diving'); document.body.classList.remove('inside');
-  zoomP=0; zoomTarget=0; applyZoom(0);
+  document.body.style.cursor=''; document.body.classList.remove('diving'); document.body.classList.remove('inside');
   try{
     gvid._hold=false;
     if(window._dlHold){ gvid.muted=true; gvid.play().catch(function(){}); }
     else if(typeof rotateCaller==='function') rotateCaller();
   }catch(e){}
+  if(!zoomAnim) zoomAnim=requestAnimationFrame(loopStep);   // eases zoomP -> 0; applyZoom(0) does the final cleanup
 }
 (function(){
   var w=document.getElementById('wrap'); if(!w) return;
