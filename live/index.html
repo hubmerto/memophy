@@ -2002,6 +2002,7 @@ var gBufReset=null;
     var vw=gvid.videoWidth, vh=gvid.videoHeight;
     var arC=cw/ch, arV=vw/vh, sx,sy,sw,sh;
     if(arV>arC){ sh=vh; sw=vh*arC; sx=(vw-sw)/2; sy=0; } else { sw=vw; sh=vw/arC; sx=0; sy=(vh-sh)/2; }
+    var Z=1.10; var nsw=sw/Z, nsh=sh/Z; sx+=(sw-nsw)/2; sy+=(sh-nsh)/2; sw=nsw; sh=nsh;  // +10% zoom to crop caller black padding
     try{ ctx.drawImage(gvid, sx,sy,sw,sh, 0,0,W,H); }catch(e){}
   }
   requestAnimationFrame(draw);
