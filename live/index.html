@@ -199,11 +199,11 @@ body.diving .hearts,body.diving .wmark,body.diving .livebadge,body.diving .tipto
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
 #calllog{height:172px;box-sizing:border-box;overflow-y:auto;padding:12px 14px 14px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
-#calllog .lyr{font:bold 21px Arial,Helvetica,sans-serif;line-height:1.35;margin:0 0 14px;color:#d9c2cf;
+#calllog .lyr{font:bold 21px Arial,Helvetica,sans-serif;line-height:1.35;margin:0 0 14px;color:#111;
   -webkit-transition:color .35s,opacity .35s,-webkit-transform .35s;transition:color .35s,opacity .35s,transform .35s;
   -webkit-transform-origin:left center;transform-origin:left center;}
-#calllog .lyr.past{color:#e9dde4;opacity:.75;}
-#calllog .lyr.active{color:#e6258f;-webkit-transform:scale(1.06);transform:scale(1.06);}
+#calllog .lyr.past{color:#555;opacity:.85;}
+#calllog .lyr.active{color:#000;-webkit-transform:scale(1.06);transform:scale(1.06);}
 #calllog .lyr.par{font-size:15px;font-style:italic;font-weight:normal;color:#cbb3c1;}
 #calllog .lyr.par.active{color:#d2287f;-webkit-transform:none;transform:none;}
 #calllog .lyr .lp{color:#e0101a;font-size:16px;margin-right:4px;}
@@ -1144,7 +1144,7 @@ function playClip(i, cam){
     var gl=document.getElementById('glive'); gl.style.display='block'; gl.innerHTML='<span class="recdot">&#9679;</span> '+esc(who);
     document.getElementById('gueststatus').innerHTML = '&mdash; <span style="color:#7cfc00;">ON THE LINE</span> &middot; '+esc(who);
     pushChat('sys', null, esc(who)+' is now on the line with memphy');
-    document.getElementById('callwith').innerHTML = '&mdash; memphy &hearts; '+esc(who);
+    document.getElementById('callwith').innerHTML = '&mdash; MEMPHY &hearts; '+esc(who);
     startCallChat(who);
   } else {
     document.getElementById('livebadge').style.display='block';
@@ -1365,7 +1365,7 @@ setInterval(function(){
     d.className="lyr par active"; d.innerHTML="\u266a "+esc(L[2]);
   } else {
     d.className="lyr active";
-    d.innerHTML='<b class="lp">memphy:</b> <span class="lt"></span>';
+    d.innerHTML='<b class="lp">MEMPHY:</b> <span class="lt"></span>';
   }
   l.insertBefore(d, l.firstChild);                 // NEW lyric on top, older ones below
   while(l.children.length>40) l.removeChild(l.lastChild);
