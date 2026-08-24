@@ -380,10 +380,10 @@ body{font-size:17px;}
 #inside{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:5000;}
 #inside video{width:100%;height:100%;object-fit:cover;display:block;}
 /* ===== CRT overlay layers (children of #wrap, clipped to the 16:9 frame) ===== */
-.crtl{position:absolute;inset:0;pointer-events:none;z-index:1400;transition:opacity .28s ease;}
-body.diving .crtl{opacity:0 !important;}   /* fade CRT out cheaply during the portal dive (no per-frame JS) */
+.crtl{position:absolute;inset:0;pointer-events:none;z-index:1400;transition:opacity 1.1s ease;}
+body.diving .crtl{opacity:0 !important;}   /* slow fade-off of the CRT as her screen takes over */
 #crtScan{mix-blend-mode:multiply;}
-#crtMask{mix-blend-mode:multiply;}
+#crtMask{mix-blend-mode:screen;}   /* additive phosphor grille — adds RGB structure to darks, leaves white white */
 #crtVig{mix-blend-mode:multiply;}
 #crtRoll{mix-blend-mode:screen;}
 #crtLeak{mix-blend-mode:screen;}
@@ -2235,8 +2235,8 @@ function composeWrapFilter(){
     window._crtGeoStr = (m>0 && (P.curv>0||P.aber>0||P.bleed>0||P.glow>0)) ? 'url(#crtGeo)' : '';
     // --- color grade ---
     if(m>0){
-      // offset the light the multiply mask/scanlines eat so the UI doesn't darken
-      var comp=1 + (P.maskInt*1.9 + P.scan*0.55 + P.vig*0.2 + P.noise*0.6)*m;
+      // mask is now a SCREEN blend (additive) so white stays white — only scanlines still darken, compensate lightly for those
+      var comp=1 + (P.scan*0.55 + P.vig*0.2)*m;
       var br=lerp(1,P.bright,m)*comp,co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
       var warm=tn>=0?tn:0, cool=tn<0?-tn:0;
       window._crtColorStr='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')'
