@@ -2050,13 +2050,8 @@ function applyZoom(p){
   w.style.willChange='transform';
   w.style.transformOrigin='0 0';
   w.style.transform='scale('+s+') translate('+tx+'px,'+ty+'px) scale('+S+')';
-  // crt-style fisheye blooms in with the dive
-  var fd=document.getElementById('fdisp');
-  if(fd){
-    var amt = p*PORTAL.fish*0.20;   // stronger crt-lab-style fisheye bulge
-    fd.setAttribute('scale', String(amt));
-    window._portalFish = amt;
-  }
+  // fisheye removed — plain scale dive, no lens bulge
+  window._portalFish = 0;
   composeWrapFilter();   // cheap: CRT is faded out via CSS (.diving), no per-frame recompute
 }
 // ---- crt-lab-style zoom: PRESS-AND-HOLD her video = cursor-following fisheye loupe that keeps zooming while held ----
@@ -2070,7 +2065,8 @@ function loopStep(){
   var goHer = auto || onHer;
   window._commitAllowed = goHer;
   var target = (pressOn || auto) ? 1 : 0;                  // auto keeps diving smoothly even after you release — no over-zooming needed
-  if(pressOn && !auto){ zc.cx=mZ.sx; zc.cy=mZ.sy; }        // manual loupe follows the cursor; the auto-dive locks the anchor
+  if(auto){ if(!window._herC) window._herC=herCenterDesign(); zc.cx=window._herC.x; zc.cy=window._herC.y; }  // ALWAYS zoom into her cam center, not where you clicked
+  else if(pressOn){ zc.cx=mZ.sx; zc.cy=mZ.sy; }            // manual loupe follows the cursor
   var dx = goHer ? 640 : zc.cx;                            // her screen -> glide to center so her footage fills the screen
   var dy = goHer ? 360 : zc.cy;
   zc.vx += (dx-zc.vx)*0.12; zc.vy += (dy-zc.vy)*0.12;
@@ -2089,6 +2085,8 @@ function startLoop(){
 }
 // viewport px -> fixed 1280x720 design space
 function toDesign(x,y){ var fr=document.getElementById('framewrap'); if(!fr) return {x:x,y:y}; var r=fr.getBoundingClientRect(); var s=window._fitS||1; return {x:(x-r.left)/s, y:(y-r.top)/s}; }
+// her cam center in design space, from layout (transform-independent)
+function herCenterDesign(){ var hs=document.getElementById('hstage'), wrap=document.getElementById('wrap'); if(!hs) return {x:320,y:300}; var x=0,y=0,el=hs; while(el && el!==wrap){ x+=el.offsetLeft; y+=el.offsetTop; el=el.offsetParent; } return {x:x+hs.offsetWidth/2, y:y+hs.offsetHeight/2}; }
 function commitInside(){
   insideMode=true;
   if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
@@ -2112,7 +2110,8 @@ function commitInside(){
   vid.style.transition='left .9s cubic-bezier(.4,0,.2,1),top .9s cubic-bezier(.4,0,.2,1),width .9s cubic-bezier(.4,0,.2,1),height .9s cubic-bezier(.4,0,.2,1)';
   // keep the UI visible (zoomed) UNDERNEATH while her video grows to cover it, then hide it — no black, no sudden disappear
   var w=document.getElementById('wrap');
-  if(w){ setTimeout(function(){ if(insideMode){ w.style.display='none'; w.style.transform=''; w.style.filter=''; w.style.opacity=''; } }, 980); }
+  if(w){ w.style.transition='opacity .9s ease'; w.style.opacity='0';
+    setTimeout(function(){ if(insideMode){ w.style.display='none'; w.style.transform=''; w.style.filter=''; w.style.opacity=''; w.style.transition=''; } }, 980); }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='none';
   // settle to true fullscreen on the next tick (timeout, not rAF — survives throttled frames)
   setTimeout(function(){ if(!insideMode) return; vid.style.left='0px'; vid.style.top='0px'; vid.style.width='100%'; vid.style.height='100%'; }, 24);
