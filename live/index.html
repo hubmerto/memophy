@@ -60,32 +60,37 @@ body.pshow #tabprivate{background:#fff;color:#ff3fa4;}
 /* private show ad units: leaderboard over her screen + 1:1 square under the chat */
 #adbanner,#adsquare{display:none;}
 body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:1px solid #222;background:#000;}
-#adbanner .bn{position:relative;height:62px;background:#000;overflow:hidden;display:flex;align-items:center;padding:0 0 0 16px;white-space:nowrap;}
-#adbanner .btxt{display:flex;flex-direction:row;align-items:baseline;}
-#adbanner .t1{font:bold 24px Arial,Helvetica,sans-serif;color:#fff;}
-#adbanner .t2{font:bold 13px Arial;color:#fff;letter-spacing:2px;margin:0 10px;}
+#adbanner .bn{position:relative;height:62px;background:#000;overflow:hidden;display:flex;align-items:center;padding:0 16px;white-space:nowrap;animation:bnbg .22s steps(1) infinite;}
+#adbanner .btxt{display:flex;flex-direction:row;align-items:baseline;margin:0 auto;}
+#adbanner .t1{font:bold 24px Arial,Helvetica,sans-serif;color:#fff;animation:bntx .22s steps(1) infinite;}
+#adbanner .t2{font:bold 13px Arial;color:#fff;letter-spacing:2px;margin:0 10px;animation:bntx .22s steps(1) infinite;}
 #adbanner .t3{font:bold 26px Arial,'Arial Black';color:#e30613;border-bottom:3px solid #e30613;letter-spacing:1px;}
-#adbanner .btri{height:44px;margin-left:18px;}
-#adbanner .bpf{height:38px;margin-left:10px;}
+#adbanner .btri{height:44px;margin-left:0;}
+#adbanner .bpf{height:38px;margin-left:10px;margin-right:auto;}
 #adbanner .bgum{height:62px;margin-left:auto;}
 #adsquare{position:absolute;right:0;bottom:8px;width:27%;border:1px solid #9CC1E7;background:#fff;z-index:4;}
 body.pshow #adsquare{display:block;}
 #adsquare .sq{height:258px;box-sizing:border-box;display:flex;background:#fff;}
 #adsquare .sqimg{width:44%;background:url('assets/memphy_ad.jpg') center top/cover no-repeat;border-right:2px solid #111;}
-#adsquare .sqtxt{flex:1;min-width:0;padding:10px 8px 8px;text-align:center;color:#000;font:bold 12px Arial;line-height:1.35;}
+#adsquare .sqtxt{flex:1;min-width:0;padding:8px;display:flex;flex-direction:column;justify-content:center;text-align:center;color:#000;font:bold 12px Arial;line-height:1.35;}
 #adsquare .sqtxt b{display:block;font:bold 21px 'Arial Black',Impact,Arial;line-height:1.05;letter-spacing:-1px;margin-bottom:6px;white-space:nowrap;}
 #adsquare .sqtxt .l1{display:block;font:bold 13px Arial;margin-bottom:3px;}
 #adsquare .sqtxt .l2{display:block;font:bold 12px Georgia,'Times New Roman',serif;font-style:italic;line-height:1.3;margin-bottom:6px;}
-#adsquare .cta2{display:block;font:bold 20px 'Arial Black',Impact,Arial;letter-spacing:.5px;}
+#adsquare .cta2{display:block;font:bold 18px 'Arial Black',Impact,Arial;letter-spacing:.5px;line-height:1.25;}
 .adlbl2{position:absolute;right:4px;top:2px;font:normal 10px Arial;color:#6F6F6F;z-index:2;}
 @keyframes adblink{50%{opacity:.25;}}
+@keyframes bnbg{0%,49.9%{background:#000;}50%,100%{background:#fff;}}
+@keyframes bntx{0%,49.9%{color:#fff;}50%,100%{color:#000;}}
+body.pshow #chatbox .ctabs{display:flex;align-items:flex-end;padding:2px 2px 0;overflow:hidden;}
+body.pshow #chatbox .ctab{float:none;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;padding:0 6px;margin-right:2px;height:26px;line-height:26px;}
+body.pshow #chatbox .ctabs .jp{display:none;}
 #pagetex{position:fixed;inset:0;pointer-events:none;z-index:2500;transition:opacity 1.1s ease;
   background-image:
     repeating-linear-gradient(0deg, rgba(0,0,0,.06) 0px, rgba(0,0,0,.06) 1px, transparent 1px, transparent 3px),
     repeating-linear-gradient(90deg, rgba(255,40,90,.055) 0px, rgba(40,255,120,.055) 1.5px, rgba(60,90,255,.055) 3px, transparent 4.5px);}
 body.diving #pagetex{opacity:0;}   /* the ONLY time it fades: her screen taking over */
 /* the overlays ON her cam fade out as her screen takes over (not a sudden disappear) */
-.hearts,.wmark,.livebadge,.tiptotal{transition:opacity .9s ease;}
+.hearts,.wmark,.livebadge,.tiptotal{transition:opacity 1.8s ease;}
 body.diving .hearts,body.diving .wmark,body.diving .livebadge,body.diving .tiptotal{opacity:0;}
 
 /* pink tab-style buttons (reference: cam-site tabs, made pink) */
@@ -558,11 +563,11 @@ html,body{overflow:auto;}
   </div>
 
   <div id="stagearea">
-    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="sqimg"></div><div class="sqtxt"><b>MY DL TRADE<br>A BOTTOM</b><span class="l1">I don't want to remarry.</span><span class="l2">I only want <i>a literal dork</i> to explain <i>chrome pendants</i> to me for over 4 hours</span><span class="cta2">CLICK HERE</span></div></div></div>
+    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="sqimg"></div><div class="sqtxt"><b>MY DL TRADE<br>A BOTTOM</b><span class="l2">I don't want a trade I just want to be spoiled</span><span class="cta2">CLICK HERE</span><span class="cta2">CLICK HERE</span><span class="cta2">CLICK HERE</span></div></div></div>
 
     <!-- ===== left: the two screens ===== -->
     <div id="left">
-      <div id="adbanner"><span class="adlbl2">Advertisement</span><div class="bn"><div class="btxt"><span class="t1">Only 1 gummy</span><span class="t2">and my trade goes</span><span class="t3">ALL NIGHT!</span></div><img class="btri" src="assets/ad_tri.jpg" alt=""><img class="bpf" src="assets/ad_pf.jpg" alt=""><img class="bgum" src="assets/ad_gummy.jpg" alt=""></div></div>
+      <div id="adbanner"><span class="adlbl2">Advertisement</span><div class="bn"><img class="btri" src="assets/ad_tri.jpg" alt=""><img class="bpf" src="assets/ad_pf.jpg" alt=""><div class="btxt"><span class="t1">Only 1 gummy</span><span class="t2">and my trade goes</span><span class="t3">ALL NIGHT!</span></div><img class="bgum" src="assets/ad_gummy.jpg" alt=""></div></div>
       <div id="camrow">
         <div class="camcol" id="hcol">
           <div id="subject" class="box">
@@ -2129,7 +2134,7 @@ function loopStep(){
   var onHer = !!window._overHer;
   if(pressOn && onHer) window._autoDive=true;              // once you zoom ON her screen, the transition takes over automatically
   var auto = !!window._autoDive;
-  if(auto) document.body.style.cursor='none';              // mouse disappears the moment we start transitioning into her frame
+  if(auto){ document.body.style.cursor='none'; document.body.classList.add('diving'); }   // cursor gone + overlays fading for the whole transition
   var goHer = auto || onHer;
   window._commitAllowed = goHer;
   var target = (pressOn || auto) ? 1 : 0;                  // auto keeps diving smoothly even after you release — no over-zooming needed
@@ -2147,7 +2152,7 @@ function loopStep(){
   // camera move: pans+zooms so her frame ends up filling the whole screen (no fading, just the move)
   var dx = auto ? 640 : zc.cx, dy = auto ? 360 : zc.cy;
   zc.vx += (dx-zc.vx)*0.12; zc.vy += (dy-zc.vy)*0.12;
-  var sp = auto ? 0.022 : PORTAL.speed;                    // auto takeover eases in slowly and smoothly
+  var sp = auto ? 0.035 : PORTAL.speed;                    // auto takeover eases in slowly and smoothly
   zoomP += (target-zoomP)*sp;
   // only when her screen fully fills the viewport do we swap to the raw video (invisible switch)
   if(goHer && auto && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
@@ -2233,7 +2238,7 @@ function exitInside(){
     window._diving=true; document.body.classList.add('diving');   // CRT fades off slowly as the zoom deepens
     startLoop();
   });
-  var release=function(){ pressOn=false; window._diving=false; document.body.classList.remove('diving'); if(!window._autoDive && !insideMode) document.body.style.cursor=''; };
+  var release=function(){ pressOn=false; if(!window._autoDive){ window._diving=false; document.body.classList.remove('diving'); if(!insideMode) document.body.style.cursor=''; } };
   addEventListener('pointerup', release);
   addEventListener('pointercancel', release);
   addEventListener('blur', release);
