@@ -2213,7 +2213,9 @@ function composeWrapFilter(){
     window._crtGeoStr = (m>0 && (P.curv>0||P.aber>0||P.bleed>0||P.glow>0)) ? 'url(#crtGeo)' : '';
     // --- color grade ---
     if(m>0){
-      var br=lerp(1,P.bright,m),co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
+      // compensate for the light the multiply mask/scanlines/vignette eat, so the picture doesn't go dark
+      var comp=1 + (P.maskInt*0.55 + P.scan*0.45 + P.vig*0.18)*m;
+      var br=lerp(1,P.bright,m)*comp,co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
       var warm=tn>=0?tn:0, cool=tn<0?-tn:0;
       window._crtColorStr='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')'
         + (warm>0?(' sepia('+(warm*0.5).toFixed(3)+') hue-rotate('+(-12*warm).toFixed(1)+'deg)'):'')
