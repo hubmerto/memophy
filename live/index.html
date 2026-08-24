@@ -137,7 +137,7 @@ a:hover{text-decoration:underline;}
 /* bars under each screen: her video bar ÃÂ· caller controls (same height) */
 .vbar,.ctrls{height:34px;line-height:34px;padding:0 10px;background:#f5f5f5;border:1px solid #b9b9b9;border-top:none;font:12px Arial;color:#555;box-sizing:border-box;}
 .vbar .vol{cursor:pointer;}
-.vbar .slider{display:inline-block;width:110px;height:6px;background:#ccc;border-radius:3px;vertical-align:middle;margin-left:6px;position:relative;}
+.vbar canvas{vertical-align:middle;margin-left:10px;width:170px;height:20px;}
 .vbar .slider i{position:absolute;left:0;top:0;height:6px;width:35%;background:#ff3fa4;border-radius:3px;}
 .vbar .hd{background:#e0101a;color:#fff;font:bold 10px Arial;padding:1px 5px;border-radius:2px;margin-right:10px;}
 .vbar .fs{cursor:pointer;font-size:15px;margin-left:10px;}
@@ -425,13 +425,7 @@ html,body{overflow:auto;}
     <span class="tab">Shop</span>
     <span class="tab">Schedule<span class="jp">&#x914D;&#x4FE1;&#x4E88;&#x5B9A;</span></span>
     <span class="tab">Following (1/1)</span>
-    <span class="miniplayer">
-      <span class="mpbtn" id="mpbtn" onclick="toggleSong()">&#9654;</span>
-      <canvas id="wave" width="104" height="22"></canvas>
-      <span class="mptitle">GO ALL NIGHT</span>
-    </span>
     <span class="rt"><a href="#">Join fanclub</a></span>
-    <audio id="song" src="assets/go-all-night.mp3" loop></audio>
   </div>
 
   <div id="mobilebar">
@@ -471,7 +465,7 @@ html,body{overflow:auto;}
             </div>
           </div>
           <div id="vbar" class="vbar">
-            <span class="vol" id="mutebtn" onclick="ctl('mute')">&#128263; Unmute</span><span class="slider"><i></i></span>
+            <span class="vol" id="mutebtn" onclick="ctl('mute')">&#128266; Mute</span><canvas id="wave" width="170" height="20"></canvas>
             <span class="rt"><span class="vtip" onclick="viewerTip()">&#128176; TIP &#x30C1;&#x30C3;&#x30D7;</span><span class="hd">HD</span><span class="fs" onclick="ctl('full')">&#9974;</span></span>
           </div>
         </div>
@@ -1065,7 +1059,7 @@ function herRotate(){
   var idx;
   if(herFirst){ herFirst=false; idx=idxs[0]; lastHer=idx; }   // memphy_03 default on entry
   else idx=bagNext('her', idxs);
-  playClip(idx,'host'); vid.loop=false; vid.muted=true;
+  playClip(idx,'host'); vid.loop=false; vid.muted=!herAudioOn;
   var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); });
 }
 vid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.playing)) herRotate(); });
@@ -1073,7 +1067,7 @@ gvid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.
 // watchdog: never let an idle cam sit paused
 setInterval(function(){
   if(typeof lab!=='undefined' && lab.playing) return;
-  if(!vid._hold && current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=true; vid.play().catch(function(){}); }
+  if(!vid._hold && current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=!herAudioOn; vid.play().catch(function(){}); }
   if(!gvid._hold && gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && gvid.currentTime < (isFinite(gvid.duration)?gvid.duration:1e9)-0.35 && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
 }, 1500);
 
@@ -1081,7 +1075,7 @@ setInterval(function(){
 function ctl(a){
   if(a==='play') vid.play();
   if(a==='pause') vid.pause();
-  if(a==='mute'){ vid.muted=!vid.muted; document.getElementById('mutebtn').innerHTML = vid.muted?'&#128263; Unmute':'&#128266; Mute'; }
+  if(a==='mute'){ vid.muted=!vid.muted; herAudioOn=!vid.muted; document.getElementById('mutebtn').innerHTML = vid.muted?'&#128263; Unmute':'&#128266; Mute'; }
   if(a==='loop'){ vid.loop=!vid.loop; document.getElementById('loopbtn').innerHTML = '&#8635; Loop: '+(vid.loop?'ON':'OFF'); }
   if(a==='full'){ if(vid.requestFullscreen) vid.requestFullscreen(); else if(vid.webkitRequestFullscreen) vid.webkitRequestFullscreen(); }
 }
@@ -1363,7 +1357,7 @@ function initAudioViz(){
   if(actx2) return;
   try{
     actx2 = new (window.AudioContext||window.webkitAudioContext)();
-    srcNode = actx2.createMediaElementSource(document.getElementById('song'));
+    srcNode = actx2.createMediaElementSource(vid);   // her clips carry the synced song
     analyser = actx2.createAnalyser(); analyser.fftSize = 64;
     srcNode.connect(analyser); analyser.connect(actx2.destination);
   }catch(e){}
@@ -1392,15 +1386,22 @@ function fadeInSong(){
   a.volume=0; var v=0;
   songFadeIv=setInterval(function(){ v=Math.min(1,v+0.035); a.volume=v; if(v>=1){ clearInterval(songFadeIv); songFadeIv=null; } },80);  // ~2.3s fade
 }
+var herAudioOn=true;   // her synced audio is the show's sound
 function toggleSong(){
-  var a=document.getElementById('song'), b=document.getElementById('mpbtn');
-  initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume();
-  if(a.paused){ var p=a.play(); if(p&&p.then){ p.then(fadeInSong).catch(function(){}); } else { fadeInSong(); } b.innerHTML='&#10074;&#10074;'; if(!waveRAF) drawWave(); }
-  else { a.pause(); b.innerHTML='&#9654;'; }
+  if(vid.muted || vid.paused){
+    herAudioOn=true; vid.muted=false;
+    initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume();
+    vid.play().catch(function(){});
+    var mb=document.getElementById('mutebtn'); if(mb) mb.innerHTML='&#128266; Mute';
+    if(!waveRAF) drawWave();
+  } else {
+    herAudioOn=false; vid.muted=true;
+    var mb2=document.getElementById('mutebtn'); if(mb2) mb2.innerHTML='&#128263; Unmute';
+  }
 }
 // try to start on the first interaction anywhere (autoplay w/ sound needs a gesture)
 (function(){
-  function kick(){ try{ vid.muted=true; vid.play().catch(function(){}); }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} var a=document.getElementById('song'); if(a && a.paused){ toggleSong(); } document.removeEventListener('pointerdown',kick); }
+  function kick(){ try{ if(vid.muted) toggleSong(); else vid.play().catch(function(){}); }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} document.removeEventListener('pointerdown',kick); }
   document.addEventListener('pointerdown',kick,{once:true});
 })();
 

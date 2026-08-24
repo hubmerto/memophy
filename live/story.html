@@ -31,8 +31,7 @@
         var v=d.getElementById('vid'), g=d.getElementById('gvid');
         if(v){ v.muted=true; v.play().catch(function(){}); }
         if(g){ g.muted=true; g.play().catch(function(){}); }
-        var a=d.getElementById('song');
-        if(typeof w.toggleSong==='function' && a && a.paused) w.toggleSong();
+        if(typeof w.toggleSong==='function' && v && v.muted) w.toggleSong();
       }catch(e){}
     }
     addEventListener('pointerdown',kickApp,{once:true});
