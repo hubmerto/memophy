@@ -2059,21 +2059,18 @@ function applyZoom(p){
   }
   composeWrapFilter();   // cheap: CRT is faded out via CSS (.diving), no per-frame recompute
 }
-// ---- crt-lab-style zoom: HOVER her video = cursor-following fisheye loupe; PRESS = dive in to enter ----
-var hoverOn=false, pressOn=false;
+// ---- crt-lab-style zoom: PRESS-AND-HOLD her video = cursor-following fisheye loupe that keeps zooming while held ----
+var pressOn=false;
 var mZ={x:0,y:0,sx:0,sy:0};
-var LOUPE=0.7;                        // hover magnify level (~2x at zmax 2.4), like crt-lab loupeZoom
 function loopStep(){
-  mZ.sx += (mZ.x-mZ.sx)*0.18; mZ.sy += (mZ.y-mZ.sy)*0.18;   // smoothed cursor follow (crt-lab mouseS)
-  var target = pressOn ? 1 : (hoverOn ? LOUPE : 0);
-  if(!pressOn){ zc.cx=mZ.sx; zc.cy=mZ.sy; }                 // hover: anchor follows cursor; press: anchor frozen at press point
-  var dx = pressOn ? window.innerWidth/2 : zc.cx;           // hover keeps the point under the cursor fixed (loupe);
-  var dy = pressOn ? window.innerHeight/2 : zc.cy;          // press glides it to the viewport center (dive)
-  zc.vx += (dx-zc.vx)*0.18; zc.vy += (dy-zc.vy)*0.18;
-  zoomP += (target-zoomP)*PORTAL.speed;                     // ease at zoomSpeed
+  mZ.sx += (mZ.x-mZ.sx)*0.2; mZ.sy += (mZ.y-mZ.sy)*0.2;    // smoothed cursor follow (crt-lab mouseS)
+  var target = pressOn ? 1 : 0;                            // hold to keep zooming; release eases back
+  if(pressOn){ zc.cx=mZ.sx; zc.cy=mZ.sy; }                 // anchor follows the cursor while pressing
+  zc.vx += (zc.cx-zc.vx)*0.2; zc.vy += (zc.cy-zc.vy)*0.2;  // loupe: keep the point under the cursor fixed
+  zoomP += (target-zoomP)*PORTAL.speed;                    // ease at zoomSpeed
   if(pressOn && window._commitAllowed && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
   applyZoom(zoomP);
-  if(target===0 && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
+  if(!pressOn && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
   zoomAnim=requestAnimationFrame(loopStep);
 }
 function startLoop(){
@@ -2119,21 +2116,15 @@ function exitInside(){
   if(layer && layer.parentNode) layer.parentNode.removeChild(layer);
   var w=document.getElementById('wrap'); if(w) w.style.display='';
   var lb=document.getElementById('lab'); if(lb) lb.style.display='';
-  hoverOn=false; pressOn=false; window._diving=false; document.body.classList.remove('diving');
+  pressOn=false; window._diving=false; document.body.classList.remove('diving');
   zoomP=0; zoomTarget=0; applyZoom(0);
   try{ if(typeof rotateCaller==='function') rotateCaller(); }catch(e){}
 }
 (function(){
   var w=document.getElementById('wrap'); if(!w) return;
   var hs=document.getElementById('hstage');
-  w.addEventListener('pointermove', function(e){ mZ.x=e.clientX; mZ.y=e.clientY; });
-  if(hs){
-    // HOVER her video -> crt-lab loupe (cursor-following fisheye magnify), eases back on leave
-    hs.addEventListener('pointerenter', function(){ if(insideMode) return; hoverOn=true; window._commitAllowed=true; startLoop(); });
-    hs.addEventListener('pointermove', function(e){ mZ.x=e.clientX; mZ.y=e.clientY; });
-    hs.addEventListener('pointerleave', function(){ hoverOn=false; });
-  }
-  // PRESS -> dive; her screen enters her video, elsewhere just magnifies toward the press point
+  w.addEventListener('pointermove', function(e){ mZ.x=e.clientX; mZ.y=e.clientY; });   // track cursor for the loupe
+  // PRESS-AND-HOLD -> cursor-following loupe that keeps zooming; her screen enters her video, elsewhere just magnifies
   w.addEventListener('pointerdown', function(e){
     if(insideMode) return;
     if(!(e.button===0||e.pointerType!=='mouse')) return;
@@ -2141,13 +2132,13 @@ function exitInside(){
     zc.cx=e.clientX; zc.cy=e.clientY; zc.vx=e.clientX; zc.vy=e.clientY;
     var onHer = !!(hs && (e.target===hs || (hs.contains && hs.contains(e.target))));
     pressOn=true; window._commitAllowed=onHer;
-    window._diving=true; document.body.classList.add('diving');   // CRT fades off slowly as the dive takes over
+    window._diving=true; document.body.classList.add('diving');   // CRT fades off slowly as the zoom deepens
     startLoop();
   });
   var release=function(){ pressOn=false; window._diving=false; document.body.classList.remove('diving'); };
   addEventListener('pointerup', release);
-  addEventListener('pointercancel', function(){ pressOn=false; hoverOn=false; window._diving=false; document.body.classList.remove('diving'); });
-  addEventListener('blur', function(){ pressOn=false; hoverOn=false; window._diving=false; document.body.classList.remove('diving'); });
+  addEventListener('pointercancel', release);
+  addEventListener('blur', release);
 })();
 
 /* ===================== CRT / VIDEO FX over the whole UI ===================== */
