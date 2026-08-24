@@ -1199,6 +1199,7 @@ function makeThumb(idx){
 }
 
 function playClip(i, cam){
+  if(window._dlHold){ window._dlHold=false; try{ gvid.loop=false; }catch(e){} }   // manual pick overrides the directed scene
   cam = cam || 'host';
   var v    = (cam==='guest') ? gvid : vid;
   var zone = (cam==='guest') ? gdz  : dz;
@@ -1301,6 +1302,7 @@ function renderQueue(){
 for(var qi=0;qi<9;qi++) joinLine(true);
 
 setInterval(function(){
+  if(window._diving || insideMode) return;
   lineTotal += 2 + Math.floor(Math.random()*40);
   if(Math.random()<.5 && queue.length<12) joinLine(false);
   else if(queue.length>4 && Math.random()<.25){
@@ -1312,6 +1314,7 @@ setInterval(function(){
 }, 6000);
 
 function acceptNext(){
+  if(window._recjobMode || window._dlHold) return;
   if(!queue.length){ pushChat('sys', null, 'the line is empty right now'); return; }
   if(!clips.length){ pushChat('sys', null, 'no caller cams uploaded yet &mdash; drop clips on the caller cam'); return; }
   currentCaller = queue.shift().name;
@@ -1320,6 +1323,7 @@ function acceptNext(){
   connectCaller();
 }
 function skipCaller(){
+  if(window._recjobMode || window._dlHold) return;
   if(currentCaller) pushChat('sys', null, 'memphy skipped '+currentCaller);
   if(queue.length && clips.length){
     currentCaller = queue.shift().name;
@@ -1330,6 +1334,7 @@ function skipCaller(){
 }
 function connectCaller(){
   gvid.pause();
+  var _holdAtCall=function(){ return window._recjobMode || window._dlHold; };
   gdz.style.display='block';
   document.getElementById('glive').style.display='none';
   document.getElementById('gnosig').innerHTML = 'CONNECTING...';
@@ -1337,6 +1342,7 @@ function connectCaller(){
   document.getElementById('gueststatus').innerHTML = '&mdash; connecting '+esc(currentCaller)+'...';
   document.getElementById('gupbtn').style.display = 'none';
   setTimeout(function(){
+    if(_holdAtCall()) return;
     document.getElementById('gupbtn').style.display = 'block';
     var gi = (forcedGuestIdx>-1) ? forcedGuestIdx : (gcurrent+1)%clips.length; forcedGuestIdx = -1;
     playClip(gi, 'guest');
@@ -1344,6 +1350,7 @@ function connectCaller(){
   }, 450);
 }
 function endCall(){
+  if(window._recjobMode || window._dlHold) return;
   gvid.pause(); gcurrent = -1;
   if(currentCaller){ pushChat('sys', null, 'memphy ended the call with '+currentCaller); currentCaller = null; }
   gdz.style.display='block';
@@ -1393,6 +1400,7 @@ function finishTyping(){
 var lyrScrollTarget=null;
 setInterval(function(){   // apple-music glide: constant drift toward the active line
   var l=document.getElementById("calllog");
+  if(window._diving || insideMode) return;
   if(!l || lyrScrollTarget===null) return;
   var d=lyrScrollTarget - l.scrollTop;
   if(Math.abs(d)<1) return;
@@ -1415,12 +1423,14 @@ function typeActiveRow(row, L){
   typeRow=row; typeFull=txt;
   row.textContent="\u258c";
   typeTimer=setInterval(function(){
+    if(window._diving || insideMode) return;
     i++;
     row.textContent = txt.slice(0,i) + (i<txt.length ? "\u258c" : "");
     if(i>=txt.length){ row.textContent=txt; clearInterval(typeTimer); typeTimer=null; typeRow=null; }
   }, step);
 }
 setInterval(function(){
+  if(window._diving || insideMode) return;
   var name=(vid.currentSrc||"").split("/").pop().split("?")[0];
   var arr=LYRICS_BY_CLIP[name];
   if(!arr){ return; }
@@ -1760,6 +1770,7 @@ function rotateCaller(){
   if(clips[idx] && NAME_FOR_CLIP[clips[idx].name]) currentCaller = NAME_FOR_CLIP[clips[idx].name];
   var connectMs=250+Math.random()*300;
   setTimeout(function(){
+    if(window._recjobMode || window._dlHold){ showSpin(false); return; }
     if(typeof lab!=='undefined' && lab.playing){ showSpin(false); return; }
     showSpin(false);
     gMaxPlay = 0;
@@ -1930,7 +1941,13 @@ function labArmRec(){
   if(!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia){ setRecStatus('screen capture not supported here'); return; }
   setRecStatus('pick what to captureÃ¢ÂÂ¦');
   // reset any active zoom so the frame records straight, not mid-dive/skewed
-  try{ pressOn=false; window._diving=false; document.body.classList.remove('diving'); if(typeof zoomP!=='undefined'){ zoomP=0; if(typeof applyZoom==='function') applyZoom(0); } }catch(e){}
+  try{
+    if(typeof insideMode!=='undefined' && insideMode && typeof exitInside==='function') exitInside();
+    pressOn=false; window._autoDive=false; window._diving=false; window._overHer=false;
+    if(typeof zoomAnim!=='undefined' && zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+    document.body.classList.remove('diving'); document.body.style.cursor='';
+    if(typeof zoomP!=='undefined'){ zoomP=0; if(typeof applyZoom==='function') applyZoom(0); }
+  }catch(e){}
   var opts={ video:{frameRate:{ideal:30,max:30}}, audio:true, preferCurrentTab:true, selfBrowserSurface:'include', surfaceSwitching:'exclude', monitorTypeSurfaces:'exclude' };
   navigator.mediaDevices.getDisplayMedia(opts).then(function(s){
     lab.recAuto=true; lab.stream=s;
@@ -2137,7 +2154,7 @@ function togglePrivate(){
   try{ var q=location.search.replace(/[?&]private/,''); history.replaceState(null,'', location.pathname+(on?(q?q+'&private':'?private'):(q||''))+location.hash); }catch(e){}
 }
 if(location.search.indexOf('private')>-1){ document.body.classList.add('pshow'); }   // direct link: /live/?private
-(function(){ var i=0; setInterval(function(){ var sl=document.querySelectorAll('#adsquare .adslide'); if(!sl.length) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // square ad rotates every 5s
+(function(){ var i=0; setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adsquare .adslide'); if(!sl.length) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // square ad rotates every 5s
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
@@ -2174,8 +2191,9 @@ function loopStep(){
       var hsEl=document.getElementById('hstage');
       var hw=hsEl?hsEl.offsetWidth:632, hh=hsEl?hsEl.offsetHeight:537;
       window._autoZmax=Math.max(1280/hw, 720/hh)*1.02;
+      if(zoomP>0) zoomP=Math.min(0.96, zoomP*(PORTAL.zmax-1)/(window._autoZmax-1));   // keep the scale continuous when latching mid-loupe
     }
-    zc.cx=window._herC.x; zc.cy=window._herC.y;            // zoom into her cam center, wherever you clicked
+    zc.cx += (window._herC.x-zc.cx)*0.12; zc.cy += (window._herC.y-zc.cy)*0.12;   // glide the anchor, no snap
   }
   else if(pressOn){ zc.cx=mZ.sx; zc.cy=mZ.sy; }            // manual loupe follows the cursor
   // camera move: pans+zooms so her frame ends up filling the whole screen (no fading, just the move)
@@ -2245,7 +2263,7 @@ function commitInside(){
       if(lb) lb.style.display='none';
     }, 500);
   }
-  try{ gvid.pause(); }catch(e){}
+  try{ gvid._hold=true; gvid.pause(); }catch(e){}
   try{ if(typeof autoRotTimer!=='undefined' && autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; } }catch(e){}
   document.addEventListener('keydown', escInside);
 }
@@ -2265,7 +2283,11 @@ function exitInside(){
   var lb=document.getElementById('lab'); if(lb) lb.style.display='';
   pressOn=false; window._diving=false; window._autoDive=false; window._autoZmax=null; window._herC=null; document.body.style.cursor=''; document.body.classList.remove('diving'); document.body.classList.remove('inside');
   zoomP=0; zoomTarget=0; applyZoom(0);
-  try{ if(typeof rotateCaller==='function') rotateCaller(); }catch(e){}
+  try{
+    gvid._hold=false;
+    if(window._dlHold){ gvid.muted=true; gvid.play().catch(function(){}); }
+    else if(typeof rotateCaller==='function') rotateCaller();
+  }catch(e){}
 }
 (function(){
   var w=document.getElementById('wrap'); if(!w) return;
@@ -2280,6 +2302,7 @@ function exitInside(){
   // PRESS-AND-HOLD -> cursor-following loupe that keeps zooming; her screen enters her video, elsewhere just magnifies
   w.addEventListener('pointerdown', function(e){
     if(insideMode) return;
+    if(window._autoDive) return;   // auto glide in flight — ignore stray presses
     var pz=document.getElementById('pzOn'); if(!pz || !pz.checked) return;   // zoom stays inactive until armed in the lab
     if(!(e.button===0||e.pointerType!=='mouse')) return;
     var d=toDesign(e.clientX,e.clientY);
@@ -2431,11 +2454,15 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
     }catch(e){}
     // her: chosen clip at the chosen cut, unmuted with the track
     try{
-      var go=function(){ try{ vid.currentTime=start; }catch(e){}
+      var go=function(){ vid.loop=false; try{ vid.currentTime=start; }catch(e){}
         vid.muted=false; var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); }); };
       if((vid.currentSrc||'').indexOf(clip)<0){
         vid.src=clips[hi].url;
-        vid.addEventListener('loadedmetadata',function once(){ vid.removeEventListener('loadedmetadata',once); go(); });
+        var fail=function(){ vid.removeEventListener('error',fail); vid.removeEventListener('loadedmetadata',once); window._dlHold=false;
+          var stE=document.getElementById('dlStatus'); if(stE) stE.textContent='SCENE FAILED — '+clip+' not found'; try{ herRotate(); }catch(e){} };
+        var once=function(){ vid.removeEventListener('loadedmetadata',once); vid.removeEventListener('error',fail); go(); };
+        vid.addEventListener('loadedmetadata',once);
+        vid.addEventListener('error',fail);
         vid.load();
       } else go();
     }catch(e){}
@@ -2444,7 +2471,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
   };
   // directed scene: when her clip runs out, loop back to the chosen cut
   vid.addEventListener('ended', function(){
-    if(window._dlHold && !window._recjobMode){ try{ vid.currentTime=window._dlStart||0; vid.play().catch(function(){}); }catch(e){} }
+    if(window._dlHold && !window._recjobMode && !(typeof lab!=='undefined' && lab.playing)){ try{ vid.currentTime=window._dlStart||0; vid.play().catch(function(){}); }catch(e){} }
   });
   if(document.readyState!=='loading') dlInit(); else document.addEventListener('DOMContentLoaded',dlInit);
 
@@ -2461,8 +2488,9 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
     function rIdx(name){ for(var i=0;i<clips.length;i++){ if(clips[i].url.split('/').pop()===name) return i; } return -1; }
     window.__renderInit=function(){
       return new Promise(function(res,rej){
-        (function wait(){ if(typeof clips!=='undefined'&&clips.length) go(); else setTimeout(wait,100); })();
+        (function wait(n){ if(typeof clips!=='undefined'&&clips.length) go(); else if(n>=80) rej(new Error('clips not loaded')); else ((window.__rt&&window.__rt.st)||setTimeout)(function(){ wait(n+1); },100); })(0);
         function go(){
+          try{ var stT=document.createElement('style'); stT.textContent='*{transition:none !important}'; document.head.appendChild(stT); }catch(e){}
           try{ var g=document.getElementById('gate'); if(g){ g.style.display='none'; g.parentNode.removeChild(g); } }catch(e){}
           try{ var cw=document.getElementById('callwith'); if(cw) cw.innerHTML='&mdash; memphy &hearts; on the line'; }catch(e){}
           try{ var mp=document.getElementById('mpop'); if(mp) mp.style.display='none'; }catch(e){}
@@ -2537,6 +2565,14 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           try{ gvid.pause(); }catch(e){}
           if(right){ gdz.style.display='none'; ps.push(seekTo(gvid, R.calIn+(t-R.CONNECT))); }
           else if(R.CONNECT>0){ gdz.style.display='block'; }
+        }
+        if(window._diving && !insideMode){
+          if(rr.diveT0==null) rr.diveT0=t;
+          var fop=Math.max(0,1-(t-rr.diveT0)/1.8).toFixed(3);
+          try{ ['hearts','wmark','livebadge','tiptotal'].forEach(function(cl){
+            var els=document.getElementsByClassName(cl);
+            for(var q2=0;q2<els.length;q2++) els[q2].style.opacity=fop;
+          }); }catch(e){}
         }
         if(R.zoomAt!=null && t>=R.CONNECT+R.zoomAt && !rr.committed){
           try{
@@ -2715,6 +2751,8 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
         // preview: freeze at the exact take end, then loop
         try{ vid.pause(); }catch(e){}
         try{ gvid.pause(); }catch(e){}
+        try{ if(!insideMode && (zoomAnim || window._autoDive)){ if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; } window._autoDive=false; window._diving=false; window._overHer=false; pressOn=false; document.body.classList.remove('diving'); document.body.style.cursor=''; zoomP=0; applyZoom(0); } }catch(e){}
+        try{ if(insideMode) exitInside(); }catch(e){}
         setTimeout(function(){
           try{ if(insideMode) exitInside(); }catch(e){}
           try{ vid.pause(); vid.currentTime=jobStart; }catch(e){}
@@ -2723,9 +2761,12 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           setTimeout(function(){ showtime(calIdx, null); }, 400);
         }, 900); }
       gvid.loop=false;
-      gvid.addEventListener('ended', function h(){ gvid.removeEventListener('ended', h); fin(); });
+      if(gvid._prevEndH) gvid.removeEventListener('ended', gvid._prevEndH);
+      gvid._prevEndH=function h(){ gvid.removeEventListener('ended', h); gvid._prevEndH=null; fin(); };
+      gvid.addEventListener('ended', gvid._prevEndH);
       var _plen=(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})();
-      probe('clips/'+jobCaller, function(D){ var run=_plen||(D>0?D:60); setTimeout(fin, run*1000+600); });
+      var _ciT=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
+      probe('clips/'+jobCaller, function(D){ var run=_plen||(D>0?Math.max(0.5,D-_ciT):60); setTimeout(fin, run*1000+600); });
       if(jobZoom!=null){
         setTimeout(function(){
           try{ window._overHer=true; window._autoDive=true; pressOn=false; document.body.classList.add('diving'); startLoop(); }catch(e){}

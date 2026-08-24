@@ -111,6 +111,7 @@ button:disabled{opacity:.5;cursor:default;}
 var API=(location.hostname==='localhost'||location.hostname==='127.0.0.1')?'':'http://localhost:8968';
 var CALLERS=[], CLIPS=['memphy_01.mp4','memphy_02.mp4','memphy_03.mp4','memphy_04.mp4'];
 var DUR={}, LYR={};
+window._tvGen=0; window._tv=null;
 var $=function(id){return document.getElementById(id);};
 
 function fmt(t){ t=Math.max(0,t||0); var m=Math.floor(t/60), s=t-m*60; return m+':'+(s<10?'0':'')+s.toFixed(1); }
@@ -127,6 +128,9 @@ fetch(API+'/index.html').then(r=>r.text()).then(function(html){
   var g=/var PRELOADED_GUEST = \[([\s\S]*?)\];/.exec(html);
   if(g){ (g[1].match(/'clips\/([^']+)'/g)||[]).forEach(function(x){ CALLERS.push(x.replace(/'clips\/|'/g,'')); }); }
   init();
+}).catch(function(){
+  if(!$('caller').options.length) init();
+  $('status').textContent='local render engine not running \u2014 start it on the Mac:  node recorder/server.js';
 });
 
 function lyricAt(clip,t){
@@ -150,6 +154,7 @@ function init(){
   });
   $('len').addEventListener('input',function(){ updateBand(); buildTiles(); });
   $('calin').addEventListener('input',function(){ updateLenDefault(); updateBand(); });
+  $('start').addEventListener('input',function(){ updateBand(); [].forEach.call(document.querySelectorAll('.tile'),function(x){ x.classList.remove('on'); }); });
   $('ctl').onclick=function(e){
     var r=$('ctl').getBoundingClientRect(); var f=(e.clientX-r.left)/r.width;
     var D=DUR['clips/'+$('caller').value]||0; var t=Math.round(f*D*10)/10;
@@ -241,15 +246,18 @@ function buildTiles(){
     };
     tiles.appendChild(d);
   });
-  // thumbnails: sequential seek through a hidden video
+  // thumbnails: sequential seek through a hidden video (generation-tagged so rebuilds cancel old chains)
+  var gen=++window._tvGen; if(window._tv){ try{ window._tv.removeAttribute('src'); window._tv.load(); }catch(e){} }
   var tv=document.createElement('video'); tv.muted=true; tv.preload='auto'; tv.src=API+'/clips/'+clip;
+  window._tv=tv;
   var k=0;
   tv.addEventListener('seeked',function(){
+    if(gen!==window._tvGen) return;
     var cv=tiles.children[k] && tiles.children[k].querySelector('canvas');
     if(cv){ try{ cv.getContext('2d').drawImage(tv,0,0,300,168); }catch(e){} }
     k++; if(k<starts.length) tv.currentTime=starts[k]+0.2;
   });
-  tv.addEventListener('loadeddata',function(){ tv.currentTime=starts[0]+0.2; });
+  tv.addEventListener('loadeddata',function(){ if(gen===window._tvGen) tv.currentTime=starts[0]+0.2; });
 }
 
 function takeSpec(){
@@ -267,6 +275,8 @@ var prevState={room:'idle',pshow:'idle'};
 function previewTake(view){
   var btn=$('btnPrev_'+view), stage=$('stage_'+view);
   if(prevState[view]==='armed'){
+    var other=view==='room'?'pshow':'room';
+    if(prevState[other]==='playing' && $('stage_'+other).querySelector('iframe')){ prevState[other]='idle'; previewTake(other); }
     var fr=stage.querySelector('iframe');
     if(fr && fr.contentWindow){ fr.contentWindow.postMessage({memphyTake:'go'},'*'); prevState[view]='playing'; btn.textContent='\u25B6 playing (loops)'; }
     return;
@@ -309,7 +319,8 @@ function recordTake(view){
           $('status').textContent='take '+j.id+': '+sj.state+(sj.progress?(' '+Math.round(sj.progress*100)+'%'):'')+last+(sj.err?(' — '+sj.err):'');
           if(sj.state==='done'){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='DONE — saved '+sj.file.split('/').pop(); refreshRecs(); }
           if(sj.state==='error'){ clearInterval(iv); btnRec.disabled=false; }
-        });
+          if(sj.state==='unknown'){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='engine restarted — job lost, render again'; }
+        }).catch(function(){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='engine unreachable — is it still running?'; });
       },2000);
     })
     .catch(function(){ $('status').textContent='local render engine not running \u2014 start it on the Mac:  node recorder/server.js'; btnRec.disabled=false; });
@@ -321,7 +332,7 @@ function refreshRecs(){
     (j.files||[]).forEach(function(f){
       var d=document.createElement('div'); d.className='item';
       var nm=f.split('/').pop();
-      d.innerHTML='<video controls preload="metadata" src="'+API+'/'+f+'"></video><div class="nm">'+nm+'</div><a class="dl" href="'+API+'/'+f+'" download>&#11015; download</a><button class="del" title="delete">&#10005;</button>';
+      d.innerHTML='<video controls preload="metadata" src="'+API+'/'+f+'"></video><div class="nm">'+nm+'</div><a class="dl" href="'+API+'/'+f+'?dl=1" download target="_blank" rel="noopener">&#11015; download</a><button class="del" title="delete">&#10005;</button>';
       d.querySelector('.del').onclick=function(){ fetch(API+'/api/delete/'+encodeURIComponent(nm),{method:'POST'}).then(refreshRecs); };
       el.appendChild(d);
     });
