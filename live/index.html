@@ -588,9 +588,6 @@ html,body{overflow:auto;}
           <div id="plempty">Drop videos on either screen &mdash; they collect here.</div>
           <div class="clear"></div>
         </div>
-        <div id="chatin">
-          <input type="text" id="chatmsg" maxlength="120"><span class="smile">&#9786;</span><button id="chatsend" onclick="sendChat()">Send</button>
-        </div>
       </div>
       <div class="clear"></div>
       </div>
@@ -1584,7 +1581,7 @@ function sendChat(){
   pushChat('me','You', esc(inp.value));
   inp.value='';
 }
-document.getElementById('chatmsg').addEventListener('keydown', function(e){ if(e.key==='Enter') sendChat(); });
+var _chatmsg=document.getElementById('chatmsg'); if(_chatmsg) _chatmsg.addEventListener('keydown', function(e){ if(e.key==='Enter') sendChat(); });
 
 // ---- counters ----
 var viewers = 1347, online = 4382, pct = 62;
