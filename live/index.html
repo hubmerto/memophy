@@ -580,12 +580,23 @@ html,body{overflow:auto;}
     <span class="labbtn" onclick="acceptNext()">&#9742; Accept next</span><span class="labbtn" onclick="skipCaller()">&#9658;&#9658; Skip</span><span class="labbtn" onclick="endCall()">&#10006; End</span>
     &nbsp; Play length <input id="labLen" type="number" value="30" min="0" step="1"> s <span style="color:#888">(Rec ignores this &mdash; it auto-stops when the shortest clip ends)</span> &nbsp;
     <span class="labbtn rec" onclick="labArmRec()">&#9679; Rec &mdash; capture this tab</span>
+  </div>
+  <div class="labrow"><b>Portal (hold her screen):</b>
+    zoom <input id="pzZoom" type="number" value="2.4" min="1.4" max="5" step="0.1" style="width:56px">
+    speed <input id="pzSpeed" type="number" value="0.05" min="0.01" max="0.2" step="0.01" style="width:56px">
+    fisheye <input id="pzFish" type="number" value="0.35" min="0" max="1" step="0.05" style="width:56px">
     <a id="labDl" href="#">download</a>
   </div>
   <div class="labrow big"><span id="labCount">&mdash;</span><span id="labElapsed">00:00.0</span><span id="labRecStatus"></span></div>
   <div class="labrow tips">Drop videos on either cam (top) and they appear in the dropdowns. Play resets both cams, counts 3-2-1 with beeps, then starts each clip at its time. Rec asks Chrome which screen/tab to capture (pick <b>This Tab</b>), then runs the same countdown and saves a .webm of the chosen length. Hotkeys: F8 accept &middot; F9 skip &middot; F10 end &middot; <code>?nogate&amp;nopop</code> for clean takes.</div>
 </div>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="fisheyeF" x="0" y="0" width="100%" height="100%" primitiveUnits="objectBoundingBox">
+    <feImage id="fimg" x="0" y="0" width="1" height="1" preserveAspectRatio="none" result="map"/>
+    <feDisplacementMap id="fdisp" in="SourceGraphic" in2="map" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
 <input type="file" id="fileinput" accept="video/*" multiple>
 
 <script type="importmap">
@@ -1922,23 +1933,54 @@ var gBufReset=null;
 
 // ======================= press-zoom portal (crt-lab style): hold on her screen to dive INSIDE her video =======================
 var zoomP=0, zoomTarget=0, zoomAnim=null, insideMode=false;
-var ZMAX=2.4, ZTHRESH=0.985;
+var ZTHRESH=0.985;
+var PORTAL={zmax:2.4, speed:0.05, fish:0.35};
+function portalParams(){
+  var z=document.getElementById("pzZoom"), sp=document.getElementById("pzSpeed"), f=document.getElementById("pzFish");
+  if(z)  PORTAL.zmax = Math.max(1.4, parseFloat(z.value)||2.4);
+  if(sp) PORTAL.speed= Math.max(0.01, parseFloat(sp.value)||0.05);
+  if(f)  PORTAL.fish = Math.max(0, Math.min(1, parseFloat(f.value)||0));
+}
+(function buildFishMap(){
+  try{
+    var c=document.createElement("canvas"); c.width=256; c.height=256;
+    var x=c.getContext("2d"), img=x.createImageData(256,256);
+    for(var j=0;j<256;j++)for(var i=0;i<256;i++){
+      var nx=(i-128)/128, ny=(j-128)/128, r=Math.sqrt(nx*nx+ny*ny);
+      var k=r<1?(1-r*r):0;
+      var o=(j*256+i)*4;
+      img.data[o]  =Math.round(128 - nx*k*127);
+      img.data[o+1]=Math.round(128 - ny*k*127);
+      img.data[o+2]=128; img.data[o+3]=255;
+    }
+    x.putImageData(img,0,0);
+    var fi=document.getElementById("fimg");
+    if(fi){ fi.setAttribute("href", c.toDataURL()); fi.setAttributeNS("http://www.w3.org/1999/xlink","xlink:href", c.toDataURL()); }
+  }catch(e){}
+})();
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
-  if(p<=0){ w.style.transform=''; w.style.willChange=''; return; }
-  var S=1+p*(ZMAX-1);
+  if(p<=0){ w.style.transform=''; w.style.willChange=''; w.style.filter=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); return; }
+  var S=1+p*(PORTAL.zmax-1);
   // her cam center stays pinned, gliding to the viewport center as we dive
   var tx=(zc.cx - zc.cx*S) + (zc.vx - zc.cx)*p;
   var ty=(zc.cy - zc.cy*S) + (zc.vy - zc.cy)*p;
   w.style.willChange='transform';
   w.style.transformOrigin='0 0';
   w.style.transform='translate('+tx+'px,'+ty+'px) scale('+S+')';
+  // crt-style fisheye blooms in with the dive
+  var fd=document.getElementById('fdisp');
+  if(fd){
+    var amt = p*PORTAL.fish*0.12;
+    fd.setAttribute('scale', String(amt));
+    w.style.filter = amt>0.004 ? 'url(#fisheyeF)' : '';
+  }
 }
 function ensureZoomLoop(){
   if(zoomAnim) return;
   zoomAnim=setInterval(function(){
-    zoomP += (zoomTarget-zoomP)*0.05;
+    zoomP += (zoomTarget-zoomP)*PORTAL.speed;
     if(zoomTarget===1 && zoomP>ZTHRESH){ commitInside(); return; }
     if(zoomTarget===0 && zoomP<0.004){ zoomP=0; applyZoom(0); clearInterval(zoomAnim); zoomAnim=null; return; }
     applyZoom(zoomP);
@@ -1951,6 +1993,7 @@ function startZoom(){
     zc.cx=r.left+r.width/2; zc.cy=r.top+r.height/2;
     zc.vx=window.innerWidth/2; zc.vy=window.innerHeight/2;
   }
+  portalParams();
   zoomTarget=1; ensureZoomLoop();
 }
 function endZoom(){ if(!insideMode) zoomTarget=0; }
@@ -1961,7 +2004,7 @@ function commitInside(){
   document.body.appendChild(layer);
   layer.appendChild(vid);                      // her actual video keeps playing — now it IS the screen
   vid.style.width='100%'; vid.style.height='100%'; vid.style.objectFit='cover'; vid.style.transform='none';
-  var w=document.getElementById('wrap'); if(w){ w.style.display='none'; w.style.transform=''; }
+  var w=document.getElementById('wrap'); if(w){ w.style.display='none'; w.style.transform=''; w.style.filter=''; }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='none';
   try{ gvid.pause(); }catch(e){}
   try{ if(typeof autoRotTimer!=='undefined' && autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; } }catch(e){}
