@@ -179,7 +179,7 @@ a:hover{text-decoration:underline;}
 #chatbox{float:right;width:calc(50% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:238px;overflow-y:auto;padding:104px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog{height:238px;overflow-y:auto;padding:8px 10px 210px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
 #calllog div{-webkit-animation:lyrup .38s ease-out;animation:lyrup .38s ease-out;}
 @-webkit-keyframes lyrup{from{opacity:0;-webkit-transform:translateY(16px);}to{opacity:1;-webkit-transform:none;}}
 @keyframes lyrup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
@@ -1233,7 +1233,7 @@ function finishTyping(){
 var lyrScrollTarget=null;
 function centerLyric(el){
   var l=document.getElementById("calllog"); if(!l||!el) return;
-  lyrScrollTarget = el.offsetTop - l.clientHeight/2 + el.offsetHeight/2;
+  lyrScrollTarget = Math.max(0, el.offsetTop - 8);   // current lyric rides at the top of the box
 }
 setInterval(function(){   // teleprompter glide: constant gentle drift toward the current line
   var l=document.getElementById("calllog");
