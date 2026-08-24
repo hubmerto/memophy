@@ -506,7 +506,7 @@ html,body{overflow:auto;}
       <div id="callpanel" class="box">
         <div class="phead">Private show <span class="jp">&#x30D7;&#x30E9;&#x30A4;&#x30D9;&#x30FC;&#x30C8;</span> <span id="callwith">&mdash; no one on the line</span><span class="rt">live transcript</span></div>
         <div id="calllog">
-          <div class="sys">accept a caller to start a conversation...</div>
+          <div class="sys">&#9834; GO ALL NIGHT</div>
         </div>
       </div>
       <div id="chatbox" class="box">
@@ -1174,7 +1174,6 @@ function endCall(){
   document.getElementById('gcammsg').innerHTML = 'accept a guy from the waiting line';
   document.getElementById('gueststatus').innerHTML = '&mdash; no one connected';
   stopCallChat();
-  pushCall('sys', null, 'call ended. the line shuffles forward...');
   document.getElementById('callwith').innerHTML = '&mdash; no one on the line';
   markCells();
 }
@@ -1206,27 +1205,28 @@ function rollProfile(){
   gProfile = r<0.3?GPROFILES[0]:(r<0.75?GPROFILES[1]:GPROFILES[2]);
   if(typeof gBufReset==="function") gBufReset();
 }
-// ---- GO ALL NIGHT: timed karaoke lyrics, synced to her clip audio ----
-var LYRICS=[[0,"(intro \u2014 la-la vocal chops)",1],[21,"All of you"],[23.5,"You want it too"],[29.9,"(one, two)",1],[33.7,"I see it through, let's make a move"],[41.9,"We keep the groove, it fits us 2"],[48.5,"Dancing to the sound of you, you, you (of you, of you\u2026)"],[55.8,"Lalalalalalalala"],[62.8,"Lalalalalalalala"],[69.8,"Lalalalalalalala"],[76.7,"Lalalalalalalala"],[80.5,"Lalalalalalalala"],[83.4,"Mini skirt, I'm such a flirt"],[89.9,"Take off the shirt, get straight to work"],[97.4,"I make it hurt, you go bezerk"],[104.4,"I put it down, flip and reverse"],[107.9,"(reverse, reverse, reverse, reverse)",1],[111.6,"Take your jeans off, we can go all night"],[118.5,"Take your jeans off, we can go all night"],[125.4,"Take your jeans off, we can go all night"],[132.3,"Take your jeans off, we can go all night"],[139.2,"Take your jeans off, we can go all night"],[146.1,"Take your jeans off, we can go all night"],[152.1,"All night, all night"],[159.3,"All night, all night"],[166.2,"(break \u2014 on me, on me, on me\u2026)",1],[180.3,"T-T-Take your jeans off, we can go all night"],[188.0,"Take your jeans off, we can go all night"],[195.1,"Take your jeans off, we can go all night"],[202.0,"Take your jeans off, we can go all night"],[209,"(outro)",1],[221.7,"You"]];
-var LYRIC_OFFSETS={"memphy_01.mp4":0,"memphy_02.mp4":0,"memphy_03.mp4":0};   // per-clip song offset (s) if a clip doesn't start at 0:00
+// ---- GO ALL NIGHT: lyric-video transcript — each clip has its own exact timeline ----
+var LYRICS_BY_CLIP={"memphy_01.mp4":[[10.472,"All of you"],[12.972,"You want it too"],[19.372,"(one, two)",1],[23.172,"I see it through, let's make a move"],[31.372,"We keep the groove, it fits us 2"],[37.972,"Dancing to the sound of you, you, you (of you, of you…)"],[45.272,"Lalalalalalalala"],[52.272,"Lalalalalalalala"],[59.272,"Lalalalalalalala"],[66.172,"Lalalalalalalala"],[69.972,"Lalalalalalalala"],[72.872,"Mini skirt, I'm such a flirt"],[79.372,"Take off the shirt, get straight to work"],[86.872,"I make it hurt, you go bezerk"],[93.872,"I put it down, flip and reverse"],[97.372,"(reverse, reverse, reverse, reverse)",1],[101.072,"Take your jeans off, we can go all night"],[107.972,"Take your jeans off, we can go all night"],[114.872,"Take your jeans off, we can go all night"],[121.772,"Take your jeans off, we can go all night"],[128.672,"Take your jeans off, we can go all night"],[135.572,"Take your jeans off, we can go all night"],[141.572,"All night, all night"],[148.772,"All night, all night"],[155.672,"(break — on me, on me, on me…)",1],[169.772,"T-T-Take your jeans off, we can go all night"],[177.472,"Take your jeans off, we can go all night"],[184.572,"Take your jeans off, we can go all night"],[191.472,"Take your jeans off, we can go all night"],[198.472,"(outro)",1],[211.172,"You"]],"memphy_02.mp4":[[0.441,"Take your jeans off, we can go all night"],[7.341,"Take your jeans off, we can go all night"],[14.241,"Take your jeans off, we can go all night"],[21.141,"Take your jeans off, we can go all night"],[28.041,"Take your jeans off, we can go all night"],[34.041,"All night, all night"],[41.241,"All night, all night"],[48.141,"(break — on me, on me, on me…)",1],[62.241,"T-T-Take your jeans off, we can go all night"],[69.941,"Take your jeans off, we can go all night"],[77.041,"Take your jeans off, we can go all night"],[83.941,"Take your jeans off, we can go all night"],[90.941,"(outro)",1]],"memphy_03.mp4":[[15.941,"(intro — la-la vocal chops)",1],[36.941,"All of you"],[39.441,"You want it too"],[45.841,"(one, two)",1],[49.641,"I see it through, let's make a move"],[57.841,"We keep the groove, it fits us 2"],[64.441,"Dancing to the sound of you, you, you (of you, of you…)"],[71.741,"Lalalalalalalala"],[78.741,"Lalalalalalalala"],[85.741,"Lalalalalalalala"],[92.641,"Lalalalalalalala"],[96.441,"Lalalalalalalala"],[99.341,"Mini skirt, I'm such a flirt"],[105.841,"Take off the shirt, get straight to work"],[113.341,"I make it hurt, you go bezerk"],[120.341,"I put it down, flip and reverse"],[123.841,"(reverse, reverse, reverse, reverse)",1],[127.541,"Take your jeans off, we can go all night"],[134.441,"Take your jeans off, we can go all night"],[141.341,"Take your jeans off, we can go all night"],[148.241,"Take your jeans off, we can go all night"],[155.141,"Take your jeans off, we can go all night"],[162.041,"Take your jeans off, we can go all night"],[168.041,"All night, all night"],[175.241,"All night, all night"],[182.141,"(break — on me, on me, on me…)",1],[196.241,"T-T-Take your jeans off, we can go all night"],[203.941,"Take your jeans off, we can go all night"],[211.041,"Take your jeans off, we can go all night"],[217.941,"Take your jeans off, we can go all night"],[224.941,"(outro)",1],[237.641,"You"]]};
 var lyrIdx=-1, lyrClip="", typingTimer=null, typingSpan=null, typingTxt="";
 function finishTyping(){
   if(typingTimer){ clearInterval(typingTimer); typingTimer=null; }
   if(typingSpan){ typingSpan.textContent=typingTxt; typingSpan=null; }
 }
-function pushLyric(idx){
-  var L=LYRICS[idx], l=document.getElementById("calllog"); if(!l) return;
+function pushLyricLine(L, dur){
+  var l=document.getElementById("calllog"); if(!l) return;
   finishTyping();
-  if(L[2]){ pushCall("sys",null,"\u266a "+esc(L[1])); return; }
+  if(L[2]){
+    var sd=document.createElement("div"); sd.className="sys"; sd.innerHTML="\u266a "+esc(L[1]);
+    l.appendChild(sd); while(l.children.length>40) l.removeChild(l.firstChild); l.scrollTop=l.scrollHeight; return;
+  }
   var d=document.createElement("div");
   d.className="mem";
   d.innerHTML='<b>memphy:</b> <span class="typing"></span>';
   l.appendChild(d);
-  while(l.children.length>50) l.removeChild(l.firstChild);
+  while(l.children.length>40) l.removeChild(l.firstChild);
   l.scrollTop=l.scrollHeight;
   var span=d.querySelector(".typing"), txt=L[1], i=0;
-  var dur=(idx+1<LYRICS.length ? LYRICS[idx+1][0]-L[0] : 4);
-  var step=Math.max(24, Math.min(95, (dur*600)/Math.max(1,txt.length)));   // typing fits inside the line
+  var step=Math.max(24, Math.min(95, (dur*600)/Math.max(1,txt.length)));
   typingSpan=span; typingTxt=txt;
   typingTimer=setInterval(function(){
     i++;
@@ -1238,23 +1238,22 @@ function pushLyric(idx){
 setInterval(function(){
   if(typeof current==="undefined" || current<0 || vid.paused || !clips[current]) return;
   var name=clips[current].name;
-  var t=vid.currentTime + (LYRIC_OFFSETS[name]||0);
+  var arr=LYRICS_BY_CLIP[name]; if(!arr) return;
+  var t=vid.currentTime;
   if(name!==lyrClip){ lyrClip=name; lyrIdx=-1; }
   var idx=-1;
-  for(var i=0;i<LYRICS.length;i++){ if(t>=LYRICS[i][0]) idx=i; else break; }
+  for(var i=0;i<arr.length;i++){ if(t>=arr[i][0]) idx=i; else break; }
   if(idx===lyrIdx) return;
-  if(idx<lyrIdx){ lyrIdx=idx; return; }   // seek/restart: resync silently
+  if(idx<lyrIdx){ lyrIdx=idx; return; }
   lyrIdx=idx;
-  if(idx>-1) pushLyric(idx);
+  if(idx>-1){
+    var L=arr[idx], dur=(idx+1<arr.length ? arr[idx+1][0]-L[0] : 4);
+    pushLyricLine(L, Math.max(1.5,Math.min(8,dur)));
+  }
 }, 300);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
-  stopCallChat();
-  pushCall('sys', null, 'connected &mdash; memphy &hearts; '+esc(who));
-  callTurn = 0;
-  callTimer = setInterval(function(){
-    pushCall('cal', esc(who), CALLER_LINES[Math.floor(Math.random()*CALLER_LINES.length)]);
-  }, 5200+Math.random()*2600);
+  stopCallChat();   // transcript panel is lyrics-only (lyric video style)
 }
 function stopCallChat(){ if(callTimer){ clearInterval(callTimer); callTimer = null; } }
 function pushCall(cls, name, text){
