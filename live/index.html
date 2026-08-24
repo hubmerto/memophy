@@ -187,6 +187,7 @@ a:hover{text-decoration:underline;}
 #calllog .lyr.active{color:#e6258f;-webkit-transform:scale(1.06);transform:scale(1.06);}
 #calllog .lyr.par{font-size:15px;font-style:italic;font-weight:normal;color:#cbb3c1;}
 #calllog .lyr.par.active{color:#d2287f;-webkit-transform:none;transform:none;}
+#calllog .lyr .lp{color:#e0101a;font-size:16px;margin-right:4px;}
 #calllog div{-webkit-animation:lyrup .38s ease-out;animation:lyrup .38s ease-out;}
 @-webkit-keyframes lyrup{from{opacity:0;-webkit-transform:translateY(16px);}to{opacity:1;-webkit-transform:none;}}
 @keyframes lyrup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
@@ -1250,16 +1251,10 @@ function finishTypeRow(){
   if(typeTimer){ clearInterval(typeTimer); typeTimer=null; }
   if(typeRow){ typeRow.textContent=typeFull; typeRow=null; }
 }
-function renderLyricSheet(name){
+function renderLyricSheet(name){   // clip change: wipe — lines only exist once she types them
   finishTypeRow();
-  var l=document.getElementById("calllog"); if(!l) return;
-  var arr=LYRICS_BY_CLIP[name]; if(!arr){ l.innerHTML=""; return; }
-  var h="";
-  for(var i=0;i<arr.length;i++){
-    h+='<div class="lyr'+(arr[i][3]?" par":"")+'" data-i="'+i+'">'+esc(arr[i][2])+"</div>";
-  }
-  l.innerHTML=h;
-  l.scrollTop=0; lyrScrollTarget=null;
+  var l=document.getElementById("calllog"); if(l){ l.innerHTML=""; }
+  lyrScrollTarget=null;
 }
 function typeActiveRow(row, L){
   finishTypeRow();
@@ -1277,24 +1272,30 @@ setInterval(function(){
   var name=(vid.currentSrc||"").split("/").pop().split("?")[0];
   var arr=LYRICS_BY_CLIP[name];
   if(!arr){ return; }
-  if(name!==lyrClip){ lyrClip=name; lyrIdx=-2; renderLyricSheet(name); }
+  if(name!==lyrClip){ lyrClip=name; lyrIdx=-1; renderLyricSheet(name); }
   if(vid.paused) return;
   var t=vid.currentTime + 0.15;
   var idx=-1;
   for(var i=0;i<arr.length;i++){ if(t>=arr[i][0]) idx=i; else break; }
   if(idx===lyrIdx) return;
+  if(idx<lyrIdx){ lyrIdx=idx; return; }   // seek back: resync silently
   lyrIdx=idx;
+  if(idx<0) return;
   var l=document.getElementById("calllog"); if(!l) return;
-  var rows=l.querySelectorAll(".lyr");
   finishTypeRow();
-  for(var k=0;k<rows.length;k++){
-    rows[k].className = "lyr"+(arr[k][3]?" par":"")+(k<idx?" past":(k===idx?" active":""));
-    if(k!==idx) rows[k].textContent = arr[k][2];   // non-active rows always show full text
+  var prev=l.querySelector(".lyr.active"); if(prev){ prev.className=prev.className.replace(" active"," past"); }
+  var L=arr[idx];
+  var d=document.createElement("div");
+  if(L[3]){
+    d.className="lyr par active"; d.innerHTML="\u266a "+esc(L[2]);
+  } else {
+    d.className="lyr active";
+    d.innerHTML='<b class="lp">memphy:</b> <span class="lt"></span>';
   }
-  if(idx>-1 && rows[idx]){
-    if(!arr[idx][3]) typeActiveRow(rows[idx], arr[idx]);   // she types the sung line
-    lyrScrollTarget=Math.max(0, rows[idx].offsetTop - 34);
-  }
+  l.appendChild(d);
+  while(l.children.length>40) l.removeChild(l.firstChild);
+  if(!L[3]) typeActiveRow(d.querySelector(".lt"), L);
+  lyrScrollTarget=Math.max(0, d.offsetTop - 34);
 }, 120);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
