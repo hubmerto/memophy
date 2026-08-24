@@ -59,7 +59,7 @@ body.pshow #tabprivate{background:#fff;color:#ff3fa4;}
 #adstrip .adlbl{position:absolute;right:8px;top:5px;font:normal 11px Arial;color:#6F6F6F;}
 /* private show ad units: leaderboard over her screen + 1:1 square under the chat */
 #adbanner,#adsquare{display:none;}
-body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:1px solid #222;background:#000;}
+body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:none;background:#000;}
 #adbanner .bn{position:relative;height:62px;background:#000;overflow:hidden;display:flex;align-items:center;padding:0 16px;white-space:nowrap;animation:bnbg .22s steps(1) infinite;}
 #adbanner .btxt{display:flex;flex-direction:row;align-items:baseline;margin:0 auto;}
 #adbanner .t1{font:bold 24px Arial,Helvetica,sans-serif;color:#fff;animation:bntx .22s steps(1) infinite;}
@@ -70,7 +70,14 @@ body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:1px s
 #adbanner .bgum{height:62px;margin-left:auto;}
 #adsquare{position:absolute;right:0;bottom:8px;width:27%;border:1px solid #9CC1E7;background:#fff;z-index:4;}
 body.pshow #adsquare{display:block;}
-#adsquare .sq{height:258px;box-sizing:border-box;display:flex;background:#fff;}
+#adsquare .sq{height:258px;box-sizing:border-box;position:relative;background:#fff;overflow:hidden;}
+#adsquare .adslide{position:absolute;inset:0;display:none;}
+#adsquare .adslide.on{display:flex;}
+#adsquare .s2 img{width:100%;height:100%;object-fit:cover;display:block;}
+#adsquare .s3{flex-direction:column;background:#fff;}
+#adsquare .s3 .dh{font:bold 24px Arial,Helvetica,sans-serif;color:#111;text-align:center;padding:6px 4px 4px;letter-spacing:-.5px;}
+#adsquare .s3 .dh i{color:#e30613;font-style:normal;}
+#adsquare .s3 img{flex:1;min-height:0;width:100%;object-fit:cover;display:block;}
 #adsquare .sqimg{width:44%;background:url('assets/memphy_ad.jpg') center top/cover no-repeat;border-right:2px solid #111;}
 #adsquare .sqtxt{flex:1;min-width:0;padding:8px;display:flex;flex-direction:column;justify-content:center;text-align:center;color:#000;font:bold 12px Arial;line-height:1.35;}
 #adsquare .sqtxt b{display:block;font:bold 21px 'Arial Black',Impact,Arial;line-height:1.05;letter-spacing:-1px;margin-bottom:6px;white-space:nowrap;}
@@ -563,7 +570,7 @@ html,body{overflow:auto;}
   </div>
 
   <div id="stagearea">
-    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="sqimg"></div><div class="sqtxt"><b>MY DL TRADE<br>A BOTTOM</b><span class="l2">I don't want a trade I just want to be spoiled</span><span class="cta2">CLICK HERE</span><span class="cta2">CLICK HERE</span><span class="cta2">CLICK HERE</span></div></div></div>
+    <div id="adsquare"><span class="adlbl2">Ads by Google</span><div class="sq"><div class="adslide s1 on"><div class="sqimg"></div><div class="sqtxt"><b>MY DL TRADE<br>A BOTTOM</b><span class="l2">I don't want a trade I just want to be spoiled</span><span class="cta2">CLICK HERE</span><span class="cta2">CLICK HERE</span><span class="cta2">CLICK HERE</span></div></div><div class="adslide s2"><img src="assets/ad_full.jpg" alt=""></div><div class="adslide s3"><div class="dh">Hot <i>Dolls</i> in your area</div><img src="assets/ad_dolls.jpg" alt=""></div></div></div>
 
     <!-- ===== left: the two screens ===== -->
     <div id="left">
@@ -2109,6 +2116,7 @@ function togglePrivate(){
   try{ var q=location.search.replace(/[?&]private/,''); history.replaceState(null,'', location.pathname+(on?(q?q+'&private':'?private'):(q||''))+location.hash); }catch(e){}
 }
 if(location.search.indexOf('private')>-1){ document.body.classList.add('pshow'); }   // direct link: /live/?private
+(function(){ var i=0; setInterval(function(){ var sl=document.querySelectorAll('#adsquare .adslide'); if(!sl.length) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // square ad rotates every 5s
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
