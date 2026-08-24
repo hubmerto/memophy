@@ -1349,10 +1349,11 @@ setInterval(function(){
     d.className="lyr active";
     d.innerHTML='<b class="lp">memphy:</b> <span class="lt"></span>';
   }
-  l.appendChild(d);
-  while(l.children.length>40) l.removeChild(l.firstChild);
+  l.insertBefore(d, l.firstChild);                 // NEW lyric on top, older ones below
+  while(l.children.length>40) l.removeChild(l.lastChild);
   if(!L[3]) typeActiveRow(d.querySelector(".lt"), L);
-  lyrScrollTarget=l.scrollHeight;  // pin the sung line to the BOTTOM; older lines rise up and off the top
+  lyrScrollTarget=0;  // keep the newest (top) line in view
+  l.scrollTop=0;
 }, 120);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
