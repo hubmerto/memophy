@@ -2064,18 +2064,20 @@ var pressOn=false;
 var mZ={x:0,y:0,sx:0,sy:0};
 function loopStep(){
   mZ.sx += (mZ.x-mZ.sx)*0.2; mZ.sy += (mZ.y-mZ.sy)*0.2;    // smoothed cursor follow (crt-lab mouseS)
-  var target = pressOn ? 1 : 0;                            // hold to keep zooming; release eases back
-  if(pressOn){ zc.cx=mZ.sx; zc.cy=mZ.sy; }                 // anchor follows the cursor while pressing
-  // LIVE: while zooming, the moment the cursor is over her screen it auto-fits her footage to fill the whole screen
   var onHer = !!window._overHer;
-  window._commitAllowed = onHer;
-  var dx = onHer ? 640 : zc.cx;
-  var dy = onHer ? 360 : zc.cy;
+  if(pressOn && onHer) window._autoDive=true;              // once you zoom ON her screen, the transition takes over automatically
+  var auto = !!window._autoDive;
+  var goHer = auto || onHer;
+  window._commitAllowed = goHer;
+  var target = (pressOn || auto) ? 1 : 0;                  // auto keeps diving smoothly even after you release — no over-zooming needed
+  if(pressOn && !auto){ zc.cx=mZ.sx; zc.cy=mZ.sy; }        // manual loupe follows the cursor; the auto-dive locks the anchor
+  var dx = goHer ? 640 : zc.cx;                            // her screen -> glide to center so her footage fills the screen
+  var dy = goHer ? 360 : zc.cy;
   zc.vx += (dx-zc.vx)*0.2; zc.vy += (dy-zc.vy)*0.2;
   zoomP += (target-zoomP)*PORTAL.speed;                    // ease at zoomSpeed
-  if(pressOn && onHer && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
+  if(goHer && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
   applyZoom(zoomP);
-  if(!pressOn && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
+  if(!pressOn && !auto && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
   zoomAnim=requestAnimationFrame(loopStep);
 }
 function startLoop(){
@@ -2089,6 +2091,7 @@ function toDesign(x,y){ var fr=document.getElementById('framewrap'); if(!fr) ret
 function commitInside(){
   insideMode=true;
   if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+  document.body.style.cursor='none';   // hide the OS cursor everywhere once her screen takes over
   // mouse vanishes in a fast pixelated glitch as her screen takes over
   try{ var lp=window._lastPtr||{x:window.innerWidth/2,y:window.innerHeight/2};
     var g=document.createElement('div'); g.id='cursorglitch'; g.style.left=lp.x+'px'; g.style.top=lp.y+'px';
@@ -2130,7 +2133,7 @@ function exitInside(){
   if(layer && layer.parentNode) layer.parentNode.removeChild(layer);
   var w=document.getElementById('wrap'); if(w){ w.style.display=''; w.style.transition=''; w.style.opacity=''; }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='';
-  pressOn=false; window._diving=false; document.body.classList.remove('diving');
+  pressOn=false; window._diving=false; window._autoDive=false; document.body.style.cursor=''; document.body.classList.remove('diving');
   zoomP=0; zoomTarget=0; applyZoom(0);
   try{ if(typeof rotateCaller==='function') rotateCaller(); }catch(e){}
 }
@@ -2153,6 +2156,7 @@ function exitInside(){
     zc.cx=d.x; zc.cy=d.y; zc.vx=d.x; zc.vy=d.y;
     var onHer = !!(hs && (e.target===hs || (hs.contains && hs.contains(e.target))));
     window._overHer=onHer;                 // seed the live over-her flag from where the press landed
+    window._autoDive=false;                // fresh press
     pressOn=true; window._commitAllowed=onHer;
     window._diving=true; document.body.classList.add('diving');   // CRT fades off slowly as the zoom deepens
     startLoop();
