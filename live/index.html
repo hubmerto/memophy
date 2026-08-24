@@ -1760,15 +1760,22 @@ function rotateCaller(){
   if(gvid._hold){ autoRotTimer=setTimeout(rotateCaller,1500); return; }
   var idxs=callerIdxs();
   if(!idxs.length){ autoRotTimer=setTimeout(rotateCaller,2000); return; }
-  currentCaller = queue.length ? queue.shift().name : ('guest'+(1000+Math.floor(Math.random()*8999)));
-  lineTotal=Math.max(lineTotal-1,queue.length); renderQueue();
+  var nextName = queue.length ? queue.shift().name : ('guest'+(1000+Math.floor(Math.random()*8999)));
+  lineTotal=Math.max(lineTotal-1,queue.length);
   document.getElementById('gdz').style.display='none';
   var idx=bagNext('caller', idxs);
-  if(clips[idx] && NAME_FOR_CLIP[clips[idx].name]) currentCaller = NAME_FOR_CLIP[clips[idx].name];
-  // hard cut to the next caller — no connecting break, the last frame holds until the new clip paints
+  if(clips[idx] && NAME_FOR_CLIP[clips[idx].name]) nextName = NAME_FOR_CLIP[clips[idx].name];
+  // hard cut to the next caller — no connecting break, the last frame holds until the new clip paints;
+  // the NAME flips exactly when the new caller's first frame shows, so label and face always match
   showSpin(false);
   gMaxPlay = 0;
   playClip(idx,'guest');
+  gvid.addEventListener('playing', function nm(){
+    gvid.removeEventListener('playing', nm);
+    currentCaller = nextName;
+    renderQueue();
+    var gs=document.getElementById('gueststatus'); if(gs) gs.innerHTML='&mdash; '+esc(currentCaller)+' is on the line';
+  });
   var _isLoop = clips[idx] && LOOP_CLIPS[clips[idx].name];
   gvid.loop = !!_isLoop;                  // reveal loops; everything else plays once then next
   var safeMs = (clips[idx] && clips[idx].seconds) ? (clips[idx].seconds*1000+6000) : 60000;
