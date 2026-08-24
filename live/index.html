@@ -385,7 +385,7 @@ body{font-size:17px;}
 .labrow.tips{font-size:15px;}
 /* ==== END FONT BUMP ==== */
 
-#inside{position:fixed;top:0;left:0;width:100%;height:100%;background:#000;z-index:5000;}
+#inside{position:fixed;top:0;left:0;width:100%;height:100%;background:transparent;z-index:5000;}   /* transparent so the UI shows through until her video grows to cover it (no black flash) */
 #inside video{width:100%;height:100%;object-fit:cover;display:block;}
 #inside{cursor:none;}   /* mouse vanishes once her screen takes over */
 #cursorglitch{position:fixed;z-index:6000;pointer-events:none;width:36px;height:36px;margin:-18px 0 0 -18px;image-rendering:pixelated;mix-blend-mode:screen;
@@ -2073,8 +2073,9 @@ function loopStep(){
   if(pressOn && !auto){ zc.cx=mZ.sx; zc.cy=mZ.sy; }        // manual loupe follows the cursor; the auto-dive locks the anchor
   var dx = goHer ? 640 : zc.cx;                            // her screen -> glide to center so her footage fills the screen
   var dy = goHer ? 360 : zc.cy;
-  zc.vx += (dx-zc.vx)*0.2; zc.vy += (dy-zc.vy)*0.2;
-  zoomP += (target-zoomP)*PORTAL.speed;                    // ease at zoomSpeed
+  zc.vx += (dx-zc.vx)*0.12; zc.vy += (dy-zc.vy)*0.12;
+  var sp = auto ? 0.022 : PORTAL.speed;                    // auto takeover eases in slowly and smoothly
+  zoomP += (target-zoomP)*sp;
   if(goHer && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
   applyZoom(zoomP);
   if(!pressOn && !auto && zoomP<0.004){ zoomP=0; applyZoom(0); zoomAnim=null; return; }
@@ -2108,14 +2109,14 @@ function commitInside(){
   vid.style.left=r.left+'px'; vid.style.top=r.top+'px';
   vid.style.width=r.width+'px'; vid.style.height=r.height+'px';
   vid.style.objectFit='cover'; vid.style.transform='none';
-  vid.style.transition='left .40s cubic-bezier(.22,.61,.36,1),top .40s cubic-bezier(.22,.61,.36,1),width .40s cubic-bezier(.22,.61,.36,1),height .40s cubic-bezier(.22,.61,.36,1)';
-  // fade the UI out as her video grows to fullscreen (no sudden disappear)
+  vid.style.transition='left .9s cubic-bezier(.4,0,.2,1),top .9s cubic-bezier(.4,0,.2,1),width .9s cubic-bezier(.4,0,.2,1),height .9s cubic-bezier(.4,0,.2,1)';
+  // keep the UI visible (zoomed) UNDERNEATH while her video grows to cover it, then hide it — no black, no sudden disappear
   var w=document.getElementById('wrap');
-  if(w){ w.style.transition='opacity .45s ease'; w.style.opacity='0'; setTimeout(function(){ if(insideMode){ w.style.display='none'; w.style.transform=''; w.style.filter=''; } }, 480); }
+  if(w){ setTimeout(function(){ if(insideMode){ w.style.display='none'; w.style.transform=''; w.style.filter=''; w.style.opacity=''; } }, 980); }
   var lb=document.getElementById('lab'); if(lb) lb.style.display='none';
   // settle to true fullscreen on the next tick (timeout, not rAF — survives throttled frames)
   setTimeout(function(){ if(!insideMode) return; vid.style.left='0px'; vid.style.top='0px'; vid.style.width='100%'; vid.style.height='100%'; }, 24);
-  setTimeout(function(){ if(insideMode) vid.style.transition=''; }, 520);
+  setTimeout(function(){ if(insideMode) vid.style.transition=''; }, 1000);
   try{ gvid.pause(); }catch(e){}
   try{ if(typeof autoRotTimer!=='undefined' && autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; } }catch(e){}
   document.addEventListener('keydown', escInside);
