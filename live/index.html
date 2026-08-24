@@ -179,7 +179,14 @@ a:hover{text-decoration:underline;}
 #chatbox{float:right;width:calc(50% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:238px;overflow-y:auto;padding:8px 10px 210px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog{height:238px;overflow-y:auto;padding:20px 14px 200px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog .lyr{font:bold 21px Arial,Helvetica,sans-serif;line-height:1.35;margin:0 0 14px;color:#d9c2cf;
+  -webkit-transition:color .35s,opacity .35s,-webkit-transform .35s;transition:color .35s,opacity .35s,transform .35s;
+  -webkit-transform-origin:left center;transform-origin:left center;}
+#calllog .lyr.past{color:#e9dde4;opacity:.75;}
+#calllog .lyr.active{color:#e6258f;-webkit-transform:scale(1.06);transform:scale(1.06);}
+#calllog .lyr.par{font-size:15px;font-style:italic;font-weight:normal;color:#cbb3c1;}
+#calllog .lyr.par.active{color:#d2287f;-webkit-transform:none;transform:none;}
 #calllog div{-webkit-animation:lyrup .38s ease-out;animation:lyrup .38s ease-out;}
 @-webkit-keyframes lyrup{from{opacity:0;-webkit-transform:translateY(16px);}to{opacity:1;-webkit-transform:none;}}
 @keyframes lyrup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
@@ -1231,54 +1238,40 @@ function finishTyping(){
   if(typingSpan){ typingSpan.textContent=typingTxt; typingSpan=null; }
 }
 var lyrScrollTarget=null;
-function centerLyric(el){
-  var l=document.getElementById("calllog"); if(!l||!el) return;
-  lyrScrollTarget = Math.max(0, el.offsetTop - 8);   // current lyric rides at the top of the box
-}
-setInterval(function(){   // teleprompter glide: constant gentle drift toward the current line
+setInterval(function(){   // apple-music glide: constant drift toward the active line
   var l=document.getElementById("calllog");
   if(!l || lyrScrollTarget===null) return;
   var d=lyrScrollTarget - l.scrollTop;
-  if(Math.abs(d)<1){ return; }
-  l.scrollTop += d*0.10;
-}, 50);
-function pushLyricLine(L){
+  if(Math.abs(d)<1) return;
+  l.scrollTop += d*0.12;
+}, 40);
+function renderLyricSheet(name){
   var l=document.getElementById("calllog"); if(!l) return;
-  finishTyping();
-  if(L[3]){
-    var sd=document.createElement("div"); sd.className="sys"; sd.innerHTML="\u266a "+esc(L[2]);
-    l.appendChild(sd); while(l.children.length>40) l.removeChild(l.firstChild); centerLyric(sd); return;
+  var arr=LYRICS_BY_CLIP[name]; if(!arr){ l.innerHTML=""; return; }
+  var h="";
+  for(var i=0;i<arr.length;i++){
+    h+='<div class="lyr'+(arr[i][3]?" par":"")+'" data-i="'+i+'">'+esc(arr[i][2])+"</div>";
   }
-  var d=document.createElement("div");
-  d.className="mem";
-  d.innerHTML='<b>memphy:</b> <span class="typing"></span>';
-  l.appendChild(d);
-  while(l.children.length>40) l.removeChild(l.firstChild);
-  centerLyric(d);
-  var span=d.querySelector(".typing"), txt=L[2], i=0;
-  // karaoke pacing: the line types across its actual sung duration
-  var step=Math.max(30, Math.min(260, (L[1]*920)/Math.max(1,txt.length)));
-  typingSpan=span; typingTxt=txt;
-  typingTimer=setInterval(function(){
-    i++;
-    span.textContent = txt.slice(0,i) + (i<txt.length ? "\u258c" : "");
-    if(i>=txt.length){ span.textContent=txt; clearInterval(typingTimer); typingTimer=null; typingSpan=null; }
-    centerLyric(d);
-  }, step);
+  l.innerHTML=h;
+  l.scrollTop=0; lyrScrollTarget=null;
 }
 setInterval(function(){
-  if(vid.paused) return;
   var name=(vid.currentSrc||"").split("/").pop().split("?")[0];
-  var arr=LYRICS_BY_CLIP[name]; if(!arr) return;
-  var LEAD=0.15;
-  var t=vid.currentTime + LEAD;
-  if(name!==lyrClip){ lyrClip=name; lyrIdx=-1; }
+  var arr=LYRICS_BY_CLIP[name];
+  if(!arr){ return; }
+  if(name!==lyrClip){ lyrClip=name; lyrIdx=-2; renderLyricSheet(name); }
+  if(vid.paused) return;
+  var t=vid.currentTime + 0.15;
   var idx=-1;
   for(var i=0;i<arr.length;i++){ if(t>=arr[i][0]) idx=i; else break; }
   if(idx===lyrIdx) return;
-  if(idx<lyrIdx){ lyrIdx=idx; return; }
   lyrIdx=idx;
-  if(idx>-1) pushLyricLine(arr[idx]);
+  var l=document.getElementById("calllog"); if(!l) return;
+  var rows=l.querySelectorAll(".lyr");
+  for(var k=0;k<rows.length;k++){
+    rows[k].className = "lyr"+(rows[k].className.indexOf("par")>-1?" par":"")+(k<idx?" past":(k===idx?" active":""));
+  }
+  if(idx>-1 && rows[idx]) lyrScrollTarget=Math.max(0, rows[idx].offsetTop - 34);
 }, 120);
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
