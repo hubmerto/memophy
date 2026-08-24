@@ -1158,6 +1158,18 @@ var MEM_LINES = [
   'the whole line is watching. behave','mmm. next question','you may compliment the pendant now',
   'careful. i skip fast','my rules. my show. go on','one more compliment and i extend you 30 seconds','\u3042\u308a\u304c\u3068\u3046. next','\u304b\u308f\u3044\u3044\u306d. tip jar is right there'
 ];
+// per-caller connection quality: rolled fresh each time a guy connects
+var GPROFILES=[
+  {name:"good", pixw:400, fps:18, gapMin:14000, gapMax:26000, lenMin:500,  lenMax:1100},
+  {name:"ok",   pixw:320, fps:15, gapMin:6000,  gapMax:15000, lenMin:800,  lenMax:1800},
+  {name:"bad",  pixw:230, fps:11, gapMin:3500,  gapMax:8000,  lenMin:1200, lenMax:3000}
+];
+var gProfile=GPROFILES[1];
+function rollProfile(){
+  var r=Math.random();
+  gProfile = r<0.3?GPROFILES[0]:(r<0.75?GPROFILES[1]:GPROFILES[2]);
+  if(typeof gBufReset==="function") gBufReset();
+}
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
   stopCallChat();
@@ -1740,26 +1752,30 @@ labPreview();
 
 // videos fill the frame (object-fit cover + slight overscan); no pan/zoom
 
-// buffering-style caller cam: soft low-res feed that periodically stalls like a bad stream
+// buffering-style caller cam: per-caller connection profile (softness, fps, stall pattern)
+var gBufReset=null;
 (function(){
   var cv=document.getElementById('gpix'); if(!cv||!cv.getContext) return;
   var ctx=cv.getContext('2d');
-  var PIXW=320, fps=(window.innerWidth<=820)?12:15, last=0;
+  var isMob=window.innerWidth<=820, last=0;
   var buffering=false, nextStall=performance.now()+5000+Math.random()*7000;
   var buf=document.getElementById('gbuffer');
   function setBuf(on){ buffering=on; if(buf) buf.className='gbuffer'+(on?' on':''); }
+  gBufReset=function(){ setBuf(false); nextStall=performance.now()+2500+Math.random()*(gProfile.gapMax-gProfile.gapMin); };
   function draw(t){
     requestAnimationFrame(draw);
+    var Pfps=Math.min(gProfile.fps, isMob?12:60);
     if(!buffering && t>nextStall && gvid.videoWidth && !gvid.paused){
       setBuf(true);
-      setTimeout(function(){ setBuf(false); nextStall=performance.now()+6000+Math.random()*9000; }, 800+Math.random()*1800);
+      setTimeout(function(){ setBuf(false); nextStall=performance.now()+gProfile.gapMin+Math.random()*(gProfile.gapMax-gProfile.gapMin); },
+                 gProfile.lenMin+Math.random()*(gProfile.lenMax-gProfile.lenMin));
     }
     if(buffering) return;                 // canvas holds the last frame = freeze
-    if(t-last<1000/fps) return; last=t;
+    if(t-last<1000/Pfps) return; last=t;
     if(!gvid.videoWidth) return;
     var st=document.getElementById('gstage');
     var cw=st.clientWidth||16, ch=st.clientHeight||9;
-    var W=PIXW, H=Math.max(2,Math.round(PIXW*ch/cw));
+    var W=gProfile.pixw, H=Math.max(2,Math.round(W*ch/cw));
     if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); }
     var vw=gvid.videoWidth, vh=gvid.videoHeight;
     var arC=cw/ch, arV=vw/vh, sx,sy,sw,sh;
