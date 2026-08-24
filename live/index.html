@@ -179,7 +179,10 @@ a:hover{text-decoration:underline;}
 #chatbox{float:right;width:calc(50% - 8px);box-sizing:border-box;}
 #callpanel .phead{color:#e6258f;}
 #callpanel .phead #callwith{color:#222;}
-#calllog{height:238px;overflow-y:auto;padding:8px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;}
+#calllog{height:238px;overflow-y:auto;padding:8px 10px;font:bold 15px Arial,Helvetica,sans-serif;background:#fff;scroll-behavior:smooth;}
+#calllog div{-webkit-animation:lyrup .38s ease-out;animation:lyrup .38s ease-out;}
+@-webkit-keyframes lyrup{from{opacity:0;-webkit-transform:translateY(16px);}to{opacity:1;-webkit-transform:none;}}
+@keyframes lyrup{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:none;}}
 #calllog div{margin-bottom:4px;line-height:19px;word-wrap:break-word;}
 #calllog .sys{color:#888;font-style:italic;}
 #calllog .mem b{color:#e0101a;}
