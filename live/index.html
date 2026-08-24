@@ -2136,18 +2136,33 @@ function commitInside(){
   var r = hs ? hs.getBoundingClientRect() : {left:0,top:0,width:window.innerWidth,height:window.innerHeight};
   var layer=document.createElement('div'); layer.id='inside';
   document.body.appendChild(layer);
-  layer.appendChild(vid);                      // her actual video keeps playing — now it IS the screen
+  // clipped morph box: starts as her cam's exact on-screen rect (same cover crop +
+  // 1.04 overscan as inside the stage), then glides the last stretch to fullscreen.
+  // The dive commits at ~98.5% zoom and the stage crop ≠ fullscreen crop, so a hard
+  // snap here always jumped — one continuous eased move instead.
+  var mo=document.createElement('div'); mo.id='insidemorph';
+  mo.style.cssText='position:absolute;overflow:hidden;left:'+r.left+'px;top:'+r.top+'px;width:'+r.width+'px;height:'+r.height+'px;';
+  layer.appendChild(mo);
+  mo.appendChild(vid);                         // her actual video keeps playing — now it IS the screen
   vid.style.position='absolute';
-  vid.style.left=r.left+'px'; vid.style.top=r.top+'px';
-  vid.style.width=r.width+'px'; vid.style.height=r.height+'px';
-  vid.style.objectFit='cover'; vid.style.transform='none';
-  // NO fading, NO grow animation — the camera has already moved so her screen fills the viewport;
-  // this swap to the raw video is invisible. Snap to exact fullscreen and hide the UI beneath.
+  vid.style.left='0'; vid.style.top='0';
+  vid.style.width='100%'; vid.style.height='100%';
+  vid.style.objectFit='cover'; vid.style.transform='scale(1.04)';
   vid.style.transition='none';
-  vid.style.left='0px'; vid.style.top='0px'; vid.style.width='100%'; vid.style.height='100%';
+  mo.getBoundingClientRect();                  // commit the start frame before animating
+  var EASE='.45s cubic-bezier(.22,.61,.36,1)';
+  mo.style.transition='left '+EASE+', top '+EASE+', width '+EASE+', height '+EASE;
+  vid.style.transition='transform '+EASE;
+  mo.style.left='0px'; mo.style.top='0px'; mo.style.width='100%'; mo.style.height='100%';
+  vid.style.transform='none';
   var w=document.getElementById('wrap');
-  if(w){ w.style.display='none'; w.style.transform=''; w.style.filter=''; }
-  var lb=document.getElementById('lab'); if(lb) lb.style.display='none';
+  var lb=document.getElementById('lab');
+  setTimeout(function(){                       // page beneath stays visible until the glide lands
+    if(!insideMode) return;                    // escaped mid-glide — leave the restored UI alone
+    mo.style.transition='none'; vid.style.transition='none';
+    if(w){ w.style.display='none'; w.style.transform=''; w.style.filter=''; }
+    if(lb) lb.style.display='none';
+  }, 500);
   try{ gvid.pause(); }catch(e){}
   try{ if(typeof autoRotTimer!=='undefined' && autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; } }catch(e){}
   document.addEventListener('keydown', escInside);
