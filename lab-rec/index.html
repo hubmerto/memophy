@@ -1,0 +1,322 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>MEMPHY RECORDING LAB</title>
+<style>
+body{margin:0;background:#f6f0f4;font:bold 14px Arial,Helvetica,sans-serif;color:#222;-webkit-user-select:none;user-select:none;}
+header{background:#fff;border-bottom:2px solid #e6258f;padding:10px 18px;font:bold 18px Arial;color:#b0006e;letter-spacing:1px;}
+header small{color:#888;font-weight:normal;margin-left:12px;}
+main{display:flex;gap:16px;padding:16px 18px;align-items:flex-start;}
+.col{background:#fff;border:1px solid #e3c4d6;border-radius:6px;padding:12px;}
+#left{flex:0 0 640px;}
+#right{flex:1;min-width:0;}
+h3{margin:0 0 8px;font:bold 13px Arial;color:#b0006e;text-transform:uppercase;letter-spacing:1px;}
+select,input[type=number]{font:bold 13px Arial;padding:4px;}
+video{background:#000;display:block;border-radius:4px;}
+#mprev{width:100%;}
+#cprev{width:220px;}
+.row{margin:10px 0;}
+.tl{position:relative;height:16px;background:#eee;border:1px solid #ccc;border-radius:3px;cursor:pointer;margin-top:6px;}
+.tl .ph{position:absolute;top:-2px;bottom:-2px;width:3px;background:#e6258f;}
+.tl .seg{position:absolute;top:0;bottom:0;background:rgba(230,37,143,.25);border-left:2px solid #e6258f;}
+#tiles{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.tile{width:150px;cursor:pointer;border:2px solid #ddd;border-radius:5px;overflow:hidden;background:#fff;}
+.tile.on{border-color:#e6258f;box-shadow:0 0 0 2px rgba(230,37,143,.3);}
+.tile canvas{width:100%;height:84px;display:block;background:#000;}
+.tile .cap{font:bold 11px Arial;padding:4px 6px;color:#333;}
+.tile .lyr{font:normal 10px Arial;color:#888;padding:0 6px 5px;height:24px;overflow:hidden;}
+button{font:bold 14px Arial;padding:9px 18px;border:1px solid #999;border-radius:4px;background:#fff;cursor:pointer;}
+button.rec{background:#e6258f;color:#fff;border-color:#b0006e;}
+button.prev{background:#2fa515;color:#fff;border-color:#1d7a0c;}
+button:disabled{opacity:.5;cursor:default;}
+.stage{width:100%;aspect-ratio:16/9;background:#000;border-radius:4px;overflow:hidden;position:relative;}
+.stage iframe{width:100%;height:100%;border:0;display:block;}
+.stage .idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#777;font:bold 15px Arial;}
+#status{margin-top:8px;font:bold 13px Arial;color:#333;min-height:18px;}
+#recs .item{display:flex;gap:10px;align-items:center;margin:8px 0;padding:8px;border:1px solid #eee;border-radius:5px;background:#fafafa;}
+#recs video{width:240px;}
+#recs a.dl{background:#e6258f;color:#fff;padding:6px 12px;border-radius:4px;text-decoration:none;font:bold 12px Arial;}
+#recs .del{padding:6px 10px;border-color:#c66;color:#c00;font-weight:bold;}
+#recs .nm{font:normal 11px Arial;color:#666;word-break:break-all;flex:1;}
+.hint{font:normal 11px Arial;color:#999;}
+</style>
+</head>
+<body>
+<header>MEMPHY&trade; RECORDING LAB <small>pick the scenes &middot; preview the whole take &middot; render offline to 4K mp4</small></header>
+<main>
+  <div id="left" class="col">
+    <h3>1 &middot; Caller</h3>
+    <div class="row">
+      <select id="caller"></select>
+      <span class="hint" id="cdur"></span>
+      <video id="cprev" controls muted playsinline style="width:100%;margin-top:8px"></video>
+      <div class="tl" id="ctl"><div class="seg" id="ctlseg"></div><div class="ph" id="ctlph"></div></div>
+      <div class="hint">click the timeline to set the caller's in-point &middot; the pink band is the part of the caller used</div>
+      <div class="row">
+        caller in at <input id="calin" type="number" min="0" step="0.1" value="0" style="width:80px"> s
+        <span class="hint">(cut: the caller starts here; length below sets how much runs)</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:16px">2 &middot; Memphy scene</h3>
+    <div class="row">
+      <select id="clip"></select>
+      <span class="hint" id="mdur"></span>
+      <video id="mprev" controls playsinline style="margin-top:8px"></video>
+      <div class="tl" id="tl"><div class="seg" id="tlseg"></div><div class="ph" id="tlph"></div></div>
+      <div class="hint">click the timeline to scrub &middot; the pink band is the segment that will record (take starts instantly, no connect intro)</div>
+      <div class="row">
+        segment proposals (caller-length slices):
+        <div id="tiles"></div>
+      </div>
+      <div class="row">
+        start at <input id="start" type="number" min="0" step="0.1" style="width:80px"> s
+        &nbsp;&nbsp; length <input id="len" type="number" min="0.5" step="0.1" style="width:80px"> s <span class="hint" id="lenhint"></span>
+        &nbsp;&nbsp; zoom-in transition at <input id="zoom" type="number" min="0" step="0.1" style="width:80px" placeholder="never"> s <span class="hint">(seconds into the take)</span>
+      </div>
+    </div>
+
+    <h3 style="margin-top:16px">3 &middot; Take</h3>
+    <div class="row">
+      <button id="btnApply" style="border-color:#b0006e;color:#b0006e">&#8635; APPLY CHANGES</button>
+      <span class="hint">re-arms the previews with the numbers above</span>
+    </div>
+    <div class="row"><span class="hint">arm a preview on the right &mdash; both clips load to their in-points and hold; &#9654; plays the take (loops); RENDER makes the 4K mp4 of that view</span>
+      <div id="status"></div>
+    </div>
+  </div>
+
+  <div id="right" class="col">
+    <h3>Chat room <span class="hint">(both cams)</span></h3>
+    <div class="stage" id="stage_room"><div class="idle">arm to load the take</div></div>
+    <div class="row">
+      <button class="prev" id="btnPrev_room">&#9202; ARM</button>
+      <button class="rec" id="btnRec_room">&#9679; RENDER CHAT ROOM</button>
+    </div>
+    <h3 style="margin-top:14px">Private show <span class="hint">(her screen + chat + ads)</span></h3>
+    <div class="stage" id="stage_pshow"><div class="idle">arm to load the take</div></div>
+    <div class="row">
+      <button class="prev" id="btnPrev_pshow">&#9202; ARM</button>
+      <button class="rec" id="btnRec_pshow">&#9679; RENDER PRIVATE SHOW</button>
+    </div>
+    <h3 style="margin-top:16px">Recordings</h3>
+    <div id="recs"></div>
+  </div>
+</main>
+<script>
+var API=(location.hostname==='localhost'||location.hostname==='127.0.0.1')?'':'http://localhost:8968';
+var CALLERS=[], CLIPS=['memphy_01.mp4','memphy_02.mp4','memphy_03.mp4','memphy_04.mp4'];
+var DUR={}, LYR={};
+var $=function(id){return document.getElementById(id);};
+
+function fmt(t){ t=Math.max(0,t||0); var m=Math.floor(t/60), s=t-m*60; return m+':'+(s<10?'0':'')+s.toFixed(1); }
+function probe(url,cb){ if(DUR[url]!=null) return cb(DUR[url]);
+  var v=document.createElement('video'); v.preload='metadata'; v.muted=true;
+  v.onloadedmetadata=function(){ DUR[url]=v.duration||0; cb(DUR[url]); };
+  v.onerror=function(){ cb(0); }; v.src=API+'/'+url; }
+
+// lyric data straight from the show page
+fetch(API+'/index.html').then(r=>r.text()).then(function(html){
+  var m=/var LYRICS_BY_CLIP=(\{.*?\});/.exec(html);
+  if(m){ try{ LYR=JSON.parse(m[1].replace(/,1\]/g,',1]')); }catch(e){ try{ LYR=eval('('+m[1]+')'); }catch(e2){} } }
+  // caller list from PRELOADED_GUEST
+  var g=/var PRELOADED_GUEST = \[([\s\S]*?)\];/.exec(html);
+  if(g){ (g[1].match(/'clips\/([^']+)'/g)||[]).forEach(function(x){ CALLERS.push(x.replace(/'clips\/|'/g,'')); }); }
+  init();
+});
+
+function lyricAt(clip,t){
+  var arr=LYR[clip]; if(!arr) return '';
+  var line=''; for(var i=0;i<arr.length;i++){ if(arr[i][0]<=t) line=arr[i][2]; else break; }
+  return line||'(instrumental)';
+}
+
+function init(){
+  CALLERS.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; $('caller').appendChild(o); });
+  CLIPS.forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; $('clip').appendChild(o); });
+  $('caller').onchange=onCaller; $('clip').onchange=onClip;
+  $('tl').onclick=function(e){
+    var r=$('tl').getBoundingClientRect(); var f=(e.clientX-r.left)/r.width;
+    var M=DUR['clips/'+$('clip').value]||0; var t=Math.round(f*M*10)/10;
+    $('mprev').currentTime=t; setStart(t);
+  };
+  $('mprev').addEventListener('timeupdate',function(){
+    var M=DUR['clips/'+$('clip').value]||1;
+    $('tlph').style.left=(($('mprev').currentTime/M)*100)+'%';
+  });
+  $('len').addEventListener('input',function(){ updateBand(); buildTiles(); });
+  $('calin').addEventListener('input',function(){ updateLenDefault(); updateBand(); });
+  $('ctl').onclick=function(e){
+    var r=$('ctl').getBoundingClientRect(); var f=(e.clientX-r.left)/r.width;
+    var D=DUR['clips/'+$('caller').value]||0; var t=Math.round(f*D*10)/10;
+    $('cprev').currentTime=t; $('calin').value=t; updateLenDefault(); updateBand();
+  };
+  $('cprev').addEventListener('timeupdate',function(){
+    var D=DUR['clips/'+$('caller').value]||1;
+    $('ctlph').style.left=(($('cprev').currentTime/D)*100)+'%';
+  });
+  $('btnApply').onclick=function(){
+    ['room','pshow'].forEach(function(v){
+      if($('stage_'+v).querySelector('iframe')){ prevState[v]='idle'; previewTake(v); }
+    });
+  };
+  $('btnPrev_room').onclick=function(){ previewTake('room'); };
+  $('btnPrev_pshow').onclick=function(){ previewTake('pshow'); };
+  $('btnRec_room').onclick=function(){ recordTake('room'); };
+  $('btnRec_pshow').onclick=function(){ recordTake('pshow'); };
+  onCaller(); onClip(); refreshRecs();
+}
+
+function calIn(){ var v=parseFloat($('calin').value); return isFinite(v)&&v>0?v:0; }
+function updateLenDefault(){
+  var D=DUR['clips/'+$('caller').value]||0;
+  var avail=Math.max(0.5, D-calIn());
+  $('len').value=Math.round(avail*10)/10;
+  $('lenhint').textContent='(caller part runs '+fmt(avail)+')';
+}
+function onCaller(){
+  var c=$('caller').value;
+  $('cprev').src=API+'/clips/'+c;
+  $('calin').value=0;
+  probe('clips/'+c,function(D){ $('cdur').textContent='runs '+fmt(D); updateLenDefault(); buildTiles(); updateBand(); });
+}
+function onClip(){
+  var m=$('clip').value;
+  $('mprev').src=API+'/clips/'+m;
+  probe('clips/'+m,function(M){ $('mdur').textContent='('+fmt(M)+' total)'; buildTiles(); updateBand(); });
+}
+function setStart(t){
+  $('start').value=Math.round(t*10)/10;
+  updateBand();
+  [].forEach.call(document.querySelectorAll('.tile'),function(x){ x.classList.remove('on'); });
+}
+function updateBand(){
+  var CD=DUR['clips/'+$('caller').value]||1;
+  var ci=calIn();
+  var Lraw=parseFloat($('len').value);
+  var useLen=isFinite(Lraw)&&Lraw>0?Lraw:Math.max(0.5,CD-ci);
+  $('ctlseg').style.left=((ci/CD)*100)+'%';
+  $('ctlseg').style.width=((Math.min(useLen,CD-ci)/CD)*100)+'%';
+  var D=useLen, M=DUR['clips/'+$('clip').value]||1;
+  var maxStart=Math.max(0, M - (D+0.6));
+  var st=parseFloat($('start').value)||0;
+  if(D && st>maxStart){ st=Math.round(maxStart*10)/10; $('start').value=st; }
+  $('start').max=Math.round(maxStart*10)/10;
+  $('start').title='max '+fmt(maxStart)+' (the take needs '+fmt(D+0.5)+')';
+  $('tlseg').style.left=((st/M)*100)+'%';
+  $('tlseg').style.width=((D/M)*100)+'%';
+}
+
+function buildTiles(){
+  var D=DUR['clips/'+$('caller').value], M=DUR['clips/'+$('clip').value];
+  if(D){ var Lraw=parseFloat($('len').value); var eff=isFinite(Lraw)&&Lraw>0?Lraw:Math.max(0.5,D-calIn()); D=eff; }
+  var clip=$('clip').value;
+  if(!D||!M) return;
+  var tiles=$('tiles'); tiles.innerHTML='';
+  var n=Math.max(1,Math.floor(M/D));
+  var maxStart=M-(D+0.6);
+  var starts=[]; for(var i=0;i<n;i++){ var st0=Math.round(i*D*10)/10; if(st0<=maxStart || i===0) starts.push(st0); }
+  starts.forEach(function(st,i){
+    var d=document.createElement('div'); d.className='tile';
+    d.innerHTML='<canvas width="300" height="168"></canvas><div class="cap">#'+(i+1)+' &nbsp;'+fmt(st)+' &rarr; '+fmt(st+D)+'</div><div class="lyr">'+lyricAt(clip,st)+'</div>';
+    d.onclick=function(){
+      [].forEach.call(document.querySelectorAll('.tile'),function(x){ x.classList.remove('on'); });
+      d.classList.add('on');
+      $('start').value=st; updateBand();
+      var v=$('mprev'); v.currentTime=st; v.play();
+      var stopAt=st+D;
+      var h=function(){ if(v.currentTime>=stopAt){ v.pause(); v.removeEventListener('timeupdate',h); } };
+      v.addEventListener('timeupdate',h);
+    };
+    tiles.appendChild(d);
+  });
+  // thumbnails: sequential seek through a hidden video
+  var tv=document.createElement('video'); tv.muted=true; tv.preload='auto'; tv.src=API+'/clips/'+clip;
+  var k=0;
+  tv.addEventListener('seeked',function(){
+    var cv=tiles.children[k] && tiles.children[k].querySelector('canvas');
+    if(cv){ try{ cv.getContext('2d').drawImage(tv,0,0,300,168); }catch(e){} }
+    k++; if(k<starts.length) tv.currentTime=starts[k]+0.2;
+  });
+  tv.addEventListener('loadeddata',function(){ tv.currentTime=starts[0]+0.2; });
+}
+
+function takeSpec(){
+  var D=DUR['clips/'+$('caller').value]||0;
+  var L=parseFloat($('len').value);
+  return { caller:$('caller').value, clip:$('clip').value,
+    start:parseFloat($('start').value)||0,
+    calIn:calIn()||null,
+    len:(isFinite(L)&&L>0)?L:null,
+    zoomAt:(function(){ var z=parseFloat($('zoom').value); return isFinite(z)&&z>=0?z:null; })() };
+}
+
+var prevState={room:'idle',pshow:'idle'};
+function previewTake(view){
+  var btn=$('btnPrev_'+view), stage=$('stage_'+view);
+  if(prevState[view]==='armed'){
+    var fr=stage.querySelector('iframe');
+    if(fr && fr.contentWindow){ fr.contentWindow.postMessage({memphyTake:'go'},'*'); prevState[view]='playing'; btn.textContent='\u25B6 playing (loops)'; }
+    return;
+  }
+  var sp=takeSpec(); sp.view=view;
+  prevState[view]='arming';
+  btn.textContent='\u23F3 arming\u2026';
+  var idle=stage.querySelector('.idle'); if(idle) idle.style.display='none';
+  var old=stage.querySelector('iframe'); if(old) old.remove();
+  var f=document.createElement('iframe');
+  var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:sp.caller,clip:sp.clip,start:sp.start,zoomat:sp.zoomAt==null?'':sp.zoomAt,calin:sp.calIn==null?'':sp.calIn,len:sp.len==null?'':sp.len,view:view});
+  f.src=API+'/index.html?'+q.toString();
+  f.allow='autoplay';
+  stage.appendChild(f);
+  $('status').textContent='arming '+view+'\u2026 both clips loading to their in-points';
+}
+function viewOf(src){
+  for(var v of ['room','pshow']){ var fr=$('stage_'+v).querySelector('iframe'); if(fr && fr.contentWindow===src) return v; }
+  return null;
+}
+window.addEventListener('message',function(e){
+  if(!e.data) return;
+  var v=viewOf(e.source); if(!v) return;
+  var btn=$('btnPrev_'+v);
+  if(e.data.memphyTake==='armed' && prevState[v]==='arming'){ prevState[v]='armed'; btn.textContent='\u25B6 PLAY TAKE'; $('status').textContent=v+' ARMED \u2014 first frames set. \u25B6 plays (loops); RENDER makes the mp4.'; }
+  if(e.data.memphyTake==='running'){ $('status').textContent=v+' take running\u2026'; }
+});
+
+function recordTake(view){
+  var sp=takeSpec(); sp.view=view;
+  var btnRec=$('btnRec_'+view);
+  btnRec.disabled=true;
+  $('status').textContent='rendering offline… every frame is composed exactly, then encoded to mp4';
+  fetch(API+'/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(sp)})
+    .then(r=>r.json()).then(function(j){
+      if(!j.id){ $('status').textContent='error: '+(j.error||'?'); btnRec.disabled=false; return; }
+      var iv=setInterval(function(){
+        fetch(API+'/api/status/'+j.id).then(r=>r.json()).then(function(sj){
+          var last=(sj.log&&sj.log.length)?(' · '+sj.log[sj.log.length-1]):'';
+          $('status').textContent='take '+j.id+': '+sj.state+(sj.progress?(' '+Math.round(sj.progress*100)+'%'):'')+last+(sj.err?(' — '+sj.err):'');
+          if(sj.state==='done'){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='DONE — saved '+sj.file.split('/').pop(); refreshRecs(); }
+          if(sj.state==='error'){ clearInterval(iv); btnRec.disabled=false; }
+        });
+      },2000);
+    })
+    .catch(function(){ $('status').textContent='local render engine not running \u2014 start it on the Mac:  node recorder/server.js'; btnRec.disabled=false; });
+}
+
+function refreshRecs(){
+  fetch(API+'/api/list').then(r=>r.json()).then(function(j){
+    var el=$('recs'); el.innerHTML='';
+    (j.files||[]).forEach(function(f){
+      var d=document.createElement('div'); d.className='item';
+      var nm=f.split('/').pop();
+      d.innerHTML='<video controls preload="metadata" src="'+API+'/'+f+'"></video><div class="nm">'+nm+'</div><a class="dl" href="'+API+'/'+f+'" download>&#11015; download</a><button class="del" title="delete">&#10005;</button>';
+      d.querySelector('.del').onclick=function(){ fetch(API+'/api/delete/'+encodeURIComponent(nm),{method:'POST'}).then(refreshRecs); };
+      el.appendChild(d);
+    });
+    if(!(j.files||[]).length) el.innerHTML='<span class="hint">no recordings yet</span>';
+  });
+}
+</script>
+</body>
+</html>

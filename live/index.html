@@ -1157,8 +1157,10 @@ function playClip(i, cam){
   var p = v.play();
   if(p && p.catch) p.catch(function(){
     v.muted = true;
-    var mb = document.getElementById(cam==='guest'?'gmutebtn':'mutebtn');
-    if(mb) mb.innerHTML = '&#128263; Unmute';
+    if(!window._recjobMode){
+      var mb = document.getElementById(cam==='guest'?'gmutebtn':'mutebtn');
+      if(mb) mb.innerHTML = '&#128263; Unmute';
+    }
     v.play();
   });
   zone.style.display='none';
@@ -1564,11 +1566,22 @@ function initAudioViz(){
   }catch(e){}
 }
 function drawWave(){
-  var c=document.getElementById('wave'); if(!c||!analyser) return;
-  var ctx=c.getContext('2d'), n=analyser.frequencyBinCount, data=new Uint8Array(n);
+  var c=document.getElementById('wave'); if(!c) return;
+  if(!analyser && !window._recjobMode) return;
+  var ctx=c.getContext('2d'), n=analyser?analyser.frequencyBinCount:32, data=new Uint8Array(n);
   function loop(){
     waveRAF=requestAnimationFrame(loop);
-    analyser.getByteFrequencyData(data);
+    if(window._recjobMode){
+      // automated take: synth EQ driven by her clip's time — deterministic, always dancing
+      var tt=(vid&&vid.currentTime)||0;
+      for(var k=0;k<n;k++){
+        var v=Math.abs(Math.sin(tt*6.1+k*1.31))*0.55+Math.abs(Math.sin(tt*13.7+k*2.71))*0.45;
+        var fall=1-(k/n)*0.55;
+        data[k]=Math.max(26, Math.min(255, v*fall*255));
+      }
+    } else {
+      analyser.getByteFrequencyData(data);
+    }
     ctx.clearRect(0,0,c.width,c.height);
     var bw=c.width/n;
     for(var i=0;i<n;i++){
@@ -2033,7 +2046,7 @@ var gBufReset=null;
   function draw(t){
     requestAnimationFrame(draw);
     var Pfps=Math.min(gProfile.fps, isMob?12:60);
-    if(!buffering && t>nextStall && gvid.videoWidth && !gvid.paused){
+    if(!window._recjobMode && !buffering && t>nextStall && gvid.videoWidth && !gvid.paused){
       var len=gProfile.lenMin+Math.random()*(gProfile.lenMax-gProfile.lenMin);
       buffering=true;
       if(len>600 && buf) buf.className='gbuffer on';   // spinner only on the rare long stall
@@ -2157,19 +2170,28 @@ function commitInside(){
   vid.style.objectFit='cover'; vid.style.transform='scale(1.04)';
   vid.style.transition='none';
   mo.getBoundingClientRect();                  // commit the start frame before animating
-  var EASE='.45s cubic-bezier(.22,.61,.36,1)';
-  mo.style.transition='left '+EASE+', top '+EASE+', width '+EASE+', height '+EASE;
-  vid.style.transition='transform '+EASE;
-  mo.style.left='0px'; mo.style.top='0px'; mo.style.width='100%'; mo.style.height='100%';
-  vid.style.transform='none';
   var w=document.getElementById('wrap');
   var lb=document.getElementById('lab');
-  setTimeout(function(){                       // page beneath stays visible until the glide lands
-    if(!insideMode) return;                    // escaped mid-glide — leave the restored UI alone
+  if(window._recjobMode){
+    // stepped rendering: wall-clock CSS glides land at arbitrary take-frames (visible hitch) — snap clean instead
     mo.style.transition='none'; vid.style.transition='none';
+    mo.style.left='0px'; mo.style.top='0px'; mo.style.width='100%'; mo.style.height='100%';
+    vid.style.transform='none';
     if(w){ w.style.display='none'; w.style.transform=''; w.style.filter=''; }
     if(lb) lb.style.display='none';
-  }, 500);
+  } else {
+    var EASE='.45s cubic-bezier(.22,.61,.36,1)';
+    mo.style.transition='left '+EASE+', top '+EASE+', width '+EASE+', height '+EASE;
+    vid.style.transition='transform '+EASE;
+    mo.style.left='0px'; mo.style.top='0px'; mo.style.width='100%'; mo.style.height='100%';
+    vid.style.transform='none';
+    setTimeout(function(){                       // page beneath stays visible until the glide lands
+      if(!insideMode) return;                    // escaped mid-glide — leave the restored UI alone
+      mo.style.transition='none'; vid.style.transition='none';
+      if(w){ w.style.display='none'; w.style.transform=''; w.style.filter=''; }
+      if(lb) lb.style.display='none';
+    }, 500);
+  }
   try{ gvid.pause(); }catch(e){}
   try{ if(typeof autoRotTimer!=='undefined' && autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; } }catch(e){}
   document.addEventListener('keydown', escInside);
@@ -2305,23 +2327,47 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
     window._recjobMode=true;   // no caller rotation
     var R={ caller:qs.get('caller'), clip:qs.get('clip'), start:parseFloat(qs.get('start'))||0,
             zoomAt:(function(){var z=parseFloat(qs.get('zoomat'));return isFinite(z)&&z>=0?z:null;})(),
-            fps:parseFloat(qs.get('fps'))||30, CONNECT:0.9, TAIL:0.5 };
+            len:(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})(),
+            calIn:(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})(),
+            view:qs.get('view')||'room',
+            fps:parseFloat(qs.get('fps'))||30, CONNECT:(qs.get('connect')?0.9:0), TAIL:0.5 };
     var rr={herIdx:-1,calIdx:-1,dur:0,callerDur:0,connected:false,committed:false};
     function rIdx(name){ for(var i=0;i<clips.length;i++){ if(clips[i].url.split('/').pop()===name) return i; } return -1; }
     window.__renderInit=function(){
       return new Promise(function(res,rej){
         (function wait(){ if(typeof clips!=='undefined'&&clips.length) go(); else setTimeout(wait,100); })();
         function go(){
-          document.body.classList.remove('pshow');
+          try{ var g=document.getElementById('gate'); if(g){ g.style.display='none'; g.parentNode.removeChild(g); } }catch(e){}
+          try{ var cw=document.getElementById('callwith'); if(cw) cw.innerHTML='&mdash; memphy &hearts; on the line'; }catch(e){}
+          try{ var mp=document.getElementById('mpop'); if(mp) mp.style.display='none'; }catch(e){}
+          if(R.view==='pshow'){ document.body.classList.add('pshow'); } else { document.body.classList.remove('pshow'); }
           var lb=document.getElementById('lab'); if(lb) lb.style.display='none';
           rr.herIdx=rIdx(R.clip); rr.calIdx=rIdx(R.caller);
           if(rr.herIdx<0||rr.calIdx<0) return rej(new Error('clip not found'));
           vid.pause(); vid.loop=false; vid.muted=true; vid.src=clips[rr.herIdx].url;
+          try{ document.getElementById('mutebtn').innerHTML='&#128266; Mute'; if(!waveRAF) drawWave(); }catch(e){}
+          // caller loads straight into its cam — plays from frame one, no connect flow
+          var GATES = (R.CONNECT===0) ? 3 : 2;   // instant mode also waits for the caller's first frame
+          if(R.CONNECT===0){
+            try{
+              gvid.pause(); gvid.loop=false; gvid.muted=true;
+              gvid.src=clips[rr.calIdx].url; gvid.load();
+              gvid.addEventListener('loadedmetadata',function g1(){ gvid.removeEventListener('loadedmetadata',g1);
+                var gs=function(){ gvid.removeEventListener('seeked',gs); rr.connected=true;
+                  gdz.style.display='none';
+                  var gl=document.getElementById('glive'); if(gl) gl.style.display='block';
+                  fin(); };
+                gvid.addEventListener('seeked',gs);
+                try{ gvid.currentTime=R.calIn||0.001; }catch(e){ gs(); }
+                setTimeout(function(){ gvid.removeEventListener('seeked',gs); if(!rr.connected){ rr.connected=true; fin(); } },2500);
+              });
+            }catch(e){}
+          }
           var vv=document.createElement('video'); vv.preload='metadata'; vv.muted=true;
           var got=0;
           var finned={};
-          function fin(){ if(finned[got]===undefined) finned[got]=1; if(++got<2) return; if(finned.done) return; finned.done=1;
-            rr.dur=R.CONNECT+rr.callerDur+R.TAIL;
+          function fin(){ if(finned.done) return; if(++got<GATES) return; finned.done=1;
+            rr.dur=R.CONNECT+(R.len||Math.max(0.5,rr.callerDur-R.calIn))+R.TAIL;
             res({duration:rr.dur, fps:R.fps, frames:Math.ceil(rr.dur*R.fps)}); }
           vv.onloadedmetadata=function(){ rr.callerDur=vv.duration||8; fin(); };
           vv.onerror=function(){ rr.callerDur=8; fin(); };
@@ -2351,9 +2397,10 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
     window.__renderStep=function(t){
       return new Promise(function(res){
         try{ vid.pause(); }catch(e){}
+        try{ var mb=document.getElementById('mutebtn'); if(mb&&mb.innerHTML.indexOf('Unmute')>-1) mb.innerHTML='&#128266; Mute'; }catch(e){}
         var ps=[ seekTo(vid, R.start+t) ];
         if(t>=R.CONNECT){
-          if(!rr.connected){
+          if(!rr.connected && R.CONNECT>0){
             rr.connected=true;
             try{ forcedGuestIdx=rr.calIdx;
                  currentCaller=(typeof queue!=='undefined'&&queue.length)?queue[0].name:'caller';
@@ -2361,8 +2408,8 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           }
           var right=(gvid.currentSrc||'').indexOf(R.caller)>-1 && gvid.readyState>=2;
           try{ gvid.pause(); }catch(e){}
-          if(right){ gdz.style.display='none'; ps.push(seekTo(gvid, t-R.CONNECT)); }
-          else { gdz.style.display='block'; }
+          if(right){ gdz.style.display='none'; ps.push(seekTo(gvid, R.calIn+(t-R.CONNECT))); }
+          else if(R.CONNECT>0){ gdz.style.display='block'; }
         }
         if(R.zoomAt!=null && t>=R.CONNECT+R.zoomAt && !rr.committed){
           try{
@@ -2410,7 +2457,24 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
       vid.addEventListener('loadedmetadata',function once(){
         vid.removeEventListener('loadedmetadata',once);
         try{ vid.currentTime=jobStart; }catch(e){}
-        if(jobPrev){ showtime(calIdx, null); return; }   // preview: run the take live, no capture
+        if(jobPrev){
+          // ARM: both cams set + seeked to their in-points, standing on their first frames
+          try{
+            gvid.pause(); gvid.loop=false; gvid.muted=true;
+            var ci=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
+            if((gvid.currentSrc||'').indexOf(jobCaller)<0){ var gi2=idxOf(jobCaller); if(gi2>-1){ gvid.src=clips[gi2].url; gvid.load(); } }
+            gvid.addEventListener('loadedmetadata',function gm(){ gvid.removeEventListener('loadedmetadata',gm); try{ gvid.currentTime=ci||0.001; }catch(e){} });
+            if(gvid.readyState>=1){ try{ gvid.currentTime=ci||0.001; }catch(e){} }
+            gdz.style.display='none';
+            var gl=document.getElementById('glive'); if(gl) gl.style.display='block';
+            if(qs.get('view')==='pshow') document.body.classList.add('pshow');
+          }catch(e){}
+          try{ if(window.parent!==window) window.parent.postMessage({memphyTake:'armed'},'*'); }catch(e){}
+          window.addEventListener('message',function onGo(ev){
+            if(ev.data && ev.data.memphyTake==='go'){ window.removeEventListener('message',onGo); showtime(calIdx, null); }
+          });
+          return;
+        }
         // 2) capture (auto-accepted by --auto-accept-this-tab-capture); retry until the window has focus
         var tries=0;
         (function grab(){
@@ -2479,8 +2543,16 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
   // the take itself: her segment plays, caller "connects…", runs the whole caller length, optional dive
   function showtime(calIdx, onEnd){
     setTimeout(function(){
-      try{ vid.play(); }catch(e){}
+      try{ var g0=document.getElementById('gate'); if(g0) g0.style.display='none'; }catch(e){}
+      try{
+        vid.muted=false; vid.volume=1;
+        var vp=vid.play();
+        if(vp&&vp.catch) vp.catch(function(){ vid.muted=true; vid.play().catch(function(){});
+          var un=function(){ vid.muted=false; document.removeEventListener('pointerdown',un); };
+          document.addEventListener('pointerdown',un); });
+      }catch(e){}
       try{ initAudioViz(); }catch(e){}
+      try{ document.getElementById('mutebtn').innerHTML='&#128266; Mute'; if(!waveRAF) drawWave(); }catch(e){}
       // a suspended AudioContext swallows her audio (initAudioViz routes the element through it) — force it running
       (function pump(n){
         try{
@@ -2492,21 +2564,36 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
         if(n>0) setTimeout(function(){pump(n-1);},500);
       })(8);
       try{
-        forcedGuestIdx=calIdx;
-        currentCaller = (typeof queue!=='undefined'&&queue.length) ? queue[0].name : 'caller';
-        connectCaller();
+        if(qs.get('view')==='pshow') document.body.classList.add('pshow');
+        // instant start: caller already armed at its in-point — just roll it
+        var _ci=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
+        if((gvid.currentSrc||'').indexOf(jobCaller)<0){ playClip(calIdx,'guest'); if(_ci>0){ try{ gvid.currentTime=_ci; }catch(e){} } }
+        else { if(Math.abs(gvid.currentTime-_ci)>0.3){ try{ gvid.currentTime=_ci; }catch(e){} } gvid.muted=true; gvid.play().catch(function(){}); }
+        gdz.style.display='none';
+        var gl=document.getElementById('glive'); if(gl) gl.style.display='block';
       }catch(e){}
       var stopped=false;
       function fin(){ if(stopped) return; stopped=true; document.title=(onEnd?'REC':'PREVIEW')+' ended';
         try{ if(window.parent!==window) window.parent.postMessage({memphyTake:'ended'},'*'); }catch(e){}
-        if(onEnd) onEnd(); }
+        if(onEnd){ onEnd(); return; }
+        // preview: freeze at the exact take end, then loop
+        try{ vid.pause(); }catch(e){}
+        try{ gvid.pause(); }catch(e){}
+        setTimeout(function(){
+          try{ if(insideMode) exitInside(); }catch(e){}
+          try{ vid.pause(); vid.currentTime=jobStart; }catch(e){}
+          try{ var ci2=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
+               gvid.pause(); gvid.currentTime=ci2||0.001; }catch(e){}
+          setTimeout(function(){ showtime(calIdx, null); }, 400);
+        }, 900); }
       gvid.loop=false;
       gvid.addEventListener('ended', function h(){ gvid.removeEventListener('ended', h); fin(); });
-      probe('clips/'+jobCaller, function(D){ if(D>0) setTimeout(fin, 450+D*1000+600); else setTimeout(fin, 60000); });
+      var _plen=(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})();
+      probe('clips/'+jobCaller, function(D){ var run=_plen||(D>0?D:60); setTimeout(fin, run*1000+600); });
       if(jobZoom!=null){
         setTimeout(function(){
           try{ window._overHer=true; window._autoDive=true; pressOn=false; document.body.classList.add('diving'); startLoop(); }catch(e){}
-        }, 450+jobZoom*1000);
+        }, jobZoom*1000);
       }
       try{ if(window.parent!==window) window.parent.postMessage({memphyTake:'running'},'*'); }catch(e){}
     }, 200);
