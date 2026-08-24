@@ -1091,7 +1091,7 @@ gvid.addEventListener('ended', function(){ if(!(typeof lab!=='undefined' && lab.
 // watchdog: never let an idle cam sit paused
 setInterval(function(){
   if(typeof lab!=='undefined' && lab.playing) return;
-  if(!vid._hold && current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=!herAudioOn; vid.play().catch(function(){}); }
+  if(!vid._hold && current>-1 && vid.getAttribute('src') && vid.paused && vid.currentTime < (isFinite(vid.duration)?vid.duration:1e9)-0.35){ vid.muted=!herAudioOn; vid.play().catch(function(){ vid.muted=true; vid.play().catch(function(){}); }); }
   if(!gvid._hold && gcurrent>-1 && gvid.getAttribute('src') && gvid.paused && gvid.currentTime < (isFinite(gvid.duration)?gvid.duration:1e9)-0.35 && document.getElementById('gspin').className.indexOf('on')<0){ gvid.muted=true; gvid.play().catch(function(){}); }
 }, 1500);
 
@@ -1452,7 +1452,11 @@ function toggleSong(){
   if(vid.muted || vid.paused){
     herAudioOn=true; vid.muted=false;
     initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume();
-    vid.play().catch(function(){});
+    vid.play().catch(function(){
+      vid.muted=true; vid.play().catch(function(){});
+      var un=function(){ vid.muted=false; if(actx2 && actx2.state==='suspended') actx2.resume(); };
+      document.addEventListener('pointerdown',un,{once:true});
+    });
     var mb=document.getElementById('mutebtn'); if(mb) mb.innerHTML='&#128266; Mute';
     if(!waveRAF) drawWave();
   } else {
@@ -1462,7 +1466,7 @@ function toggleSong(){
 }
 // try to start on the first interaction anywhere (autoplay w/ sound needs a gesture)
 (function(){
-  function kick(){ try{ if(vid.muted) toggleSong(); else vid.play().catch(function(){}); }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} document.removeEventListener('pointerdown',kick); }
+  function kick(){ try{ if(vid.muted) toggleSong(); else { vid.play().catch(function(){}); initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume(); if(!waveRAF) drawWave(); } }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} document.removeEventListener('pointerdown',kick); }
   document.addEventListener('pointerdown',kick,{once:true});
 })();
 
