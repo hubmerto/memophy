@@ -674,6 +674,15 @@ html,body{overflow:auto;}
     fisheye <input id="pzFish" type="number" value="0.35" min="0" max="1" step="0.05" style="width:56px">
     <a id="labDl" href="#">download</a>
   </div>
+  <div class="labrow" id="dirlab" style="border-top:2px solid #b0006e;padding-top:10px;">
+    <b style="color:#b0006e">DIRECT THE SHOW:</b>
+    caller <select id="dlCaller" style="font:bold 12px Arial;max-width:210px"></select> <span style="color:#888;font-weight:normal">(loops)</span>
+    &nbsp; memphy <select id="dlClip" style="font:bold 12px Arial"></select>
+    &nbsp; cut <select id="dlSeg" style="font:bold 12px Arial;max-width:330px"></select>
+    &nbsp; or start <input id="dlStart" type="number" min="0" step="0.1" style="width:70px" placeholder="s"> s
+    &nbsp; <span class="labbtn" onclick="dlApply()">&#9654; SET SCENE</span>
+    <span id="dlStatus" style="font:bold 12px Arial;color:#2fa515;margin-left:8px"></span>
+  </div>
   <div class="labrow" id="reclab" style="border-top:2px solid #b0006e;padding-top:10px;">
     <b style="color:#b0006e">RECORDING LAB:</b> run <code>node recorder/server.js</code> and open
     <a href="http://localhost:8968/lab" target="_blank"><b>http://localhost:8968/lab</b></a> — visual scene picker, live take preview, one-click 4K recording.
@@ -1230,7 +1239,7 @@ var herPos=0;
 function herIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==='her' && !clips[i].removed) a.push(i); return a; }
 var herFirst=true;
 function herRotate(){
-  if(window._recjobMode) return;   // automated render/take: her clip is pinned
+  if(window._recjobMode || window._dlHold) return;   // automated take / directed scene: her clip is pinned
   if(typeof lab!=='undefined' && lab.playing) return;
   if(vid._hold) return;
   var idxs=herIdxs(); if(!idxs.length) return;
@@ -1514,6 +1523,7 @@ var TIPS = [
   ['sadboy2009',75,'skip me but keep the money'],['first_time_caller',150,'longtime watcher first time tipper']
 ];
 function fakeTip(){
+  if(window._diving || insideMode){ setTimeout(fakeTip, 3000+Math.random()*6000); return; }
   var t = TIPS[Math.floor(Math.random()*TIPS.length)];
   var d = document.createElement('div');
   d.className='tip';
@@ -1568,6 +1578,7 @@ function tipPop(amount){
 var _isMob = window.innerWidth <= 820;
 setInterval(function(){
   if(document.hidden) return;
+  if(window._diving || insideMode) return;   // no DOM churn while the camera moves — keeps the zoom silky
   var n=_isMob ? 1 : (2+Math.floor(Math.random()*3));
   for(var i=0;i<n;i++) setTimeout(spawnHeart, Math.random()*220);
   var mn=_isMob ? (Math.random()<0.5?1:0) : (1+Math.floor(Math.random()*2)); for(var mI=0;mI<mn;mI++) setTimeout(function(){ spawnMoney(); }, Math.random()*220);
@@ -1575,6 +1586,7 @@ setInterval(function(){
 }, _isMob ? 520 : 260);
 
 function pushChat(cls, user, text){
+  if(window._diving || insideMode) return;
   var d = document.createElement('div');
   if(cls==='sys'){ d.className='sys'; d.innerHTML = text; }
   else { d.className=cls; d.innerHTML = '<b>'+user+':</b> '+text; }
@@ -1732,7 +1744,7 @@ function bagNext(bagName,idxs,lastVar){
 function callerIdxs(){ var a=[]; for(var i=0;i<clips.length;i++) if(clips[i].feed==='caller' && !clips[i].removed) a.push(i); return a; }
 function showSpin(on,msg){ var el=document.getElementById('gspin'); if(!el) return; el.className='gspin'+(on?' on':''); if(on&&msg){ var m=el.querySelector('.spinmsg'); if(m) m.innerHTML=msg; } }
 function rotateCaller(){
-  if(window._recjobMode) return;   // automated take: one caller, no rotation
+  if(window._recjobMode || window._dlHold) return;   // automated take / directed scene: no rotation
   if(autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; }
   if(typeof lab!=='undefined' && lab.playing){ autoRotTimer=setTimeout(rotateCaller,2500); return; }
   if(gvid._hold){ autoRotTimer=setTimeout(rotateCaller,1500); return; }
@@ -2311,7 +2323,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
     if(!cs||!ms||typeof clips==='undefined') return;
     clips.forEach(function(c){
       var name=c.url.split('/').pop();
-      if(c.feed==='guest'){ var o=document.createElement('option'); o.value=name; o.textContent=name; cs.appendChild(o); }
+      if(c.feed==='caller'||c.feed==='guest'){ var o=document.createElement('option'); o.value=name; o.textContent=name; cs.appendChild(o); }
     });
     ['memphy_01.mp4','memphy_02.mp4','memphy_03.mp4','memphy_04.mp4'].forEach(function(n){
       var o=document.createElement('option'); o.value=n; o.textContent=n; ms.appendChild(o);
@@ -2362,6 +2374,79 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
       .catch(function(){ st.textContent='recorder server not running — start it with:  node recorder/server.js  (then open http://localhost:8968)'; });
   };
   if(document.readyState!=='loading') rlInit(); else document.addEventListener('DOMContentLoaded',rlInit);
+
+  // ---- DIRECT THE SHOW (live scene picker: looping caller + her cut in caller-length slices) ----
+  function dlLyricAt(clipName,t){
+    var arr=(typeof LYRICS_BY_CLIP!=='undefined')&&LYRICS_BY_CLIP[clipName]; if(!arr) return '';
+    var line=''; for(var i=0;i<arr.length;i++){ if(arr[i][0]<=t) line=arr[i][2]; else break; }
+    return line?(' — “'+line.slice(0,40)+(line.length>40?'…':'')+'”'):' — (instrumental)';
+  }
+  function dlInit(){
+    var cs=document.getElementById('dlCaller'), ms=document.getElementById('dlClip');
+    if(!cs||!ms||typeof clips==='undefined') return;
+    clips.forEach(function(c){
+      var name=c.url.split('/').pop();
+      if(c.feed==='caller'||c.feed==='guest'){ var o=document.createElement('option'); o.value=name; o.textContent=name; cs.appendChild(o); }
+    });
+    ['memphy_01.mp4','memphy_02.mp4','memphy_03.mp4','memphy_04.mp4'].forEach(function(n){
+      var o=document.createElement('option'); o.value=n; o.textContent=n; ms.appendChild(o);
+    });
+    cs.addEventListener('change',dlSegs); ms.addEventListener('change',dlSegs);
+    dlSegs();
+  }
+  function dlSegs(){
+    var cs=document.getElementById('dlCaller'), ms=document.getElementById('dlClip'), seg=document.getElementById('dlSeg');
+    if(!cs.value||!ms.value) return;
+    probe('clips/'+cs.value,function(D){ probe('clips/'+ms.value,function(M){
+      seg.innerHTML='';
+      if(!D||!M){ var o=document.createElement('option'); o.textContent='(durations unavailable)'; seg.appendChild(o); return; }
+      var n=Math.max(1,Math.floor(M/D));
+      for(var i=0;i<n;i++){
+        var st=Math.round(i*D*10)/10;
+        var o=document.createElement('option'); o.value=st;
+        o.textContent='#'+(i+1)+'  '+fmt(st)+' → '+fmt(st+D)+dlLyricAt(ms.value,st);
+        seg.appendChild(o);
+      }
+      seg.title='caller runs '+fmt(D)+' — cuts are caller-length';
+    });});
+  }
+  window.dlApply=function(){
+    var caller=document.getElementById('dlCaller').value, clip=document.getElementById('dlClip').value;
+    var custom=parseFloat(document.getElementById('dlStart').value);
+    var start=isFinite(custom)&&custom>=0?custom:parseFloat(document.getElementById('dlSeg').value)||0;
+    var ci=idxOf(caller), hi=idxOf(clip);
+    if(ci<0||hi<0) return;
+    window._dlHold=true;
+    window._dlStart=start;
+    try{ if(typeof autoRotTimer!=='undefined'&&autoRotTimer){ clearTimeout(autoRotTimer); autoRotTimer=null; } }catch(e){}
+    // caller: chosen clip, LOOPING
+    try{
+      gvid.pause(); gvid.loop=true; gvid.muted=true;
+      if((gvid.currentSrc||'').indexOf(caller)<0){ gvid.src=clips[ci].url; gvid.load(); }
+      else gvid.currentTime=0;
+      gdz.style.display='none';
+      var gl=document.getElementById('glive'); if(gl) gl.style.display='block';
+      gvid.play().catch(function(){});
+      if(typeof gBufReset==='function') gBufReset();
+    }catch(e){}
+    // her: chosen clip at the chosen cut, unmuted with the track
+    try{
+      var go=function(){ try{ vid.currentTime=start; }catch(e){}
+        vid.muted=false; var pr=vid.play(); if(pr&&pr.catch) pr.catch(function(){ vid.muted=true; vid.play().catch(function(){}); }); };
+      if((vid.currentSrc||'').indexOf(clip)<0){
+        vid.src=clips[hi].url;
+        vid.addEventListener('loadedmetadata',function once(){ vid.removeEventListener('loadedmetadata',once); go(); });
+        vid.load();
+      } else go();
+    }catch(e){}
+    var st=document.getElementById('dlStatus');
+    if(st){ st.textContent='SCENE SET — '+caller.replace('.mp4','')+' loops · '+clip.replace('.mp4','')+' @ '+fmt(start); setTimeout(function(){ st.textContent=''; },4000); }
+  };
+  // directed scene: when her clip runs out, loop back to the chosen cut
+  vid.addEventListener('ended', function(){
+    if(window._dlHold && !window._recjobMode){ try{ vid.currentTime=window._dlStart||0; vid.play().catch(function(){}); }catch(e){} }
+  });
+  if(document.readyState!=='loading') dlInit(); else document.addEventListener('DOMContentLoaded',dlInit);
 
   // ---- offline RENDER mode: stepped frame-by-frame, driven over CDP (no screen recording) ----
   if(qs.get('renderjob')!=null){
