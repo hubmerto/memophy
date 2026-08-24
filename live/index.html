@@ -608,13 +608,10 @@ html,body{overflow:auto;}
     fisheye <input id="pzFish" type="number" value="0.35" min="0" max="1" step="0.05" style="width:56px">
     <a id="labDl" href="#">download</a>
   </div>
-  <div class="labrow"><b>CRT / video FX (over the whole UI):</b>
-    <label style="font:bold 13px Arial"><input type="checkbox" id="crtOn"> ON</label>
-    &nbsp; look <select id="crtPreset" style="font:bold 12px Arial"></select>
-    &nbsp; intensity <input id="crtAmt" type="range" min="0" max="1" step="0.01" value="1" style="width:120px;vertical-align:middle">
-    <span style="color:#888;font-weight:normal">— fades out as you dive into her cam</span>
+  <div class="labrow"><b>CRT / video FX:</b>
+    <label style="font:bold 14px Arial"><input type="checkbox" id="crtOn"> ON / OFF</label>
+    <span style="color:#888;font-weight:normal">&nbsp;— fades out as you dive into her cam</span>
   </div>
-  <div id="crtpanel" class="labrow"></div>
   <div class="labrow big"><span id="labCount">&mdash;</span><span id="labElapsed">00:00.0</span><span id="labRecStatus"></span></div>
   <div class="labrow tips">Drop videos on either cam (top) and they appear in the dropdowns. Play resets both cams, counts 3-2-1 with beeps, then starts each clip at its time. Rec pops one Chrome prompt (pick <b>This Tab</b> / <b>Share</b>) &mdash; it then records <b>only the 16:9 frame</b> (auto-cropped, no padding or lab), with the song audio, runs the 3-2-1 countdown, and auto-downloads a .webm of the chosen length. No lining-up, no staying in place. Hotkeys: F8 accept &middot; F9 skip &middot; F10 end &middot; <code>?nogate&amp;nopop</code> for clean takes.</div>
 </div>
@@ -2153,7 +2150,7 @@ function composeWrapFilter(){
     ['Glow',[['glow','glow',0,1.5,.01,.35],['glowSize','radius',1,6,.1,3]]],
     ['Damage',[['noise','noise',0,1,.01,.06],['flicker','flicker',0,1,.01,.05],['jitter','jitter',0,1,.01,0],['roll','roll bar',0,1,.01,.1],['track','vhs track',0,1,.01,0]]],
     ['Film',[['grain','grain',0,1,.01,0],['leak','light leak',0,1,.01,0],['burn','film burn',0,1,.01,0],['dust','dust',0,1,.01,0]]],
-    ['Color',[['bright','bright',.3,1.8,.01,1.05],['contrast','contrast',.5,1.8,.01,1.05],['sat','sat',0,2.2,.01,1.1],['tint','warm/cool',-1,1,.01,0]]]
+    ['Color',[['bright','bright',.3,1.8,.01,.70],['contrast','contrast',.5,1.8,.01,1.00],['sat','sat',0,2.2,.01,1.00],['tint','warm/cool',-1,1,.01,0]]]
   ];
   var DEF={maskType:0}; GROUPS.forEach(function(g){g[1].forEach(function(p){DEF[p[0]]=p[5];});});
   var PRESETS={
@@ -2222,9 +2219,7 @@ function composeWrapFilter(){
     window._crtGeoStr = (m>0 && (P.curv>0||P.aber>0||P.bleed>0||P.glow>0)) ? 'url(#crtGeo)' : '';
     // --- color grade ---
     if(m>0){
-      // compensate for the light the multiply mask/scanlines/vignette eat, so the picture doesn't go dark
-      var comp=1 + (P.maskInt*1.7 + P.scan*0.55 + P.vig*0.2 + P.noise*0.6)*m;
-      var br=lerp(1,P.bright,m)*comp,co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
+      var br=lerp(1,P.bright,m),co=lerp(1,P.contrast,m),sa=lerp(1,P.sat,m),tn=P.tint*m;
       var warm=tn>=0?tn:0, cool=tn<0?-tn:0;
       window._crtColorStr='brightness('+br.toFixed(3)+') contrast('+co.toFixed(3)+') saturate('+sa.toFixed(3)+')'
         + (warm>0?(' sepia('+(warm*0.5).toFixed(3)+') hue-rotate('+(-12*warm).toFixed(1)+'deg)'):'')
@@ -2292,14 +2287,9 @@ function composeWrapFilter(){
   function syncInputs(){ for(var k in inputs){ if(inputs[k]){ inputs[k].value=P[k]; var sp=inputs[k].parentNode.querySelector('span'); if(sp) sp.textContent=(+P[k]).toFixed((''+inputs[k].step).indexOf('.')<0?0:2);} } }
 
   function init(){
-    var sel=document.getElementById('crtPreset'); var on=document.getElementById('crtOn'); var amt=document.getElementById('crtAmt'); var pan=document.getElementById('crtpanel');
-    if(!sel||!on) return;
-    Object.keys(PRESETS).forEach(function(n){var o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o);});
-    sel.value='CRT default';
-    buildPanel();
-    on.addEventListener('change',function(){ crtOn=on.checked; if(pan)pan.className='labrow'+(crtOn?' on':''); updateCRT(); });
-    amt.addEventListener('input',function(){ crtAmt=parseFloat(amt.value); updateCRT(); });
-    sel.addEventListener('change',function(){ P=clone(PRESETS[sel.value]||{}); syncInputs(); updateCRT(); });
+    var on=document.getElementById('crtOn'); if(!on) return;   // fixed CRT look — only an ON/OFF toggle
+    crtAmt=1;
+    on.addEventListener('change',function(){ crtOn=on.checked; updateCRT(); });
     updateCRT();
   }
   if(document.readyState!=='loading') init(); else document.addEventListener('DOMContentLoaded', init);
