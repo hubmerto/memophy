@@ -81,6 +81,7 @@ button:disabled{opacity:.5;cursor:default;}
     <div class="row">
       <button id="btnApply" style="border-color:#b0006e;color:#b0006e">&#8635; APPLY CHANGES</button>
       <span class="hint">re-arms the previews with the numbers above</span>
+      &nbsp;&nbsp;<label style="font:bold 13px Arial"><input type="checkbox" id="draft"> &#9889; draft render (1080p, ~4&times; faster)</label>
     </div>
     <div class="row"><span class="hint">arm a preview on the right &mdash; both clips load to their in-points and hold; &#9654; plays the take (loops); RENDER makes the 4K mp4 of that view</span>
       <div id="status"></div>
@@ -246,6 +247,7 @@ function takeSpec(){
   var D=DUR['clips/'+$('caller').value]||0;
   var L=parseFloat($('len').value);
   return { caller:$('caller').value, clip:$('clip').value,
+    draft:$('draft').checked||undefined,
     start:parseFloat($('start').value)||0,
     calIn:calIn()||null,
     len:(isFinite(L)&&L>0)?L:null,
