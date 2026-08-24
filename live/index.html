@@ -1238,7 +1238,6 @@ setInterval(function(){
 var callTimer = null, callTurn = 0;
 function startCallChat(who){
   stopCallChat();
-  var l = document.getElementById('calllog'); l.innerHTML='';
   pushCall('sys', null, 'connected &mdash; memphy &hearts; '+esc(who));
   callTurn = 0;
   callTimer = setInterval(function(){
