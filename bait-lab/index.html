@@ -385,10 +385,7 @@ const baseId = id => String(id||'').replace('builtin-','');
 /* ---- icon -> scenario tags (families are UI labels only; randomizer filters on scenarios[]) ---- */
 const ICON_FAMILY = {
   PHARMA:   { icons:['bluepill','capsules','blister','boost','vial'], scen:['sellPill'] },
-  CANDY:    { icons:['gummies','gummybear','lollipop','cherries','peach'], scen:['t4tCuties','prize'] },
-  GEAR:     { icons:['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','padlock','rose','towel'], scen:['meetTrade'] },
-  PEOPLE:   { icons:['girl1','girl2','girl3','girl4','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','slave','gummygirl'], scen:['meetTrade','t4tCuties','camLive','fakeNotif'] },
-  BRAND:    { icons:['logo','shield','pfiercer','hazard','pendant'], scen:['scareWarning','prize','fakeNotif'] },
+  GEAR:     { icons:['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','padlock'], scen:['meetTrade'] },
   CAM:      { icons:['ringlight','tripod','token','heartspam','webcam'], scen:['camLive'] },
   UI:       { icons:['bubble','notifdot','battery','cursor'], scen:['fakeNotif','scareWarning'] },
   SHOP:     { icons:['parcel','pumpbottle','priceburst'], scen:['sellPill'] },
@@ -429,7 +426,11 @@ function fxSpec(fxName) {
 
 /* ---- THE RESOLVER: one scenario -> a fully intent-correlated ad ---- */
 function eligibleIcons(scen) {
-  return assets.filter(a => (ICON_SCEN[baseId(a.id)] || []).includes(scen));
+  const tagged = assets.filter(a => (ICON_SCEN[baseId(a.id)] || []).includes(scen));
+  const wild = assets.filter(a => !ICON_SCEN[baseId(a.id)]);   // untagged = usable anywhere
+  // tagged icons dominate their scenario; wildcards fill the gaps (and cover untagged scenarios)
+  if (tagged.length) return (Math.random() < 0.78 || !wild.length) ? tagged : wild;
+  return wild.length ? wild : assets;
 }
 function resolve(scen) {
   const S = SCENARIOS[scen]; if (!S) return null;
@@ -449,8 +450,8 @@ function resolve(scen) {
   } else if (solos.length) {
     iconIds = [pick(solos).id];
   } else {
-    const brand = assets.find(a => (ICON_FAMILY.BRAND.icons).includes(baseId(a.id)));
-    iconIds = brand ? [brand.id] : (assets[0] ? [assets[0].id] : []);
+    const any = assets.find(a => !ICON_SCEN[baseId(a.id)]) || assets[0];
+    iconIds = any ? [any.id] : [];
   }
 
   // motion = scenario.motion ∩ icon.motionClass
