@@ -120,7 +120,7 @@
   .t-show-banner .pic { float:left; width:80px; height:60px; overflow:hidden; }
   .t-show-banner .pic img { width:80px; height:60px; }
   .t-show-banner .badge { float:left; margin:16px 0 0 14px; padding:4px 10px; font-size:14px; letter-spacing:2px; }
-  .t-show-banner .hl { float:left; margin:5px 0 0 18px; max-width:520px; font-size:42px; line-height:50px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
+  .t-show-banner .hl { float:left; margin:5px 0 0 18px; max-width:600px; font-size:42px; line-height:50px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
   .t-show-banner .sub { float:left; margin:20px 0 0 14px; max-width:120px; font:italic bold 14px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
   .t-show-banner .cta { position:absolute; right:16px; top:16px; font:bold 22px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
 
@@ -1007,6 +1007,7 @@ function renderPreviewInner() {
     if (urls.length > 1) ad._icons = urls;
     row.appendChild(ad);
     enableEditing(ad, template);
+    fitText(ad);
     ad.ondragover = e => e.preventDefault();
     ad.ondrop = e => {
       e.preventDefault();
@@ -1169,7 +1170,7 @@ function buildOptions() {
     if (isBanner) card.style.width = '100%';
     box.style.width = t.w * scale + 'px'; box.style.height = t.h * scale + 'px';
     ad.style.transformOrigin = '0 0'; ad.style.transform = `scale(${scale})`;
-    box.appendChild(ad); card.appendChild(box);
+    box.appendChild(ad); card.appendChild(box); fitText(ad);
     const meta = document.createElement('div');
     meta.className = 'meta';
     meta.innerHTML = `<span>${SCENARIOS[scen]?.label || scen} · ${skin}</span>`;
@@ -1316,7 +1317,21 @@ function pageCss() {
   }
   return css;
 }
+function fitText(adEl){
+  adEl.querySelectorAll('.hl').forEach(hl => {
+    let fs = parseFloat(getComputedStyle(hl).fontSize) || 20;
+    let guard = 0;
+    while (guard++ < 60 && fs > 9 && (hl.scrollWidth > hl.clientWidth + 1 || hl.scrollHeight > hl.clientHeight + 1)) {
+      fs -= 1; hl.style.fontSize = fs + 'px'; hl.style.lineHeight = (fs + 2) + 'px';
+    }
+  });
+}
 async function rasterizeAd(adEl, t) {
+  const _off = document.createElement('div');
+  _off.style.cssText = 'position:fixed;left:-99999px;top:0;pointer-events:none;';
+  document.body.appendChild(_off); _off.appendChild(adEl);
+  fitText(adEl);
+  _off.removeChild(adEl); document.body.removeChild(_off);
   adEl.style.transform = 'none';
   // gradient-clip text paints unreliably in SVG rasterization — flatten headlines to a solid for export
   adEl.querySelectorAll('.hl').forEach(h => {
