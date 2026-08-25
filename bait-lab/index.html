@@ -952,15 +952,29 @@ function init() {
   window.updBuildLabel = () => { document.getElementById('build').textContent = 'BUILD 12 × ' + (window.ACTIVE || ts.value).toUpperCase(); };
   ts.onchange = () => { updBuildLabel(); renderPreview(); };
   updBuildLabel();
-  ss.onchange = () => { if (!writeProp({ skin: ss.value })) renderPreview(); };
-  document.getElementById('motion').onchange = () => { if (!writeProp({ motion: document.getElementById('motion').value })) renderPreview(); };
+  ss.onchange = () => {
+    if (writeProp({ skin: ss.value })) return;
+    for (const t of Object.keys(TPL)) { const P = LAYOUT[t]?.props; if (P) delete P.skin; }
+    saveLayout(); renderPreview();
+  };
+  document.getElementById('motion').onchange = () => {
+    if (writeProp({ motion: document.getElementById('motion').value })) return;
+    for (const t of Object.keys(TPL)) { const P = LAYOUT[t]?.props; if (P) delete P.motion; }
+    saveLayout(); renderPreview();
+  };
   FX_KEYS.forEach(k => document.getElementById('fx-' + k).onchange = () => {
-    if (window.ACTIVE) writeProp({ fx: currentFx() });
-    else renderPreview();
+    if (window.ACTIVE) { writeProp({ fx: currentFx() }); return; }
+    for (const t of Object.keys(TPL)) { const P = LAYOUT[t]?.props; if (P) delete P.fx; }
+    saveLayout(); renderPreview();
   });
   for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).oninput = () => {
-    if (window.ACTIVE) { const c = { ...(propsFor(window.ACTIVE).copy ?? {}) }; c[k] = document.getElementById('c-' + k).value; writeProp({ copy: c }); }
-    else renderPreview();
+    const v = document.getElementById('c-' + k).value;
+    if (window.ACTIVE) { const c = { ...(propsFor(window.ACTIVE).copy ?? {}) }; c[k] = v; writeProp({ copy: c }); }
+    else {
+      // ALL ADS: write through to any per-ad copy overrides so typing always shows
+      for (const t of Object.keys(TPL)) { const P = LAYOUT[t]?.props; if (P?.copy) P.copy[k] = v; }
+      saveLayout(); renderPreview();
+    }
   };
   document.querySelectorAll('.dice').forEach(b => b.onclick = () => {
     document.getElementById('c-' + b.dataset.roll).value = roll(b.dataset.roll); renderPreview();
