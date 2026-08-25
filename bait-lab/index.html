@@ -37,7 +37,7 @@
     background:#c00; color:#fff; font:bold 10px Arial; border:1px solid #fff; border-radius:0; display:none; }
   .asset:hover .del { display:block; }
   /* preview + options */
-  #previewWrap { display:inline-block; border:1px solid var(--ui-line); background:#0d0d0d; padding:18px; }
+  #previewWrap { display:block; max-width:960px; border:1px solid var(--ui-line); background:#0d0d0d; padding:18px; }
   #optGrid { display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; align-items:flex-start; }
   .opt { background:var(--ui-panel); border:1px solid var(--ui-line); padding:8px; }
   .opt .meta { display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:6px; }
@@ -142,7 +142,7 @@
     <input type="file" id="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" multiple style="display:none">
     <div id="lib"></div>
 
-    <h2>Format</h2>
+    <h2>Format (options grid + reset)</h2>
     <select id="template"></select>
     <h2>Skin</h2>
     <select id="skin"></select>
@@ -410,15 +410,32 @@ function currentCopy() {
 function renderPreview() {
   const wrap = document.getElementById('previewWrap');
   wrap.innerHTML = '';
-  const ad = makeAd(sel('template'), sel('skin'), currentCopy(), selectedAsset?.dataUrl);
-  wrap.appendChild(ad);
-  enableEditing(ad, sel('template'));
-  ad.ondragover = e => e.preventDefault();
-  ad.ondrop = e => {
-    e.preventDefault();
-    const a = assets.find(x => x.id === e.dataTransfer.getData('text/asset-id'));
-    if (a) { selectedAsset = a; drawLib(); renderPreview(); }
-  };
+  for (const template of Object.keys(TPL)) {
+    const row = document.createElement('div');
+    row.style.cssText = 'margin-bottom:20px;';
+    const ad = makeAd(template, sel('skin'), currentCopy(), selectedAsset?.dataUrl);
+    row.appendChild(ad);
+    enableEditing(ad, template);
+    ad.ondragover = e => e.preventDefault();
+    ad.ondrop = e => {
+      e.preventDefault();
+      const a = assets.find(x => x.id === e.dataTransfer.getData('text/asset-id'));
+      if (a) { selectedAsset = a; drawLib(); renderPreview(); }
+    };
+    const meta = document.createElement('div');
+    meta.style.cssText = 'display:flex; gap:10px; align-items:center; margin-top:5px;';
+    const lbl = document.createElement('span');
+    lbl.style.cssText = 'font:10px Courier,monospace; color:#888;';
+    lbl.textContent = `${template} ${TPL[template].w}x${TPL[template].h}`;
+    const btn = document.createElement('button');
+    btn.textContent = 'GIF';
+    btn.style.cssText = 'width:auto; margin:0; padding:3px 14px; font-size:11px;';
+    btn.onclick = () => exportCreative({ template, skin: sel('skin'), copy: currentCopy(),
+      imgUrl: selectedAsset?.dataUrl, fx: currentFx(), motion: sel('motion') }, `${template}-${sel('skin')}`);
+    meta.appendChild(lbl); meta.appendChild(btn);
+    row.appendChild(meta);
+    wrap.appendChild(row);
+  }
   persist();
 }
 
