@@ -467,11 +467,36 @@ document.addEventListener('keydown', e => {
       const adEl = document.querySelector('#previewWrap .t-' + t);
       const node = adEl ? layoutNodes(adEl)[k] : null;
       if (k === 'pic' || (node && node.tagName === 'IMG')) {
-        const img = node ? (node.tagName === 'IMG' ? node : node.querySelector('img[data-slot], img[data-xtra], img')) : null;
-        window.CLIP = { kind: 'add-img', img: img?.src || selectedAsset?.dataUrl };
+        e.preventDefault();
+        const nrect = node.getBoundingClientRect(), arect = adEl.getBoundingClientRect();
+        const srcS = LAYOUT[t]?.off?.[k]?.s || 1;
+        (async () => {
+          const tpl = TPL[t];
+          // render the ad with transparent bg and text hidden -> icon + its effects only
+          const cap = makeAd(t, effSkin(t), effCopy(t), selectedAsset?.dataUrl, effFx(t), 'static');
+          cap.style.background = 'transparent';
+          cap.style.backgroundImage = 'none';
+          cap.style.border = 'none';
+          cap.querySelectorAll('.hl, .sub, .cta, .badge').forEach(x => x.style.visibility = 'hidden');
+          const frame = await rasterizeAd(cap, tpl);
+          const W = tpl.w * 2, H = tpl.h * 2;
+          const mx = nrect.width * 0.4, my = nrect.height * 0.4;
+          const x0 = Math.max(0, Math.round((nrect.left - arect.left - mx) * 2));
+          const y0 = Math.max(0, Math.round((nrect.top - arect.top - my) * 2));
+          const x1 = Math.min(W, Math.round((nrect.right - arect.left + mx) * 2));
+          const y1 = Math.min(H, Math.round((nrect.bottom - arect.top + my) * 2));
+          const cw = x1 - x0, ch = y1 - y0;
+          const c = document.createElement('canvas'); c.width = W; c.height = H;
+          c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(frame), W, H), 0, 0);
+          const c2 = document.createElement('canvas'); c2.width = cw; c2.height = ch;
+          c2.getContext('2d').drawImage(c, x0, y0, cw, ch, 0, 0, cw, ch);
+          window.CLIP = { kind: 'add-img', img: c2.toDataURL('image/png'), w: cw / 2, s: srcS };
+        })();
+        return;
       } else {
         window.CLIP = { kind: 'add-text',
           text: node ? node.innerText : (effCopy(t)[k] ?? 'TEXT'),
+          s: LAYOUT[t]?.off?.[k]?.s || 1,
           style: JSON.parse(JSON.stringify(LAYOUT[t]?.text?.[k] ?? null)) };
       }
       e.preventDefault();
@@ -493,9 +518,9 @@ document.addEventListener('keydown', e => {
       const id = 'e' + Date.now().toString(36) + Math.floor(Math.random() * 999);
       const bump = 16 + L.extras.length * 14;
       if (window.CLIP.kind === 'add-img' && window.CLIP.img) {
-        L.extras.push({ id, kind: 'img', img: window.CLIP.img, dx: bump, dy: bump, s: 1 });
+        L.extras.push({ id, kind: 'img', img: window.CLIP.img, w: window.CLIP.w, dx: bump, dy: bump, s: window.CLIP.s || 1 });
       } else {
-        L.extras.push({ id, kind: 'text', text: window.CLIP.text || 'TEXT', dx: bump, dy: bump, s: 1 });
+        L.extras.push({ id, kind: 'text', text: window.CLIP.text || 'TEXT', dx: bump, dy: bump, s: window.CLIP.s || 1 });
         if (window.CLIP.style) (L.text ??= {})['x:' + id] = JSON.parse(JSON.stringify(window.CLIP.style));
       }
       saveLayout(); renderPreview();
@@ -756,7 +781,8 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
     if (ex.kind === 'img') {
       n = document.createElement('img');
       n.src = ex.img;
-      n.style.cssText = 'position:absolute;left:6px;top:6px;width:38%;height:auto;object-fit:contain;z-index:2;';
+      n.style.cssText = 'position:absolute;left:6px;top:6px;height:auto;object-fit:contain;z-index:2;';
+      n.style.width = ex.w ? ex.w + 'px' : '38%';
     } else {
       n = document.createElement('div');
       n.textContent = ex.text || 'TEXT';
