@@ -792,48 +792,108 @@ function buildOptions() {
 }
 
 /* ============ GIF89a encoder (web-safe 216 palette + LZW) ============ */
+function buildPalette(frames, w, h) {
+  // sample pixels, median-cut to 256 colors
+  const px = [];
+  const total = w * h * frames.length;
+  const stride = Math.max(1, Math.floor(total / 80000)) * 4;
+  for (const f of frames) for (let i = 0; i < f.length; i += stride) px.push([f[i], f[i+1], f[i+2]]);
+  let boxes = [px];
+  while (boxes.length < 256) {
+    boxes.sort((a, b) => b.length - a.length);
+    const box = boxes.shift();
+    if (!box || box.length < 2) { if (box) boxes.push(box); break; }
+    let br = [255,0], bg = [255,0], bb = [255,0];
+    for (const c of box) {
+      if (c[0] < br[0]) br[0] = c[0]; if (c[0] > br[1]) br[1] = c[0];
+      if (c[1] < bg[0]) bg[0] = c[1]; if (c[1] > bg[1]) bg[1] = c[1];
+      if (c[2] < bb[0]) bb[0] = c[2]; if (c[2] > bb[1]) bb[1] = c[2];
+    }
+    const ranges = [br[1]-br[0], bg[1]-bg[0], bb[1]-bb[0]];
+    const ch = ranges.indexOf(Math.max(...ranges));
+    box.sort((a, b) => a[ch] - b[ch]);
+    const mid = box.length >> 1;
+    boxes.push(box.slice(0, mid), box.slice(mid));
+  }
+  const pal = boxes.map(box => {
+    let r = 0, g = 0, b = 0;
+    for (const c of box) { r += c[0]; g += c[1]; b += c[2]; }
+    const n = box.length || 1;
+    return [Math.round(r/n), Math.round(g/n), Math.round(b/n)];
+  });
+  while (pal.length < 256) pal.push([0, 0, 0]);
+  return pal;
+}
+
 function encodeGif(frames, w, h, delayCs) {
-  const pal = [];
-  for (let r = 0; r < 6; r++) for (let g = 0; g < 6; g++) for (let b = 0; b < 6; b++) pal.push(r*51, g*51, b*51);
-  while (pal.length < 768) pal.push(0);
+  const pal = buildPalette(frames, w, h);
+  const cache = new Map();
+  const nearest = (r, g, b) => {
+    const key = ((r >> 3) << 10) | ((g >> 3) << 5) | (b >> 3);
+    let idx = cache.get(key);
+    if (idx !== undefined) return idx;
+    let best = 0, bd = Infinity;
+    for (let i = 0; i < 256; i++) {
+      const d = (pal[i][0]-r)**2 + (pal[i][1]-g)**2 + (pal[i][2]-b)**2;
+      if (d < bd) { bd = d; best = i; }
+    }
+    cache.set(key, best);
+    return best;
+  };
   const out = [];
   const u8 = v => out.push(v & 255);
   const u16 = v => { u8(v); u8(v >> 8); };
   const str = t => { for (const c of t) u8(c.charCodeAt(0)); };
   str('GIF89a'); u16(w); u16(h); u8(0xF7); u8(0); u8(0);
-  for (const v of pal) u8(v);
+  for (const c of pal) { u8(c[0]); u8(c[1]); u8(c[2]); }
   str('!'); u8(0xFF); u8(11); str('NETSCAPE2.0'); u8(3); u8(1); u16(0); u8(0); // loop forever
   for (const data of frames) {
-    const px = new Uint8Array(w * h);
-    for (let i = 0; i < w * h; i++) {
-      const r = Math.round(data[i*4] / 51), g = Math.round(data[i*4+1] / 51), b = Math.round(data[i*4+2] / 51);
-      px[i] = r * 36 + g * 6 + b;
+    // Floyd-Steinberg dither onto the adaptive palette
+    const idxBuf = new Uint8Array(w * h);
+    const errCur = new Float32Array((w + 2) * 3);
+    const errNxt = new Float32Array((w + 2) * 3);
+    for (let y = 0; y < h; y++) {
+      errNxt.fill(0);
+      for (let x = 0; x < w; x++) {
+        const i = (y * w + x) * 4, e = (x + 1) * 3;
+        let r = Math.max(0, Math.min(255, data[i] + errCur[e]));
+        let g = Math.max(0, Math.min(255, data[i+1] + errCur[e+1]));
+        let b = Math.max(0, Math.min(255, data[i+2] + errCur[e+2]));
+        const pi = nearest(r | 0, g | 0, b | 0);
+        idxBuf[y * w + x] = pi;
+        const er = r - pal[pi][0], eg = g - pal[pi][1], eb = b - pal[pi][2];
+        errCur[e+3] += er * 7/16; errCur[e+4] += eg * 7/16; errCur[e+5] += eb * 7/16;
+        errNxt[e-3] += er * 3/16; errNxt[e-2] += eg * 3/16; errNxt[e-1] += eb * 3/16;
+        errNxt[e]   += er * 5/16; errNxt[e+1] += eg * 5/16; errNxt[e+2] += eb * 5/16;
+        errNxt[e+3] += er * 1/16; errNxt[e+4] += eg * 1/16; errNxt[e+5] += eb * 1/16;
+      }
+      errCur.set(errNxt);
     }
-    str('!'); u8(0xF9); u8(4); u8(0); u16(delayCs); u8(0); u8(0);           // GCE
-    u8(0x2C); u16(0); u16(0); u16(w); u16(h); u8(0);                        // image descriptor
-    u8(8);                                                                   // LZW min code size
+    str('!'); u8(0xF9); u8(4); u8(0); u16(delayCs); u8(0); u8(0);
+    u8(0x2C); u16(0); u16(0); u16(w); u16(h); u8(0);
+    u8(8);
     const bytes = [];
-    let cur = 0, curBits = 0;
+    let acc = 0, accBits = 0;
     const emit = (code, bits) => {
-      cur |= code << curBits; curBits += bits;
-      while (curBits >= 8) { bytes.push(cur & 255); cur >>= 8; curBits -= 8; }
+      acc |= code << accBits; accBits += bits;
+      while (accBits >= 8) { bytes.push(acc & 255); acc >>= 8; accBits -= 8; }
     };
     const CLEAR = 256, EOI = 257;
     let dict = new Map(), next = 258, bits = 9;
     emit(CLEAR, bits);
-    let prev = px[0];
-    for (let i = 1; i < px.length; i++) {
-      const k = prev * 4096 + px[i];
+    let prev = idxBuf[0];
+    for (let i = 1; i < idxBuf.length; i++) {
+      const k = prev * 4096 + idxBuf[i];
       if (dict.has(k)) { prev = dict.get(k); continue; }
       emit(prev, bits);
       dict.set(k, next);
       if (next === 1 << bits && bits < 12) bits++;
       next++;
       if (next >= 4095) { emit(CLEAR, bits); dict = new Map(); next = 258; bits = 9; }
-      prev = px[i];
+      prev = idxBuf[i];
     }
     emit(prev, bits); emit(EOI, bits);
-    if (curBits > 0) bytes.push(cur & 255);
+    if (accBits > 0) bytes.push(acc & 255);
     for (let i = 0; i < bytes.length; i += 255) {
       const chunk = bytes.slice(i, i + 255);
       u8(chunk.length); for (const b of chunk) u8(b);
