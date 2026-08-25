@@ -64,7 +64,7 @@
 
   <details open><summary>TRANSITION</summary>
     <div id="g_trans"></div>
-    <div class="btns"><button id="bTransIn">▶ video → particles</button><button id="bTransOut">◀ particles → video</button></div>
+    <div class="status">auto: every playthrough starts as the clear video, particles come in on cue</div>
   </details>
   <details open><summary>SOURCE</summary>
     <div class="btns">
@@ -175,7 +175,7 @@ const P={
   // camera
   fov:40, clickZoom:true, zoomAmt:1.8, zoomSpeed:0.05, zoomBack:0.05, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
   // render
-  trans:1.0, transDur:2.5, transHold:1.0, transExport:true,
+  trans:1.0, transAuto:true, transStart:1.0, transDur:2.5,
   bg:'#000000', bloom:0.25, bloomThr:0.55, bloomRad:0.4, ratio:'source', recScale:1, recLoop:true,
 };
 const GLYPH_SETS={
@@ -215,10 +215,10 @@ function fmt(x){return typeof x==='number'?(Number.isInteger(x)?x:(+x).toFixed(2
 
 const gD=$('#g_depth'),gP=$('#g_part'),gS=$('#g_style'),gF=$('#g_fx'),gC=$('#g_cam'),gR=$('#g_render');
 const gT=$('#g_trans');
-slider(gT,'trans','transition',0,1,0.005,()=>{transAnim.mode='idle';});
-slider(gT,'transDur','duration s',0.3,10,0.1);
-slider(gT,'transHold','hold before s',0,5,0.1);
-check(gT,'transExport','run on export');
+check(gT,'transAuto','auto intro (video clock)');
+slider(gT,'transStart','particles in at s',0,10,0.1);
+slider(gT,'transDur','come in over s',0.3,10,0.1);
+slider(gT,'trans','manual scrub',0,1,0.005,()=>{P.transAuto=false;ctls.transAuto.set(false);});
 select(gD,'depthSize','quality',[[252,'252 fast'],[378,'378'],[518,'518 sharp']],(v)=>{worker&&worker.postMessage({type:'size',size:v}); if(src.kind==='image')kickDepth(true);});
 select(gD,'depthDtype','precision',[['fp32','fp32'],['fp16','fp16 (slower on Apple WebGPU)'],['q8','q8']],()=>initWorker());
 slider(gD,'depthSmooth','temporal smooth',0,0.95,0.01);
@@ -750,17 +750,13 @@ function autoCam(t,dt){
   const v=new THREE.Vector3().setFromSphericalCoords(dd,pol,az); camera.position.copy(v); controls.target.set(0,0,0); camera.lookAt(0,0,0);
 }
 
-/* transition: 0 = clean video, 1 = full effect */
-const transAnim={mode:'idle',from:0,to:1,start:0};
-function playTransition(to,delay){ transAnim.from=P.trans; transAnim.to=to; transAnim.start=clock.getElapsedTime()+(delay||0); transAnim.mode='play'; }
-$('#bTransIn').onclick=()=>playTransition(1,0);
-$('#bTransOut').onclick=()=>playTransition(0,0);
+/* transition: 0 = clean video, 1 = full effect; auto mode follows the video clock */
 function tickTransition(t){
-  if(transAnim.mode!=='play')return;
-  const k=(t-transAnim.start)/Math.max(0.05,P.transDur);
-  if(k<0)return; const e=k>=1?1:(k*k*(3-2*k));
-  P.trans=transAnim.from+(transAnim.to-transAnim.from)*e; ctls.trans.set(P.trans);
-  if(k>=1)transAnim.mode='idle';
+  if(!P.transAuto)return;
+  if(src.kind!=='video'){ if(P.trans!==1){P.trans=1;ctls.trans.set(1);} return; }
+  const k=Math.min(1,Math.max(0,(video.currentTime-P.transStart)/Math.max(0.05,P.transDur)));
+  const e=k*k*(3-2*k);
+  if(Math.abs(e-P.trans)>0.0005){ P.trans=e; ctls.trans.set(e); }
 }
 /* ───────────── canvas fit ───────────── */
 function fitCanvas(){
@@ -809,7 +805,7 @@ function tickAudio(){
 /* ───────────── recording ───────────── */
 let rec=null, recChunks=[], recT0=0;
 $('#bRec').onclick=()=>{ if(rec)stopRec(); else startRec(); };
-$('#bExport').onclick=()=>{ if(rec){stopRec();return;} if(src.kind==='video'){P.recLoop=true;ctls.recLoop.set(true);} if(P.transExport){P.trans=0;ctls.trans.set(0);playTransition(1,P.transHold);} startRec(); $('#expStatus').textContent=src.kind==='video'?'recording one full loop → stops itself, mp4 lands in Downloads':'recording… click again to stop'; };
+$('#bExport').onclick=()=>{ if(rec){stopRec();return;} if(src.kind==='video'){P.recLoop=true;ctls.recLoop.set(true);} startRec(); $('#expStatus').textContent=src.kind==='video'?'recording one full loop → stops itself, mp4 lands in Downloads':'recording… click again to stop'; };
 function pickMime(withAudio){ const list=withAudio?['video/mp4;codecs=avc1.640034,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm']:['video/mp4;codecs=avc1.640034','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm']; for(const m of list){ if(MediaRecorder.isTypeSupported(m))return m; } return ''; }
 function startRec(){
   const withAudio=P.audio&&curNode&&destNode;
