@@ -84,6 +84,11 @@
   .ad.m-lineup.ph0 .pic img.li1, .ad.m-lineup.ph0 .pic img.li2, .ad.m-lineup.ph0 .pic img.li3 { visibility:hidden; }
   .ad.m-lineup.ph1 .pic img.li2, .ad.m-lineup.ph1 .pic img.li3 { visibility:hidden; }
   .ad.m-lineup.ph2 .pic img.li3 { visibility:hidden; }
+  .ad.m-slideup .pic { overflow:hidden; }
+  .ad.m-slideup.ph0 .pic > * { transform:translateY(105%); }
+  .ad.m-slideup.ph1 .pic > * { transform:translateY(62%); }
+  .ad.m-slideup.ph2 .pic > * { transform:translateY(24%); }
+  .ad.m-slideup.ph3 .pic > * { transform:translateY(0); }
   .ad.m-twitch.ph0 .pic > * { transform:translate(-6px,1px) rotate(-5deg); }
   .ad.m-twitch.ph1 .pic > * { transform:translate(6px,-4px) rotate(4deg); }
   .ad.m-twitch.ph2 .pic > * { transform:translate(-4px,-2px) rotate(-3deg); }
@@ -158,6 +163,7 @@
       <option value="appear">appear / disappear</option>
       <option value="lineup">line up one by one</option>
       <option value="twitch">twitch (jumpy)</option>
+      <option value="slideup">rise from below</option>
     </select>
     <h2>Image FX (stackable)</h2>
     <label class="fxopt"><input type="checkbox" id="fx-glow"> glow (skin-tinted overshadow)</label>
@@ -551,7 +557,7 @@ setInterval(() => {
       a.querySelectorAll('[data-slot="image"]').forEach(im => { if (im.src !== url) im.src = url; });
       a.querySelectorAll('.glit').forEach(d => { d.style.webkitMaskImage = d.style.maskImage = `url("${url}")`; });
     }
-    const n = (a.classList.contains('m-lineup') || a.classList.contains('m-twitch')) ? PHASE : PHASE % 2;
+    const n = (a.classList.contains('m-lineup') || a.classList.contains('m-twitch') || a.classList.contains('m-slideup')) ? PHASE : PHASE % 2;
     a.classList.remove('ph0','ph1','ph2','ph3');
     a.classList.add('ph' + n);
     a.classList.toggle('frame2', PHASE % 2 === 1);
@@ -681,7 +687,7 @@ async function exportCreative(spec, name) {
   const t = TPL[spec.template];
   const icons = spec.icons && spec.icons.length > 1 ? spec.icons : null;
   const phases = icons ? icons.map((_, i) => i)
-    : (spec.motion === 'lineup' || spec.motion === 'twitch') ? [0, 1, 2, 3] : [0, 1];
+    : (spec.motion === 'lineup' || spec.motion === 'twitch' || spec.motion === 'slideup') ? [0, 1, 2, 3] : [0, 1];
   try {
     const frames = [];
     for (const k of phases) {
@@ -795,7 +801,7 @@ function init() {
     document.getElementById('fx-glow').checked = Math.random() < 0.5;
     document.getElementById('fx-sparkle').checked = Math.random() < 0.5;
     document.getElementById('fx-glitter').checked = Math.random() < 0.35;
-    document.getElementById('motion').value = rnd(['static','static','appear','lineup','twitch']);
+    document.getElementById('motion').value = rnd(['static','static','appear','lineup','twitch','slideup']);
     drawLib();
     renderPreview();
   };
