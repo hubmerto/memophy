@@ -331,17 +331,31 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       pic.appendChild(d);
     }
   }
+  // glitter/holo are masked to the icon's alpha so they sit ON the object, not over the whole slot
+  const maskToIcon = d => {
+    const u = `url("${imgUrl || PLACEHOLDER}")`;
+    d.style.webkitMaskImage = u; d.style.maskImage = u;
+    if (motion === 'lineup') {
+      d.style.webkitMaskSize = d.style.maskSize = '25% 100%';
+      d.style.webkitMaskRepeat = d.style.maskRepeat = 'repeat-x';
+    } else {
+      d.style.webkitMaskSize = d.style.maskSize = 'contain';
+      d.style.webkitMaskRepeat = d.style.maskRepeat = 'no-repeat';
+      d.style.webkitMaskPosition = d.style.maskPosition = 'center';
+    }
+  };
   if (fx.includes('glitter')) {
     const pic = el.querySelector('.pic');
     if (pic) for (const c of ['g1','g2']) {
       const d = document.createElement('div');
       d.className = 'glit ' + c;
+      maskToIcon(d);
       pic.appendChild(d);
     }
   }
   if (fx.includes('holo')) {
     const pic = el.querySelector('.pic');
-    if (pic) { const d = document.createElement('div'); d.className = 'holo'; pic.appendChild(d); }
+    if (pic) { const d = document.createElement('div'); d.className = 'holo'; maskToIcon(d); pic.appendChild(d); }
   }
   applyLayout(el, template);
   return el;
