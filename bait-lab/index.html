@@ -222,6 +222,12 @@
     <div class="row"><input type="color" id="bg-color" value="#000000" style="height:30px;"><button id="bg-clear">skin default</button></div>
     <select id="bg-pattern">
       <option value="">no pattern</option>
+      <option value="grad-pink">gradient: hot pink</option>
+      <option value="grad-red">gradient: red</option>
+      <option value="grad-green">gradient: tip green</option>
+      <option value="grad-blue">gradient: deep blue</option>
+      <option value="grad-night">gradient: night pink-black</option>
+      <option value="grad-candy">gradient: pink-red candy</option>
       <option value="camo">camo (cover)</option>
     </select>
 
@@ -455,6 +461,14 @@ function applyLayout(el, template) {
 }
 
 const FX_KEYS = ['glow','sparkle','glitter','overlay'];
+const BG_GRADIENTS = {
+  'grad-pink':  'linear-gradient(180deg,#ff3fa4,#b0106a)',
+  'grad-red':   'linear-gradient(180deg,#ff5560,#e0101a 55%,#7a0000)',
+  'grad-green': 'linear-gradient(180deg,#6ad04f,#2f8a1e)',
+  'grad-blue':  'linear-gradient(180deg,#1179ab,#052e42)',
+  'grad-night': 'linear-gradient(180deg,#3a0a2e,#000000)',
+  'grad-candy': 'linear-gradient(135deg,#ff3fa4,#e0101a)',
+};
 const CSS_PATTERNS = {
   chrome: 'linear-gradient(180deg,#e9edf2 0%,#9aa6b4 18%,#4a5666 32%,#c7d0da 50%,#6f7c8c 62%,#aeb9c6 78%,#3c4655 92%,#dfe6ee 100%)',
   gold:   'linear-gradient(180deg,#fff3b0 0%,#f4c430 22%,#8a5a00 42%,#ffe07a 55%,#b8860b 70%,#fff0a8 88%,#7a5200 100%)',
@@ -509,7 +523,10 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   if (_bg) {
     if (_bg.color) el.style.background = _bg.color;
     if (_bg.pattern) {
-      const purl = _bg.pattern === 'camo' ? CAMO_URL : (assets.find(a => a.id === 'builtin-' + _bg.pattern)?.dataUrl);
+      if (BG_GRADIENTS[_bg.pattern]) {
+        el.style.backgroundImage = BG_GRADIENTS[_bg.pattern];
+      }
+      const purl = BG_GRADIENTS[_bg.pattern] ? null : (_bg.pattern === 'camo' ? CAMO_URL : (assets.find(a => a.id === 'builtin-' + _bg.pattern)?.dataUrl));
       if (purl) {
         if (_bg.color) el.style.backgroundColor = _bg.color;
         el.style.backgroundImage = `url("${purl}")`;
