@@ -268,6 +268,8 @@ function drawLib() {
     d.className = 'asset' + (selectedAsset && selectedAsset.id === a.id ? ' sel' : '');
     d.style.backgroundImage = `url("${a.dataUrl}"), repeating-conic-gradient(#3d3d3d 0% 25%, #262626 0% 50%)`;
     d.title = a.name;
+    d.draggable = true;
+    d.ondragstart = ev => ev.dataTransfer.setData('text/asset-id', a.id);
     d.onclick = () => { selectedAsset = a; drawLib(); renderPreview(); };
     const x = document.createElement('div');
     x.className = 'del'; x.textContent = '×';
@@ -412,6 +414,12 @@ function renderPreview() {
   const ad = makeAd(sel('template'), sel('skin'), currentCopy(), selectedAsset?.dataUrl);
   wrap.appendChild(ad);
   enableEditing(ad, sel('template'));
+  ad.ondragover = e => e.preventDefault();
+  ad.ondrop = e => {
+    e.preventDefault();
+    const a = assets.find(x => x.id === e.dataTransfer.getData('text/asset-id'));
+    if (a) { selectedAsset = a; drawLib(); renderPreview(); }
+  };
   persist();
 }
 
