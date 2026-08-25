@@ -95,7 +95,6 @@
     border:2px solid #fff; border-radius:2px; cursor:nwse-resize; z-index:20; pointer-events:auto; }
   #layoutHint { color:var(--ui-dim); font-size:11px; margin:4px 0 6px; }
   /* motion: appear = image blinks; lineup = 4 copies marching in */
-  .ad.m-appear.ph1 .pic img { visibility:hidden; }
   .ad .pic img.li { display:inline-block; width:25%; height:100%; vertical-align:top; }
   .ad.m-lineup.ph0 .pic img.li1, .ad.m-lineup.ph0 .pic img.li2, .ad.m-lineup.ph0 .pic img.li3 { visibility:hidden; }
   .ad.m-lineup.ph1 .pic img.li2, .ad.m-lineup.ph1 .pic img.li3 { visibility:hidden; }
@@ -174,7 +173,7 @@
     <h2>Motion</h2>
     <select id="motion">
       <option value="static">static</option>
-      <option value="appear">appear / disappear</option>
+      <option value="appear">swap icons (instant)</option>
       <option value="lineup">line up one by one</option>
       <option value="twitch">twitch (jumpy)</option>
       <option value="slideup">rise from below</option>
@@ -373,6 +372,16 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Delete' || e.key === 'Backspace') && window.SEL) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     e.preventDefault();
+    // deleting the icon from the preview permanently removes it from the library
+    if (window.SEL.k === 'pic' && selectedAsset) {
+      const gone = selectedAsset.id;
+      dropAsset(gone);
+      assets = assets.filter(a => a.id !== gone);
+      selectedIds = selectedIds.filter(x => x !== gone);
+      selectedAsset = selectedAssets()[0] ?? assets[0] ?? null;
+      drawLib(); renderPreview();
+      return;
+    }
     snapshotLayout();
     const L = (LAYOUT[window.SEL.t] ??= {});
     L.hidden = [...new Set([...(L.hidden ?? []), window.SEL.k])];
@@ -473,10 +482,10 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   if (_bg) {
     if (_bg.color) el.style.background = _bg.color;
     if (_bg.pattern) {
-      const pa = assets.find(a => a.id === 'builtin-' + _bg.pattern) || assets.find(a => a.name === _bg.pattern);
-      if (pa) {
+      const purl = _bg.pattern === 'camo' ? CAMO_URL : (assets.find(a => a.id === 'builtin-' + _bg.pattern)?.dataUrl);
+      if (purl) {
         if (_bg.color) el.style.backgroundColor = _bg.color;
-        el.style.backgroundImage = `url("${pa.dataUrl}")`;
+        el.style.backgroundImage = `url("${purl}")`;
         el.style.backgroundRepeat = 'no-repeat';
         el.style.backgroundPosition = 'center';
         el.style.backgroundSize = 'cover';
@@ -566,9 +575,8 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       } else if (pat && CSS_PATTERNS[pat]) {
         d.style.background = CSS_PATTERNS[pat];
         if (pat === 'diamond') d.style.backgroundSize = '18px 18px';
-      } else if (pat) {
-        const pa = assets.find(a => a.id === 'builtin-' + pat) || assets.find(a => a.name === pat);
-        d.style.background = pa ? `url("${pa.dataUrl}") center/cover` : col;
+      } else if (pat === 'camo' && CAMO_URL) {
+        d.style.background = `url("${CAMO_URL}") center/cover`;
       } else d.style.background = col;
       pic.appendChild(d);
     }
@@ -713,14 +721,14 @@ setInterval(() => {
 function buildOptions() {
   const grid = document.getElementById('optGrid');
   grid.innerHTML = '';
-  const template = sel('template');
+  const template = window.ACTIVE || sel('template');
   const pool = assets.length ? assets : [{ dataUrl: PLACEHOLDER, name: 'placeholder' }];
   const skinNames = Object.keys(SKINS);
   for (let i = 0; i < 12; i++) {
     const skin = skinNames[i % skinNames.length];
     const img = pool[i % pool.length];
     const copy = { headline: roll('headline'), sub: roll('sub'), cta: roll('cta'), badge: roll('badge') };
-    const ad = makeAd(template, skin, copy, img.dataUrl);
+    const ad = makeAd(template, skin, copy, img.dataUrl, effFx(template), effMotion(template));
     const card = document.createElement('div');
     card.className = 'opt';
     const box = document.createElement('div');
@@ -735,7 +743,7 @@ function buildOptions() {
     meta.innerHTML = `<span>${skin}</span>`;
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
-    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: currentFx(), motion: sel('motion') }, `${template}-${skin}-${i+1}`);
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: effFx(template), motion: effMotion(template) }, `${template}-${skin}-${i+1}`);
     meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
@@ -857,8 +865,18 @@ function persist() {
     template: sel('template'), skin: sel('skin'), fx: currentFx(), motion: sel('motion'), copy: currentCopy(),
   }));
 }
+let CAMO_URL = null;
+async function loadCamo() {
+  try {
+    const blob = await (await fetch('icons/icon-camo.png')).blob();
+    CAMO_URL = await new Promise(r => { const rd = new FileReader(); rd.onload = () => r(rd.result); rd.readAsDataURL(blob); });
+  } catch (e) {}
+  // purge any previously-saved camo icon from the library
+  const cam = assets.find(a => a.id === 'builtin-camo');
+  if (cam) { dropAsset('builtin-camo'); assets = assets.filter(a => a.id !== 'builtin-camo'); }
+}
 async function loadBuiltins() {
-  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop'];
+  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop'];
   for (const n of names) {
     const id = 'builtin-' + n;
     if (DELETED.includes(id)) continue;
@@ -892,7 +910,9 @@ function init() {
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
   }
 
-  ts.onchange = renderPreview;
+  window.updBuildLabel = () => { document.getElementById('build').textContent = 'BUILD 12 × ' + (window.ACTIVE || ts.value).toUpperCase(); };
+  ts.onchange = () => { updBuildLabel(); renderPreview(); };
+  updBuildLabel();
   ss.onchange = () => { if (!writeProp({ skin: ss.value })) renderPreview(); };
   document.getElementById('motion').onchange = () => { if (!writeProp({ motion: document.getElementById('motion').value })) renderPreview(); };
   FX_KEYS.forEach(k => document.getElementById('fx-' + k).onchange = () => {
@@ -980,6 +1000,7 @@ function init() {
   window.syncControls = () => {
     const bar = document.getElementById('activeBar');
     bar.firstChild.textContent = 'Editing: ' + (window.ACTIVE ? window.ACTIVE.toUpperCase() : 'ALL ADS') + ' ';
+    if (window.updBuildLabel) window.updBuildLabel();
     if (!window.ACTIVE) return;
     const p = propsFor(window.ACTIVE);
     if (p.skin) document.getElementById('skin').value = p.skin;
@@ -1171,7 +1192,7 @@ function init() {
     if (files.length) { e.preventDefault(); addFiles(files); }
   });
 
-  loadAssets().then(loadBuiltins).then(() => {
+  loadAssets().then(loadCamo).then(loadBuiltins).then(() => {
     if (!selectedAsset) { selectedAsset = assets[0] ?? null; selectedIds = selectedAsset ? [selectedAsset.id] : []; }
     drawLib(); renderPreview();
   });
