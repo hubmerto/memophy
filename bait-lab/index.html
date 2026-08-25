@@ -59,6 +59,19 @@
   .ad.frame2 .cta[data-blink] { visibility:hidden; }
   .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
   .ad img { display:block; }
+  .ad .pic { position:relative; }
+  .ad.fx-glow .pic img { filter:drop-shadow(0 0 6px var(--grad-b,#f0f)) drop-shadow(0 0 16px var(--grad-b,#f0f)) drop-shadow(0 0 30px var(--grad-b,#f0f)) saturate(1.2); }
+  .ad .sparkles { position:absolute; inset:0; pointer-events:none; background-size:100% 100%; }
+  .ad .sparkles.s1 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M18 12 l1.6 6.4 L26 20 l-6.4 1.6 L18 28 l-1.6-6.4 L10 20 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M78 55 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M88 14 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M36 78 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M18 12 l1.6 6.4 L26 20 l-6.4 1.6 L18 28 l-1.6-6.4 L10 20 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M78 55 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M88 14 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M36 78 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); }
+  .ad .sparkles.s2 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); display:none; }
+  .ad.frame2 .sparkles.s1 { display:none; }
+  .ad.frame2 .sparkles.s2 { display:block; }
+  /* motion: appear = image blinks; lineup = 4 copies marching in */
+  .ad.m-appear.ph1 .pic img { visibility:hidden; }
+  .ad .pic img.li { display:inline-block; width:25%; height:100%; vertical-align:top; }
+  .ad.m-lineup.ph0 .pic img.li1, .ad.m-lineup.ph0 .pic img.li2, .ad.m-lineup.ph0 .pic img.li3 { visibility:hidden; }
+  .ad.m-lineup.ph1 .pic img.li2, .ad.m-lineup.ph1 .pic img.li3 { visibility:hidden; }
+  .ad.m-lineup.ph2 .pic img.li3 { visibility:hidden; }
 
 
 
@@ -68,18 +81,18 @@
   .t-show-banner { width:926px; height:62px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
   .t-show-banner .pic { float:left; width:80px; height:60px; overflow:hidden; background:#111; }
   .t-show-banner .pic img { width:80px; height:60px; }
-  .t-show-banner .badge { float:left; margin:18px 0 0 14px; padding:3px 10px; font-size:12px; letter-spacing:2px; }
-  .t-show-banner .hl { float:left; margin:8px 0 0 18px; max-width:480px; font-size:36px; line-height:44px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
-  .t-show-banner .sub { float:left; margin:22px 0 0 16px; max-width:105px; font:italic bold 12px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
-  .t-show-banner .cta { position:absolute; right:16px; top:18px; font:bold 18px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
+  .t-show-banner .badge { float:left; margin:16px 0 0 14px; padding:4px 10px; font-size:14px; letter-spacing:2px; }
+  .t-show-banner .hl { float:left; margin:5px 0 0 18px; max-width:520px; font-size:42px; line-height:50px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
+  .t-show-banner .sub { float:left; margin:20px 0 0 14px; max-width:120px; font:italic bold 14px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
+  .t-show-banner .cta { position:absolute; right:16px; top:16px; font:bold 22px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
 
   .t-show-rect { width:346px; height:258px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
-  .t-show-rect .pic { width:344px; height:120px; overflow:hidden; background:#111; }
-  .t-show-rect .pic img { width:344px; height:120px; }
-  .t-show-rect .badge { position:absolute; top:5px; left:5px; padding:2px 8px; font-size:11px; }
-  .t-show-rect .hl { padding:6px 10px 2px; font-size:28px; line-height:28px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:56px; overflow:hidden; }
-  .t-show-rect .sub { position:absolute; bottom:52px; left:0; right:0; padding:0 12px; font:11px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
-  .t-show-rect .cta { position:absolute; bottom:12px; left:0; right:0; text-align:center; font:bold 16px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; overflow:hidden; }
+  .t-show-rect .pic { width:344px; height:110px; overflow:hidden; background:#111; }
+  .t-show-rect .pic img { width:344px; height:110px; }
+  .t-show-rect .badge { position:absolute; top:5px; left:5px; padding:3px 9px; font-size:13px; }
+  .t-show-rect .hl { padding:6px 8px 2px; font-size:32px; line-height:32px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:64px; overflow:hidden; }
+  .t-show-rect .sub { position:absolute; bottom:44px; left:0; right:0; padding:0 12px; font:13px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-show-rect .cta { position:absolute; bottom:10px; left:0; right:0; text-align:center; font:bold 20px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; overflow:hidden; }
 
   .ad.skin-acid { border:2px dotted var(--cta-border) !important; }
   .ad.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
@@ -103,6 +116,19 @@
     <select id="template"></select>
     <h2>Skin</h2>
     <select id="skin"></select>
+    <h2>Motion</h2>
+    <select id="motion">
+      <option value="static">static</option>
+      <option value="appear">appear / disappear</option>
+      <option value="lineup">line up one by one</option>
+    </select>
+    <h2>Image FX</h2>
+    <select id="fx">
+      <option value="none">none</option>
+      <option value="glow">glow (skin-tinted)</option>
+      <option value="sparkle">sparkle (twinkles)</option>
+      <option value="glow-sparkle">glow + sparkle</option>
+    </select>
 
     <h2>Copy</h2>
     <div class="row"><input type="text" id="c-headline" placeholder="headline"><button class="dice" data-roll="headline">🎲</button></div>
@@ -113,7 +139,7 @@
 
     <h2>Build</h2>
     <button class="acc" id="build">BUILD 12 OPTIONS</button>
-    <button id="export">export preview PNG @2x</button>
+    <button id="export">export GIF @2x (blinking)</button>
     <label style="display:block;color:var(--ui-dim);margin-top:4px;"><input type="checkbox" id="blink" checked> blink preview</label>
   </div>
 
@@ -219,15 +245,37 @@ function drawLib() {
 }
 
 /* ============ ad composition ============ */
-function makeAd(template, skin, copy, imgUrl) {
+function makeAd(template, skin, copy, imgUrl, fx, motion) {
+  fx = fx ?? (document.getElementById('fx')?.value || 'none');
+  motion = motion ?? (document.getElementById('motion')?.value || 'static');
   const t = TPL[template];
   const el = document.createElement('div');
   el.className = `ad t-${template} skin-${skin}`;
+  if (fx.includes('glow')) el.classList.add('fx-glow');
   el.innerHTML = t.html;
   for (const [k,v] of Object.entries(SKINS[skin])) el.style.setProperty(k, v);
   for (const [slot, text] of Object.entries(copy))
     el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => n.textContent = text);
-  el.querySelectorAll('[data-slot="image"]').forEach(n => n.src = imgUrl || PLACEHOLDER);
+  if (motion !== 'static') el.classList.add('m-' + motion);
+  el.querySelectorAll('[data-slot="image"]').forEach(n => {
+    n.src = imgUrl || PLACEHOLDER;
+    if (motion === 'lineup') {
+      n.classList.add('li', 'li0');
+      for (let k = 1; k < 4; k++) {
+        const c = n.cloneNode();
+        c.className = 'li li' + k;
+        n.parentNode.appendChild(c);
+      }
+    }
+  });
+  if (fx.includes('sparkle')) {
+    const pic = el.querySelector('.pic');
+    if (pic) for (const c of ['s1','s2']) {
+      const d = document.createElement('div');
+      d.className = 'sparkles ' + c;
+      pic.appendChild(d);
+    }
+  }
   return el;
 }
 function currentCopy() {
@@ -247,11 +295,18 @@ function renderPreview() {
 }
 const sel = id => document.getElementById(id).value;
 
-/* blink loop */
+/* phase cycler: drives CTA blink (frame2) and image motion (ph0..ph3) */
+let PHASE = 0;
 setInterval(() => {
   const on = document.getElementById('blink').checked;
-  document.querySelectorAll('#previewWrap .ad, #optGrid .ad').forEach(a =>
-    a.classList.toggle('frame2', on && !a.classList.contains('frame2')));
+  PHASE = (PHASE + 1) % 4;
+  document.querySelectorAll('#previewWrap .ad, #optGrid .ad').forEach(a => {
+    if (!on) { a.classList.remove('frame2','ph0','ph1','ph2','ph3'); a.classList.add('ph3'); return; }
+    const n = a.classList.contains('m-lineup') ? PHASE : PHASE % 2;
+    a.classList.remove('ph0','ph1','ph2','ph3');
+    a.classList.add('ph' + n);
+    a.classList.toggle('frame2', PHASE % 2 === 1);
+  });
 }, 500);
 
 /* ============ options ============ */
@@ -279,11 +334,64 @@ function buildOptions() {
     meta.className = 'meta';
     meta.innerHTML = `<span>${skin}</span>`;
     const dl = document.createElement('button');
-    dl.textContent = 'PNG';
-    dl.onclick = () => exportAd(makeAd(template, skin, copy, img.dataUrl), `${template}-${skin}-${i+1}`);
+    dl.textContent = 'GIF';
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: sel('fx'), motion: sel('motion') }, `${template}-${skin}-${i+1}`);
     meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
+}
+
+/* ============ GIF89a encoder (web-safe 216 palette + LZW) ============ */
+function encodeGif(frames, w, h, delayCs) {
+  const pal = [];
+  for (let r = 0; r < 6; r++) for (let g = 0; g < 6; g++) for (let b = 0; b < 6; b++) pal.push(r*51, g*51, b*51);
+  while (pal.length < 768) pal.push(0);
+  const out = [];
+  const u8 = v => out.push(v & 255);
+  const u16 = v => { u8(v); u8(v >> 8); };
+  const str = t => { for (const c of t) u8(c.charCodeAt(0)); };
+  str('GIF89a'); u16(w); u16(h); u8(0xF7); u8(0); u8(0);
+  for (const v of pal) u8(v);
+  str('!'); u8(0xFF); u8(11); str('NETSCAPE2.0'); u8(3); u8(1); u16(0); u8(0); // loop forever
+  for (const data of frames) {
+    const px = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      const r = Math.round(data[i*4] / 51), g = Math.round(data[i*4+1] / 51), b = Math.round(data[i*4+2] / 51);
+      px[i] = r * 36 + g * 6 + b;
+    }
+    str('!'); u8(0xF9); u8(4); u8(0); u16(delayCs); u8(0); u8(0);           // GCE
+    u8(0x2C); u16(0); u16(0); u16(w); u16(h); u8(0);                        // image descriptor
+    u8(8);                                                                   // LZW min code size
+    const bytes = [];
+    let cur = 0, curBits = 0;
+    const emit = (code, bits) => {
+      cur |= code << curBits; curBits += bits;
+      while (curBits >= 8) { bytes.push(cur & 255); cur >>= 8; curBits -= 8; }
+    };
+    const CLEAR = 256, EOI = 257;
+    let dict = new Map(), next = 258, bits = 9;
+    emit(CLEAR, bits);
+    let prev = px[0];
+    for (let i = 1; i < px.length; i++) {
+      const k = prev * 4096 + px[i];
+      if (dict.has(k)) { prev = dict.get(k); continue; }
+      emit(prev, bits);
+      dict.set(k, next);
+      if (next === 1 << bits && bits < 12) bits++;
+      next++;
+      if (next >= 4095) { emit(CLEAR, bits); dict = new Map(); next = 258; bits = 9; }
+      prev = px[i];
+    }
+    emit(prev, bits); emit(EOI, bits);
+    if (curBits > 0) bytes.push(cur & 255);
+    for (let i = 0; i < bytes.length; i += 255) {
+      const chunk = bytes.slice(i, i + 255);
+      u8(chunk.length); for (const b of chunk) u8(b);
+    }
+    u8(0);
+  }
+  u8(0x3B);
+  return new Uint8Array(out);
 }
 
 /* ============ export (foreignObject -> canvas @2x) ============ */
@@ -294,9 +402,7 @@ function pageCss() {
   }
   return css;
 }
-function exportAd(adEl, name) {
-  const m = adEl.className.match(/t-([a-z-]+)/);
-  const t = TPL[m[1]];
+async function rasterizeAd(adEl, t) {
   adEl.style.transform = 'none';
   const holder = document.createElement('div');
   holder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
@@ -309,29 +415,61 @@ function exportAd(adEl, name) {
     `<foreignObject width="${t.w}" height="${t.h}">${xhtml}</foreignObject></svg>`;
   // data: URL, not blob: — foreignObject SVGs loaded via blob taint the canvas
   const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
-  const img = new Image();
-  img.onload = () => {
-    const c = document.createElement('canvas');
-    c.width = t.w * 2; c.height = t.h * 2;
-    const ctx = c.getContext('2d');
-    ctx.scale(2, 2); ctx.drawImage(img, 0, 0);
-    c.toBlob(b => {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(b);
-      a.download = `${name}.png`;
-      a.click();
-    }, 'image/png');
-  };
-  img.onerror = () => alert('export failed in this browser — screenshot the preview instead');
-  img.src = url;
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i); i.onerror = rej;
+    i.src = url;
+  });
+  const c = document.createElement('canvas');
+  c.width = t.w * 2; c.height = t.h * 2;
+  const ctx = c.getContext('2d');
+  ctx.scale(2, 2); ctx.drawImage(img, 0, 0);
+  return ctx.getImageData(0, 0, c.width, c.height).data;
+}
+
+/* CTA always blinks: every export is a looping GIF (2 frames; 4 for lineup) */
+async function exportCreative(spec, name) {
+  const t = TPL[spec.template];
+  const phases = spec.motion === 'lineup' ? [0, 1, 2, 3] : [0, 1];
+  try {
+    const frames = [];
+    for (const k of phases) {
+      const ad = makeAd(spec.template, spec.skin, spec.copy, spec.imgUrl, spec.fx, spec.motion);
+      ad.classList.add('ph' + k);
+      if (k % 2 === 1) ad.classList.add('frame2');
+      frames.push(await rasterizeAd(ad, t));
+    }
+    const gif = encodeGif(frames, t.w * 2, t.h * 2, 50);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([gif], { type: 'image/gif' }));
+    a.download = `${name}.gif`;
+    a.click();
+  } catch (e) {
+    alert('export failed in this browser — screenshot the preview instead');
+  }
 }
 
 /* ============ wiring ============ */
 function persist() {
   localStorage.setItem('mph-bait-lab', JSON.stringify({
-    template: sel('template'), skin: sel('skin'), copy: currentCopy(),
+    template: sel('template'), skin: sel('skin'), fx: sel('fx'), motion: sel('motion'), copy: currentCopy(),
   }));
 }
+async function loadBuiltins() {
+  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl'];
+  for (const n of names) {
+    const id = 'builtin-' + n;
+    if (assets.some(a => a.id === id)) continue;
+    try {
+      const blob = await (await fetch('icons/icon-' + n + '.png')).blob();
+      if (!blob.type.startsWith('image')) continue;
+      const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+      const a = { id, name: n, dataUrl };
+      assets.push(a); saveAsset(a);
+    } catch (e) {}
+  }
+}
+
 function init() {
   const ts = document.getElementById('template');
   for (const k of Object.keys(TPL)) ts.add(new Option(`${k}  (${TPL[k].w}×${TPL[k].h})`, k));
@@ -342,13 +480,15 @@ function init() {
   if (saved) {
     ts.value = saved.template in TPL ? saved.template : 'show-banner';
     ss.value = saved.skin in SKINS ? saved.skin : 'flame';
+    if (saved.fx) document.getElementById('fx').value = saved.fx;
+    if (saved.motion) document.getElementById('motion').value = saved.motion;
     for (const k of ['headline','sub','cta','badge'])
       document.getElementById('c-' + k).value = saved.copy?.[k] ?? roll(k);
   } else {
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
   }
 
-  ts.onchange = renderPreview; ss.onchange = renderPreview;
+  ts.onchange = renderPreview; ss.onchange = renderPreview; document.getElementById('fx').onchange = renderPreview; document.getElementById('motion').onchange = renderPreview;
   for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).oninput = renderPreview;
   document.querySelectorAll('.dice').forEach(b => b.onclick = () => {
     document.getElementById('c-' + b.dataset.roll).value = roll(b.dataset.roll); renderPreview();
@@ -359,7 +499,8 @@ function init() {
   };
   document.getElementById('build').onclick = buildOptions;
   document.getElementById('export').onclick = () =>
-    exportAd(makeAd(sel('template'), sel('skin'), currentCopy(), selectedAsset?.dataUrl), `${sel('template')}-${sel('skin')}`);
+    exportCreative({ template: sel('template'), skin: sel('skin'), copy: currentCopy(),
+      imgUrl: selectedAsset?.dataUrl, fx: sel('fx'), motion: sel('motion') }, `${sel('template')}-${sel('skin')}`);
 
   const drop = document.getElementById('drop'), file = document.getElementById('file');
   drop.onclick = () => file.click();
@@ -375,7 +516,10 @@ function init() {
     if (files.length) { e.preventDefault(); addFiles(files); }
   });
 
-  loadAssets().then(renderPreview);
+  loadAssets().then(loadBuiltins).then(() => {
+    if (!selectedAsset) selectedAsset = assets[0] ?? null;
+    drawLib(); renderPreview();
+  });
 }
 init();
 </script>
