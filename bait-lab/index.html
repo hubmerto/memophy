@@ -74,6 +74,9 @@
   .ad .holo { position:absolute; inset:0; pointer-events:none;
     background:linear-gradient(115deg, rgba(255,0,150,.38), rgba(0,255,255,.30) 35%, rgba(255,255,0,.26) 65%, rgba(140,0,255,.38)); }
   .fxopt { display:block; color:var(--ui-txt); font-size:12px; margin-bottom:4px; }
+  .editable { cursor:move; }
+  .editable:hover { outline:1px dashed rgba(255,136,0,.85); outline-offset:1px; }
+  #layoutHint { color:var(--ui-dim); font-size:11px; margin:4px 0 6px; }
   /* motion: appear = image blinks; lineup = 4 copies marching in */
   .ad.m-appear.ph1 .pic img { visibility:hidden; }
   .ad .pic img.li { display:inline-block; width:25%; height:100%; vertical-align:top; }
@@ -142,6 +145,10 @@
     <div class="row"><input type="text" id="c-cta" placeholder="cta"><button class="dice" data-roll="cta">🎲</button></div>
     <div class="row"><input type="text" id="c-badge" placeholder="badge"><button class="dice" data-roll="badge">🎲</button></div>
     <button id="rollAll">🎲 roll all copy</button>
+
+    <h2>Layout</h2>
+    <div id="layoutHint">drag elements in the preview to move them - scroll over one to resize</div>
+    <button id="resetLayout">reset layout (this format)</button>
 
     <h2>Build</h2>
     <button class="acc" id="build">BUILD 12 OPTIONS</button>
@@ -251,6 +258,31 @@ function drawLib() {
 }
 
 /* ============ ad composition ============ */
+let LAYOUT = JSON.parse(localStorage.getItem('mph-bait-layout') || '{}');
+function saveLayout() { localStorage.setItem('mph-bait-layout', JSON.stringify(LAYOUT)); }
+function layoutNodes(el) {
+  const map = {};
+  const pic = el.querySelector('.pic');
+  if (pic) map.pic = pic;
+  for (const slot of ['headline','sub','cta','badge']) {
+    const n = el.querySelector(`[data-slot="${slot}"]`);
+    if (n) map[slot] = n;
+  }
+  return map;
+}
+function applyLayout(el, template) {
+  const L = LAYOUT[template];
+  if (!L) return;
+  const nodes = layoutNodes(el);
+  for (const [k, o] of Object.entries(L)) {
+    const n = nodes[k];
+    if (n) {
+      n.style.transform = `translate(${o.dx || 0}px, ${o.dy || 0}px) scale(${o.s || 1})`;
+      n.style.transformOrigin = 'center';
+    }
+  }
+}
+
 const FX_KEYS = ['glow','sparkle','glitter','holo'];
 function currentFx() {
   return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
@@ -298,6 +330,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
     const pic = el.querySelector('.pic');
     if (pic) { const d = document.createElement('div'); d.className = 'holo'; pic.appendChild(d); }
   }
+  applyLayout(el, template);
   return el;
 }
 function currentCopy() {
@@ -313,7 +346,42 @@ function renderPreview() {
   wrap.innerHTML = '';
   const ad = makeAd(sel('template'), sel('skin'), currentCopy(), selectedAsset?.dataUrl);
   wrap.appendChild(ad);
+  enableEditing(ad, sel('template'));
   persist();
+}
+
+function enableEditing(ad, template) {
+  const nodes = layoutNodes(ad);
+  for (const [key, n] of Object.entries(nodes)) {
+    n.classList.add('editable');
+    n.onpointerdown = e => {
+      e.preventDefault();
+      n.setPointerCapture(e.pointerId);
+      const o = ((LAYOUT[template] ??= {})[key] ??= { dx: 0, dy: 0, s: 1 });
+      const sx = e.clientX - o.dx, sy = e.clientY - o.dy;
+      const move = ev => {
+        o.dx = Math.round(ev.clientX - sx);
+        o.dy = Math.round(ev.clientY - sy);
+        n.style.transform = `translate(${o.dx}px, ${o.dy}px) scale(${o.s})`;
+        n.style.transformOrigin = 'center';
+      };
+      const up = () => {
+        n.removeEventListener('pointermove', move);
+        n.removeEventListener('pointerup', up);
+        saveLayout();
+      };
+      n.addEventListener('pointermove', move);
+      n.addEventListener('pointerup', up);
+    };
+    n.onwheel = e => {
+      e.preventDefault();
+      const o = ((LAYOUT[template] ??= {})[key] ??= { dx: 0, dy: 0, s: 1 });
+      o.s = Math.min(4, Math.max(0.25, (o.s || 1) - e.deltaY * 0.0015));
+      n.style.transform = `translate(${o.dx}px, ${o.dy}px) scale(${o.s})`;
+      n.style.transformOrigin = 'center';
+      saveLayout();
+    };
+  }
 }
 const sel = id => document.getElementById(id).value;
 
@@ -521,6 +589,11 @@ function init() {
     renderPreview();
   };
   document.getElementById('build').onclick = buildOptions;
+  document.getElementById('resetLayout').onclick = () => {
+    delete LAYOUT[sel('template')];
+    saveLayout();
+    renderPreview();
+  };
   document.getElementById('export').onclick = () =>
     exportCreative({ template: sel('template'), skin: sel('skin'), copy: currentCopy(),
       imgUrl: selectedAsset?.dataUrl, fx: currentFx(), motion: sel('motion') }, `${sel('template')}-${sel('skin')}`);
