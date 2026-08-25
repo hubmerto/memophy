@@ -216,6 +216,7 @@
     <h2>Layout</h2>
     <div id="layoutHint">drag to move - drag the corner handle to resize (ratio locked) - double-click to type - click + Delete removes - &#8984;-click thumbs to cycle icons - &#8984;Z undo</div>
     <button id="resetLayout">reset layout (this format)</button>
+    <div id="hiddenList" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"></div>
 
     <h2>Background</h2>
     <div class="row"><input type="color" id="bg-color" value="#000000" style="height:30px;"><button id="bg-clear">skin default</button></div>
@@ -628,8 +629,27 @@ function currentCopy() {
   };
 }
 let RP_RECOVERED = false;
+function refreshHiddenList() {
+  const el = document.getElementById('hiddenList');
+  if (!el) return;
+  el.innerHTML = '';
+  for (const t of Object.keys(TPL)) {
+    for (const k of (LAYOUT[t]?.hidden ?? [])) {
+      const b = document.createElement('button');
+      b.style.cssText = 'width:auto;margin:0;padding:2px 8px;font-size:10px;';
+      b.textContent = '\u21a9 ' + k + ' (' + t.replace('show-','') + ')';
+      b.title = 'restore this deleted element';
+      b.onclick = () => {
+        snapshotLayout();
+        LAYOUT[t].hidden = LAYOUT[t].hidden.filter(x => x !== k);
+        saveLayout(); renderPreview();
+      };
+      el.appendChild(b);
+    }
+  }
+}
 function renderPreview() {
-  try { renderPreviewInner(); }
+  try { renderPreviewInner(); refreshHiddenList(); }
   catch (err) {
     if (!RP_RECOVERED) {
       RP_RECOVERED = true;
