@@ -16,11 +16,13 @@
   #stage { flex:1; padding:20px; overflow:auto; }
   h2 { font:bold 11px Arial; text-transform:uppercase; letter-spacing:1px; color:var(--ui-dim); margin:18px 0 8px; }
   h2:first-child { margin-top:0; }
-  select, input[type=text], button {
+  select, input[type=text], textarea, button {
     width:100%; background:#222; color:var(--ui-txt); border:1px solid #3a3a3a;
     padding:6px 8px; font:12px Arial; margin-bottom:6px;
   }
-  select:focus, input:focus { outline:1px solid var(--ui-acc); }
+  select:focus, input:focus, textarea:focus { outline:1px solid var(--ui-acc); }
+  textarea { resize:vertical; font-family:Arial, Helvetica, sans-serif; }
+  .ad [contenteditable="true"] { background:none !important; -webkit-text-fill-color:currentColor !important; outline:2px solid #ff8800; filter:none !important; cursor:text; }
   button { cursor:pointer; }
   button:hover { border-color:var(--ui-acc); }
   button.acc { background:var(--ui-acc); color:#000; font-weight:bold; border-color:var(--ui-acc); }
@@ -75,6 +77,7 @@
   .editable { cursor:move; }
   .editable:hover { outline:1px dashed rgba(255,136,0,.85); outline-offset:1px; }
   .droptarget { outline:2px solid #ff8800 !important; outline-offset:2px; }
+  .selected { outline:2px solid #ff8800 !important; outline-offset:1px; }
   #layoutHint { color:var(--ui-dim); font-size:11px; margin:4px 0 6px; }
   /* motion: appear = image blinks; lineup = 4 copies marching in */
   .ad.m-appear.ph1 .pic img { visibility:hidden; }
@@ -159,15 +162,35 @@
     <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
 
     <h2>Copy</h2>
-    <div class="row"><input type="text" id="c-headline" placeholder="headline"><button class="dice" data-roll="headline">🎲</button></div>
-    <div class="row"><input type="text" id="c-sub" placeholder="sub"><button class="dice" data-roll="sub">🎲</button></div>
-    <div class="row"><input type="text" id="c-cta" placeholder="cta"><button class="dice" data-roll="cta">🎲</button></div>
-    <div class="row"><input type="text" id="c-badge" placeholder="badge"><button class="dice" data-roll="badge">🎲</button></div>
+    <div class="row"><textarea id="c-headline" placeholder="headline" rows="1"></textarea><button class="dice" data-roll="headline">🎲</button></div>
+    <div class="row"><textarea id="c-sub" placeholder="sub" rows="1"></textarea><button class="dice" data-roll="sub">🎲</button></div>
+    <div class="row"><textarea id="c-cta" placeholder="cta" rows="1"></textarea><button class="dice" data-roll="cta">🎲</button></div>
+    <div class="row"><textarea id="c-badge" placeholder="badge" rows="1"></textarea><button class="dice" data-roll="badge">🎲</button></div>
     <button id="rollAll">🎲 roll all copy</button>
 
     <h2>Layout</h2>
-    <div id="layoutHint">drag to move - drop onto another element to swap slots - scroll to resize - &#8984;Z undo</div>
+    <div id="layoutHint">drag to move - drop onto another to swap - scroll resizes - double-click to type (Enter = new line) - click + Delete removes an element - &#8984;-click thumbs for multi-icon cycling - &#8984;Z undo</div>
     <button id="resetLayout">reset layout (this format)</button>
+
+    <h2>Text (click a text element)</h2>
+    <div id="textPanel" style="display:none">
+      <div id="tp-slot" style="color:var(--ui-dim); font-size:11px; margin-bottom:4px;"></div>
+      <select id="tp-font">
+        <option value="">font: skin default</option>
+        <option value='Impact, "Arial Black", Arial, sans-serif'>Impact</option>
+        <option value='"Arial Black", Arial, sans-serif'>Arial Black</option>
+        <option value='Arial, Helvetica, sans-serif'>Arial</option>
+        <option value='"Times New Roman", Times, serif'>Times New Roman</option>
+        <option value='"Comic Sans MS", "Arial Black", sans-serif'>Comic Sans</option>
+        <option value='Tahoma, Geneva, sans-serif'>Tahoma</option>
+        <option value='Verdana, Geneva, sans-serif'>Verdana</option>
+      </select>
+      <div class="row"><input type="number" id="tp-size" placeholder="size px" min="8" max="140"><input type="color" id="tp-color" value="#ffffff" style="height:30px;"></div>
+      <label class="fxopt"><input type="checkbox" id="tp-bold"> bold</label>
+      <label class="fxopt"><input type="checkbox" id="tp-italic"> italic</label>
+      <label class="fxopt"><input type="checkbox" id="tp-underline"> underline</label>
+      <button id="tp-reset">reset this text style</button>
+    </div>
 
     <h2>Build</h2>
     <button class="acc" id="randomAll">&#127922; RANDOMIZE ALL</button>
@@ -228,7 +251,8 @@ const fill = s => s.replace(/\{([A-Z_]+)\}/g, (m,k) => BANKS[k] ? pick(BANKS[k])
 const roll = slot => fill(pick(COPY[slot]));
 
 /* ============ library (IndexedDB) ============ */
-let db, assets = [], selectedAsset = null;
+let db, assets = [], selectedAsset = null, selectedIds = [];
+function selectedAssets() { return selectedIds.map(id => assets.find(a => a.id === id)).filter(Boolean); }
 function idb() {
   return new Promise((res, rej) => {
     const r = indexedDB.open('mph-bait-lab', 1);
@@ -255,7 +279,7 @@ function addFiles(files) {
     rd.onload = () => {
       const a = { id: Date.now() + '-' + Math.random().toString(36).slice(2,7), name: f.name, dataUrl: rd.result };
       assets.push(a); saveAsset(a); drawLib();
-      if (!selectedAsset) { selectedAsset = a; drawLib(); renderPreview(); }
+      if (!selectedAsset) { selectedAsset = a; selectedIds = [a.id]; drawLib(); renderPreview(); }
     };
     rd.readAsDataURL(f);
   }
@@ -265,12 +289,18 @@ function drawLib() {
   el.innerHTML = '';
   for (const a of assets) {
     const d = document.createElement('div');
-    d.className = 'asset' + (selectedAsset && selectedAsset.id === a.id ? ' sel' : '');
+    d.className = 'asset' + (selectedIds.includes(a.id) ? ' sel' : '');
     d.style.backgroundImage = `url("${a.dataUrl}"), repeating-conic-gradient(#3d3d3d 0% 25%, #262626 0% 50%)`;
     d.title = a.name;
     d.draggable = true;
     d.ondragstart = ev => ev.dataTransfer.setData('text/asset-id', a.id);
-    d.onclick = () => { selectedAsset = a; drawLib(); renderPreview(); };
+    d.onclick = ev => {
+      if (ev.metaKey || ev.ctrlKey || ev.shiftKey) {
+        selectedIds = selectedIds.includes(a.id) ? selectedIds.filter(x => x !== a.id) : [...selectedIds, a.id];
+      } else selectedIds = [a.id];
+      selectedAsset = selectedAssets()[0] ?? null;
+      drawLib(); renderPreview();
+    };
     const x = document.createElement('div');
     x.className = 'del'; x.textContent = '×';
     x.onclick = ev => { ev.stopPropagation(); dropAsset(a.id); assets = assets.filter(v => v.id !== a.id);
@@ -286,8 +316,17 @@ const UNDO = [];
 let lastWheelSnap = 0;
 function snapshotLayout() { UNDO.push(JSON.stringify(LAYOUT)); if (UNDO.length > 60) UNDO.shift(); }
 document.addEventListener('keydown', e => {
+  if ((e.key === 'Delete' || e.key === 'Backspace') && window.SEL) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    e.preventDefault();
+    snapshotLayout();
+    const L = (LAYOUT[window.SEL.t] ??= {});
+    L.hidden = [...new Set([...(L.hidden ?? []), window.SEL.k])];
+    saveLayout(); renderPreview();
+    return;
+  }
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     e.preventDefault();
     const prev = UNDO.pop();
     if (prev) { LAYOUT = JSON.parse(prev); saveLayout(); renderPreview(); }
@@ -338,6 +377,24 @@ function applyLayout(el, template) {
       n.style.transformOrigin = 'center';
     }
   }
+  for (const k of L.hidden ?? []) {
+    if (nodes[k]) nodes[k].style.display = 'none';
+  }
+  for (const [k, ts] of Object.entries(L.text ?? {})) {
+    const n = nodes[k];
+    if (!n || k === 'pic') continue;
+    if (ts.font) n.style.fontFamily = ts.font;
+    if (ts.size) { n.style.fontSize = ts.size + 'px'; n.style.lineHeight = 1.05; }
+    if (ts.bold) n.style.fontWeight = 'bold';
+    if (ts.italic) n.style.fontStyle = 'italic';
+    if (ts.underline) n.style.textDecoration = 'underline';
+    if (ts.color) {
+      // solid color override wins over the gradient-clip treatment
+      n.style.color = ts.color; n.style.background = 'none';
+      n.style.webkitTextFillColor = ts.color; n.style.filter = 'none';
+      n.style.webkitTextStroke = '0';
+    }
+  }
 }
 
 const FX_KEYS = ['glow','sparkle','glitter'];
@@ -354,7 +411,10 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   el.innerHTML = t.html;
   for (const [k,v] of Object.entries(SKINS[skin])) el.style.setProperty(k, v);
   for (const [slot, text] of Object.entries(copy))
-    el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => n.textContent = text);
+    el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => {
+      n.textContent = text;
+      if (String(text).includes('\n')) n.style.whiteSpace = 'pre-line';
+    });
   if (motion !== 'static') el.classList.add('m-' + motion);
   el.querySelectorAll('[data-slot="image"]').forEach(n => {
     n.src = imgUrl || PLACEHOLDER;
@@ -414,6 +474,8 @@ function renderPreview() {
     const row = document.createElement('div');
     row.style.cssText = 'margin-bottom:20px;';
     const ad = makeAd(template, sel('skin'), currentCopy(), selectedAsset?.dataUrl);
+    const urls = selectedAssets().map(a => a.dataUrl);
+    if (urls.length > 1) ad._icons = urls;
     row.appendChild(ad);
     enableEditing(ad, template);
     ad.ondragover = e => e.preventDefault();
@@ -431,7 +493,8 @@ function renderPreview() {
     btn.textContent = 'GIF';
     btn.style.cssText = 'width:auto; margin:0; padding:3px 14px; font-size:11px;';
     btn.onclick = () => exportCreative({ template, skin: sel('skin'), copy: currentCopy(),
-      imgUrl: selectedAsset?.dataUrl, fx: currentFx(), motion: sel('motion') }, `${template}-${sel('skin')}`);
+      imgUrl: selectedAsset?.dataUrl, icons: selectedAssets().map(a => a.dataUrl),
+      fx: currentFx(), motion: sel('motion') }, `${template}-${sel('skin')}`);
     meta.appendChild(lbl); meta.appendChild(btn);
     row.appendChild(meta);
     wrap.appendChild(row);
@@ -445,7 +508,21 @@ function enableEditing(ad, template) {
   L.off ??= {}; L.boxes ??= {};
   for (const [key, n] of Object.entries(nodes)) {
     n.classList.add('editable');
+    if (key !== 'pic') n.ondblclick = e => {
+      e.stopPropagation();
+      n.contentEditable = 'true';
+      n.focus();
+      const range = document.createRange(); range.selectNodeContents(n);
+      const selx = window.getSelection(); selx.removeAllRanges(); selx.addRange(range);
+      n.onblur = () => {
+        n.contentEditable = 'false';
+        const field = document.getElementById('c-' + key);
+        if (field) field.value = n.innerText.replace(/\n+$/, '');
+        renderPreview();
+      };
+    };
     n.onpointerdown = e => {
+      if (n.isContentEditable) return;
       e.preventDefault();
       snapshotLayout();
       n.setPointerCapture(e.pointerId);
@@ -502,6 +579,7 @@ function enableEditing(ad, template) {
           swapped = true;
         }
         saveLayout();
+        if (!moved) selectSlot(template, key);
         if (swapped) renderPreview();
       };
       n.addEventListener('pointermove', move);
@@ -527,6 +605,11 @@ setInterval(() => {
   PHASE = (PHASE + 1) % 4;
   document.querySelectorAll('#previewWrap .ad, #optGrid .ad').forEach(a => {
     if (!on) { a.classList.remove('frame2','ph0','ph1','ph2','ph3'); a.classList.add('ph3'); return; }
+    if (a._icons) {
+      const url = a._icons[PHASE % a._icons.length];
+      a.querySelectorAll('[data-slot="image"]').forEach(im => { if (im.src !== url) im.src = url; });
+      a.querySelectorAll('.glit').forEach(d => { d.style.webkitMaskImage = d.style.maskImage = `url("${url}")`; });
+    }
     const n = (a.classList.contains('m-lineup') || a.classList.contains('m-twitch')) ? PHASE : PHASE % 2;
     a.classList.remove('ph0','ph1','ph2','ph3');
     a.classList.add('ph' + n);
@@ -655,12 +738,14 @@ async function rasterizeAd(adEl, t) {
 /* CTA always blinks: every export is a looping GIF (2 frames; 4 for lineup) */
 async function exportCreative(spec, name) {
   const t = TPL[spec.template];
-  const phases = (spec.motion === 'lineup' || spec.motion === 'twitch') ? [0, 1, 2, 3] : [0, 1];
+  const icons = spec.icons && spec.icons.length > 1 ? spec.icons : null;
+  const phases = icons ? icons.map((_, i) => i)
+    : (spec.motion === 'lineup' || spec.motion === 'twitch') ? [0, 1, 2, 3] : [0, 1];
   try {
     const frames = [];
     for (const k of phases) {
-      const ad = makeAd(spec.template, spec.skin, spec.copy, spec.imgUrl, spec.fx, spec.motion);
-      ad.classList.add('ph' + k);
+      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k] : spec.imgUrl, spec.fx, spec.motion);
+      ad.classList.add('ph' + (k % 4));
       if (k % 2 === 1) ad.classList.add('frame2');
       frames.push(await rasterizeAd(ad, t));
     }
@@ -723,12 +808,49 @@ function init() {
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
     renderPreview();
   };
+  const tp = id => document.getElementById(id);
+  window.selectSlot = (t, k) => {
+    window.SEL = { t, k };
+    document.querySelectorAll('#previewWrap .selected').forEach(x => x.classList.remove('selected'));
+    const adEl = document.querySelector('#previewWrap .t-' + t);
+    if (adEl) layoutNodes(adEl)[k]?.classList.add('selected');
+    if (k === 'pic') { tp('textPanel').style.display = 'none'; return; }
+    const st = LAYOUT[t]?.text?.[k] ?? {};
+    tp('textPanel').style.display = 'block';
+    tp('tp-slot').textContent = k + ' @ ' + t;
+    tp('tp-font').value = st.font ?? '';
+    tp('tp-size').value = st.size ?? '';
+    tp('tp-bold').checked = !!st.bold;
+    tp('tp-italic').checked = !!st.italic;
+    tp('tp-underline').checked = !!st.underline;
+    if (st.color) tp('tp-color').value = st.color;
+  };
+  const updateText = patch => {
+    if (!window.SEL) return;
+    snapshotLayout();
+    const L = (LAYOUT[window.SEL.t] ??= {});
+    L.text ??= {};
+    L.text[window.SEL.k] = { ...(L.text[window.SEL.k] ?? {}), ...patch };
+    saveLayout(); renderPreview();
+  };
+  tp('tp-font').onchange = () => updateText({ font: tp('tp-font').value || undefined });
+  tp('tp-size').onchange = () => updateText({ size: Number(tp('tp-size').value) || undefined });
+  tp('tp-color').oninput = () => updateText({ color: tp('tp-color').value });
+  tp('tp-bold').onchange = () => updateText({ bold: tp('tp-bold').checked });
+  tp('tp-italic').onchange = () => updateText({ italic: tp('tp-italic').checked });
+  tp('tp-underline').onchange = () => updateText({ underline: tp('tp-underline').checked });
+  tp('tp-reset').onclick = () => {
+    if (!window.SEL) return;
+    snapshotLayout();
+    delete LAYOUT[window.SEL.t]?.text?.[window.SEL.k];
+    saveLayout(); renderPreview(); selectSlot(window.SEL.t, window.SEL.k);
+  };
   document.getElementById('randomAll').onclick = () => {
     const rnd = a => a[Math.floor(Math.random() * a.length)];
     document.getElementById('template').value = rnd(Object.keys(TPL));
     document.getElementById('skin').value = rnd(Object.keys(SKINS));
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
-    if (assets.length) selectedAsset = rnd(assets);
+    if (assets.length) { selectedAsset = rnd(assets); selectedIds = [selectedAsset.id]; }
     document.getElementById('fx-glow').checked = Math.random() < 0.5;
     document.getElementById('fx-sparkle').checked = Math.random() < 0.5;
     document.getElementById('fx-glitter').checked = Math.random() < 0.35;
@@ -762,7 +884,7 @@ function init() {
   });
 
   loadAssets().then(loadBuiltins).then(() => {
-    if (!selectedAsset) selectedAsset = assets[0] ?? null;
+    if (!selectedAsset) { selectedAsset = assets[0] ?? null; selectedIds = selectedAsset ? [selectedAsset.id] : []; }
     drawLib(); renderPreview();
   });
 }
