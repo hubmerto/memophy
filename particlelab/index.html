@@ -835,7 +835,7 @@ function syncUniforms(t){
   const T=P.trans;
   U.uGlobal.value=T; if(points)points.visible=T>0.002;
   U.uTime.value=t; U.uDepthScale.value=P.depthScale*T; U.uDepthCurve.value=P.depthCurve; U.uNear.value=P.depthNear; U.uFar.value=P.depthFar; U.uEdgePin.value=P.edgePin; U.uInvert.value=P.depthInvert?1:0;
-  U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=P.contrast; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw*T; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
+  U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=1+(P.contrast-1)*T; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw*T; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
   U.uTint.value.set(P.tint); U.uTintAmt.value=P.tintAmt*T; U.uRain.value=P.rain*T; U.uRainSpeed.value=P.rainSpeed; U.uRainTrail.value=P.rainTrail; U.uHoloScan.value=P.holoScan*T; U.uScanFreq.value=P.scanFreq; U.uRgbSplit.value=P.rgbSplit*T;
   U.uFlick.value=1-(P.flicker*T>0&&Math.random()<0.12?Math.random()*0.7*P.flicker*T:0);
   U.uWave.value=P.wave*T; U.uWaveFreq.value=P.waveFreq; U.uWaveSpeed.value=P.waveSpeed; U.uGlitch.value=P.glitch*T; U.uGlitchRate.value=P.glitchRate; U.uScatter.value=P.scatter*T; U.uScatterSpeed.value=P.scatterSpeed; U.uExplode.value=P.explode*T;
@@ -849,7 +849,7 @@ function renderFrame(dt){
   const t=clock.getElapsedTime();
   tickTransition(t); autoCam(t,dt); tickPressZoom(); controls.update(); applyShake(t); tickAudio();
   syncUniforms(t);
-  if(P.audio&&curNode){ bloomPass.strength=P.bloom*P.trans*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
+  if(P.audio&&curNode){ bloomPass.strength=P.bloom*P.trans*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06*P.trans; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
   if(P.bloom*P.trans>0.001)composer.render(); else renderer.render(scene,camera);
 }
 function loop(){
