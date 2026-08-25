@@ -71,8 +71,6 @@
   .ad .glit.g2 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'><path d='M18 6.3 L19.7 8 L18 9.7 L16.3 8 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M44 7.5 L46.5 10 L44 12.5 L41.5 10 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M64 4.5 L65.5 6 L64 7.5 L62.5 6 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M6 23.4 L8.6 26 L6 28.6 L3.4 26 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M34 24.5 L35.5 26 L34 27.5 L32.5 26 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M56 33.7 L58.3 36 L56 38.3 L53.7 36 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M12 44.5 L13.5 46 L12 47.5 L10.5 46 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M40 49.3 L42.7 52 L40 54.7 L37.3 52 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M66 60.2 L67.8 62 L66 63.8 L64.2 62 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M26 66.5 L27.5 68 L26 69.5 L24.5 68 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M18 6.3 L19.7 8 L18 9.7 L16.3 8 Z' fill='#d2fffb' opacity='.92'/><path d='M44 7.5 L46.5 10 L44 12.5 L41.5 10 Z' fill='white' opacity='.92'/><path d='M64 4.5 L65.5 6 L64 7.5 L62.5 6 Z' fill='white' opacity='.92'/><path d='M6 23.4 L8.6 26 L6 28.6 L3.4 26 Z' fill='white' opacity='.92'/><path d='M34 24.5 L35.5 26 L34 27.5 L32.5 26 Z' fill='#ffd9f2' opacity='.92'/><path d='M56 33.7 L58.3 36 L56 38.3 L53.7 36 Z' fill='white' opacity='.92'/><path d='M12 44.5 L13.5 46 L12 47.5 L10.5 46 Z' fill='white' opacity='.92'/><path d='M40 49.3 L42.7 52 L40 54.7 L37.3 52 Z' fill='#ffd9f2' opacity='.92'/><path d='M66 60.2 L67.8 62 L66 63.8 L64.2 62 Z' fill='white' opacity='.92'/><path d='M26 66.5 L27.5 68 L26 69.5 L24.5 68 Z' fill='#d2fffb' opacity='.92'/></svg>"); display:none; }
   .ad.frame2 .glit.g1 { display:none; }
   .ad.frame2 .glit.g2 { display:block; }
-  .ad .holo { position:absolute; inset:0; pointer-events:none;
-    background:linear-gradient(115deg, rgba(255,0,150,.38), rgba(0,255,255,.30) 35%, rgba(255,255,0,.26) 65%, rgba(140,0,255,.38)); }
   .fxopt { display:block; color:var(--ui-txt); font-size:12px; margin-bottom:4px; }
   .editable { cursor:move; }
   .editable:hover { outline:1px dashed rgba(255,136,0,.85); outline-offset:1px; }
@@ -83,6 +81,10 @@
   .ad.m-lineup.ph0 .pic img.li1, .ad.m-lineup.ph0 .pic img.li2, .ad.m-lineup.ph0 .pic img.li3 { visibility:hidden; }
   .ad.m-lineup.ph1 .pic img.li2, .ad.m-lineup.ph1 .pic img.li3 { visibility:hidden; }
   .ad.m-lineup.ph2 .pic img.li3 { visibility:hidden; }
+  .ad.m-twitch.ph0 .pic > * { transform:translate(-6px,1px) rotate(-5deg); }
+  .ad.m-twitch.ph1 .pic > * { transform:translate(6px,-4px) rotate(4deg); }
+  .ad.m-twitch.ph2 .pic > * { transform:translate(-4px,-2px) rotate(-3deg); }
+  .ad.m-twitch.ph3 .pic > * { transform:translate(7px,2px) rotate(6deg); }
 
 
 
@@ -132,12 +134,12 @@
       <option value="static">static</option>
       <option value="appear">appear / disappear</option>
       <option value="lineup">line up one by one</option>
+      <option value="twitch">twitch (jumpy)</option>
     </select>
     <h2>Image FX (stackable)</h2>
     <label class="fxopt"><input type="checkbox" id="fx-glow"> glow (skin-tinted overshadow)</label>
     <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
     <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
-    <label class="fxopt"><input type="checkbox" id="fx-holo"> holo sheen</label>
 
     <h2>Copy</h2>
     <div class="row"><input type="text" id="c-headline" placeholder="headline"><button class="dice" data-roll="headline">🎲</button></div>
@@ -147,7 +149,7 @@
     <button id="rollAll">🎲 roll all copy</button>
 
     <h2>Layout</h2>
-    <div id="layoutHint">drag to move - drop onto another element to swap slots - scroll to resize</div>
+    <div id="layoutHint">drag to move - drop onto another element to swap slots - scroll to resize - &#8984;Z undo</div>
     <button id="resetLayout">reset layout (this format)</button>
 
     <h2>Build</h2>
@@ -259,6 +261,17 @@ function drawLib() {
 
 /* ============ ad composition ============ */
 let LAYOUT = JSON.parse(localStorage.getItem('mph-bait-layout') || '{}');
+const UNDO = [];
+let lastWheelSnap = 0;
+function snapshotLayout() { UNDO.push(JSON.stringify(LAYOUT)); if (UNDO.length > 60) UNDO.shift(); }
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    e.preventDefault();
+    const prev = UNDO.pop();
+    if (prev) { LAYOUT = JSON.parse(prev); saveLayout(); renderPreview(); }
+  }
+});
 for (const t of Object.keys(LAYOUT)) if (!LAYOUT[t].off && !LAYOUT[t].boxes) LAYOUT[t] = { off: LAYOUT[t], boxes: {} };
 function saveLayout() { localStorage.setItem('mph-bait-layout', JSON.stringify(LAYOUT)); }
 function layoutNodes(el) {
@@ -296,7 +309,7 @@ function applyLayout(el, template) {
   }
 }
 
-const FX_KEYS = ['glow','sparkle','glitter','holo'];
+const FX_KEYS = ['glow','sparkle','glitter'];
 function currentFx() {
   return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
 }
@@ -331,7 +344,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       pic.appendChild(d);
     }
   }
-  // glitter/holo are masked to the icon's alpha so they sit ON the object, not over the whole slot
+  // glitter is masked to the icon's alpha so it sits ON the object, not over the whole slot
   const maskToIcon = d => {
     const u = `url("${imgUrl || PLACEHOLDER}")`;
     d.style.webkitMaskImage = u; d.style.maskImage = u;
@@ -352,10 +365,6 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       maskToIcon(d);
       pic.appendChild(d);
     }
-  }
-  if (fx.includes('holo')) {
-    const pic = el.querySelector('.pic');
-    if (pic) { const d = document.createElement('div'); d.className = 'holo'; maskToIcon(d); pic.appendChild(d); }
   }
   applyLayout(el, template);
   return el;
@@ -385,6 +394,7 @@ function enableEditing(ad, template) {
     n.classList.add('editable');
     n.onpointerdown = e => {
       e.preventDefault();
+      snapshotLayout();
       n.setPointerCapture(e.pointerId);
       const o = (L.off[key] ??= { dx: 0, dy: 0, s: 1 });
       const sx = e.clientX - o.dx, sy = e.clientY - o.dy;
@@ -431,6 +441,7 @@ function enableEditing(ad, template) {
     };
     n.onwheel = e => {
       e.preventDefault();
+      if (Date.now() - lastWheelSnap > 600) { snapshotLayout(); lastWheelSnap = Date.now(); }
       const o = (L.off[key] ??= { dx: 0, dy: 0, s: 1 });
       o.s = Math.min(4, Math.max(0.25, (o.s || 1) - e.deltaY * 0.0015));
       n.style.transform = `translate(${o.dx}px, ${o.dy}px) scale(${o.s})`;
@@ -448,7 +459,7 @@ setInterval(() => {
   PHASE = (PHASE + 1) % 4;
   document.querySelectorAll('#previewWrap .ad, #optGrid .ad').forEach(a => {
     if (!on) { a.classList.remove('frame2','ph0','ph1','ph2','ph3'); a.classList.add('ph3'); return; }
-    const n = a.classList.contains('m-lineup') ? PHASE : PHASE % 2;
+    const n = (a.classList.contains('m-lineup') || a.classList.contains('m-twitch')) ? PHASE : PHASE % 2;
     a.classList.remove('ph0','ph1','ph2','ph3');
     a.classList.add('ph' + n);
     a.classList.toggle('frame2', PHASE % 2 === 1);
@@ -576,7 +587,7 @@ async function rasterizeAd(adEl, t) {
 /* CTA always blinks: every export is a looping GIF (2 frames; 4 for lineup) */
 async function exportCreative(spec, name) {
   const t = TPL[spec.template];
-  const phases = spec.motion === 'lineup' ? [0, 1, 2, 3] : [0, 1];
+  const phases = (spec.motion === 'lineup' || spec.motion === 'twitch') ? [0, 1, 2, 3] : [0, 1];
   try {
     const frames = [];
     for (const k of phases) {
@@ -646,6 +657,7 @@ function init() {
   };
   document.getElementById('build').onclick = buildOptions;
   document.getElementById('resetLayout').onclick = () => {
+    snapshotLayout();
     delete LAYOUT[sel('template')];
     saveLayout();
     renderPreview();
