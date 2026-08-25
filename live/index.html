@@ -2510,6 +2510,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
             zoomSeq:parseZoomSeq(qs.get('zoomat')),
             len:(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})(),
             calIn:(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})(),
+            calLoop:qs.get('calloop')==='1',
             view:qs.get('view')||'room',
             fps:parseFloat(qs.get('fps'))||30, CONNECT:(qs.get('connect')?0.9:0), TAIL:0.5 };
     var rr={herIdx:-1,calIdx:-1,dur:0,callerDur:0,connected:false,committed:false};
@@ -2591,7 +2592,12 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           }
           var right=(gvid.currentSrc||'').indexOf(R.caller)>-1 && gvid.readyState>=2;
           try{ gvid.pause(); }catch(e){}
-          if(right){ gdz.style.display='none'; ps.push(seekTo(gvid, R.calIn+(t-R.CONNECT))); }
+          if(right){
+            gdz.style.display='none';
+            var tc=t-R.CONNECT;
+            if(R.calLoop){ var avail=Math.max(0.5,(rr.callerDur||8)-R.calIn); tc=tc%avail; }
+            ps.push(seekTo(gvid, R.calIn+tc));
+          }
           else if(R.CONNECT>0){ gdz.style.display='block'; }
         }
         if(window._diving && !insideMode){
@@ -2818,7 +2824,13 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
                gvid.pause(); gvid.currentTime=ci2||0.001; }catch(e){}
           setTimeout(function(){ showtime(calIdx, null); }, 400);
         }, 900); }
+      var _cloop=qs.get('calloop')==='1';
       gvid.loop=false;
+      if(_cloop){
+        if(gvid._loopH) gvid.removeEventListener('timeupdate', gvid._loopH);
+        gvid._loopH=function(){ var d=gvid.duration; if(isFinite(d)&&d>0.3&&gvid.currentTime>=d-0.08){ try{ gvid.currentTime=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})(); gvid.play().catch(function(){}); }catch(e){} } };
+        gvid.addEventListener('timeupdate', gvid._loopH);
+      } else if(gvid._loopH){ gvid.removeEventListener('timeupdate', gvid._loopH); gvid._loopH=null; }
       if(gvid._prevEndH) gvid.removeEventListener('ended', gvid._prevEndH);
       gvid._prevEndH=function h(){ gvid.removeEventListener('ended', h); gvid._prevEndH=null; fin(); };
       gvid.addEventListener('ended', gvid._prevEndH);

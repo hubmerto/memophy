@@ -73,6 +73,8 @@ button:disabled{opacity:.5;cursor:default;}
       <div class="row">
         start at <input id="start" type="number" min="0" step="0.1" style="width:80px"> s
         &nbsp;&nbsp; length <input id="len" type="number" min="0.5" step="0.1" style="width:80px"> s <span class="hint" id="lenhint"></span>
+        &nbsp;&nbsp; <button id="btnFull" style="padding:5px 10px;font-size:12px">&#127916; FULL VIDEO</button>
+        &nbsp; <label style="font:bold 12px Arial"><input type="checkbox" id="calloop"> loop caller</label>
         &nbsp;&nbsp; zoom moments <input id="zoom" type="text" style="width:150px" placeholder="e.g. 3-6, 10-14"> <span class="hint">in-out pairs in seconds; a single number stays in until the end</span>
       </div>
     </div>
@@ -155,6 +157,15 @@ function init(){
   $('len').addEventListener('input',function(){ updateBand(); buildTiles(); });
   $('calin').addEventListener('input',function(){ updateLenDefault(); updateBand(); });
   $('start').addEventListener('input',function(){ updateBand(); [].forEach.call(document.querySelectorAll('.tile'),function(x){ x.classList.remove('on'); }); });
+  $('btnFull').onclick=function(){
+    var M=DUR['clips/'+$('clip').value]||0; if(!M) return;
+    $('start').value=0;
+    $('len').value=Math.round((M-0.6)*10)/10;
+    $('calloop').checked=true;               // the caller loops through the whole video
+    $('lenhint').textContent='(whole video)';
+    updateBand();
+    $('status').textContent='take = the whole of '+$('clip').value+' ('+fmt(M)+') with the caller looping';
+  };
   $('ctl').onclick=function(e){
     var r=$('ctl').getBoundingClientRect(); var f=(e.clientX-r.left)/r.width;
     var D=DUR['clips/'+$('caller').value]||0; var t=Math.round(f*D*10)/10;
@@ -175,7 +186,7 @@ function init(){
   $('btnRec_pshow').onclick=function(){ recordTake('pshow'); };
   function openTab(view){
     var sp=takeSpec(); sp.view=view;
-    var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:sp.caller,clip:sp.clip,start:sp.start,zoomat:sp.zoomAt==null?'':sp.zoomAt,calin:sp.calIn==null?'':sp.calIn,len:sp.len==null?'':sp.len,view:view});
+    var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:sp.caller,clip:sp.clip,start:sp.start,zoomat:sp.zoomAt==null?'':sp.zoomAt,calin:sp.calIn==null?'':sp.calIn,len:sp.len==null?'':sp.len,calloop:sp.calLoop?'1':'',view:view});
     window.open((API||'')+'/index.html?'+q.toString(),'_blank');
   }
   $('btnTab_room').onclick=function(){ openTab('room'); };
@@ -267,6 +278,7 @@ function takeSpec(){
     draft:$('draft').checked||undefined,
     start:parseFloat($('start').value)||0,
     calIn:calIn()||null,
+    calLoop:$('calloop').checked||undefined,
     len:(isFinite(L)&&L>0)?L:null,
     zoomAt:(function(){ var z=($('zoom').value||'').trim(); return z?z:null; })() };
 }
@@ -287,7 +299,7 @@ function previewTake(view){
   var idle=stage.querySelector('.idle'); if(idle) idle.style.display='none';
   var old=stage.querySelector('iframe'); if(old) old.remove();
   var f=document.createElement('iframe');
-  var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:sp.caller,clip:sp.clip,start:sp.start,zoomat:sp.zoomAt==null?'':sp.zoomAt,calin:sp.calIn==null?'':sp.calIn,len:sp.len==null?'':sp.len,view:view});
+  var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:sp.caller,clip:sp.clip,start:sp.start,zoomat:sp.zoomAt==null?'':sp.zoomAt,calin:sp.calIn==null?'':sp.calIn,len:sp.len==null?'':sp.len,calloop:sp.calLoop?'1':'',view:view});
   f.src=API+'/index.html?'+q.toString();
   f.allow='autoplay';
   stage.appendChild(f);
