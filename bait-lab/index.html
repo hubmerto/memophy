@@ -143,6 +143,8 @@
   .crtv [data-slot].d-hidden { display:none !important; }
   /* empty slots stay present & selectable (never auto-vanish); give them a click target in edit */
   #previewWrap .crtv [data-slot]:empty { min-width:24px; min-height:16px; outline:1px dotted rgba(255,136,0,.35); }
+  /* shadow/glow escapes the icon slot; only the ad edge clips (slideup keeps its slot clipping) */
+  .crtv .pic { overflow:visible; }
   /* elements move freely but stay clipped to the ad frame (.crtv is overflow:hidden) */
   .crtv .hl { max-height:none; }
   .crtv .hl, .crtv .sub, .crtv .cta { white-space:normal; height:auto; }
