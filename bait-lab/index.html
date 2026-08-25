@@ -58,7 +58,7 @@
   }
   .ad.frame2 .cta[data-blink] { visibility:hidden; }
   .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
-  .ad img { display:block; object-fit:contain; }
+  .ad img { display:block; object-fit:fill; }
   .ad .pic { position:relative; }
   .ad.fx-glow .pic img { filter:drop-shadow(0 0 6px var(--grad-b,#f0f)) drop-shadow(0 0 16px var(--grad-b,#f0f)) drop-shadow(0 0 30px var(--grad-b,#f0f)) saturate(1.2); }
   .ad .sparkles { position:absolute; inset:0; pointer-events:none; background-size:100% 100%; }
@@ -383,9 +383,8 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       d.style.webkitMaskSize = d.style.maskSize = '25% 100%';
       d.style.webkitMaskRepeat = d.style.maskRepeat = 'repeat-x';
     } else {
-      d.style.webkitMaskSize = d.style.maskSize = 'contain';
+      d.style.webkitMaskSize = d.style.maskSize = '100% 100%';
       d.style.webkitMaskRepeat = d.style.maskRepeat = 'no-repeat';
-      d.style.webkitMaskPosition = d.style.maskPosition = 'center';
     }
   };
   if (fx.includes('glitter')) {
