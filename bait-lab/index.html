@@ -317,7 +317,43 @@ const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
 
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const fill = s => s.replace(/\{([A-Z_]+)\}/g, (m,k) => BANKS[k] ? pick(BANKS[k]) : m);
-const roll = slot => fill(pick(COPY[slot]));
+const THEMES = [
+  { icons: ['bluepill','capsules','blister','boost','vial'],
+    headline: ['DOCTORS HATE THIS PILL','1 WEIRD PILL EXPERTS HATE','{N}% MORE STAMINA INSTANTLY','THIS PILL WON\'T STAY LEGAL','TAKE 1 BEFORE THE GYM'],
+    sub: ['results not typical','not approved by anyone','he won\'t tell if you won\'t','discretion guaranteed*'],
+    cta: ['CLAIM PRIZE','TRY FREE','GET THE PILL','TAP IN'],
+    badge: ['AD','SPONSORED','NEW','18+'] },
+  { icons: ['gummies','gummybear','lollipop','cherries','peach'],
+    headline: ['SUGAR DADDIES NEAR YOU','SWEETEST {TYPE}S IN TOWN','TASTE THIS BEFORE IT\'S GONE','FREE SAMPLES TONIGHT'],
+    sub: ['first taste is free','he is {DIST} miles away','looking rn','ur type is online'],
+    cta: ['TASTE NOW','TAP IN','SEE MORE','DM HIM'],
+    badge: ['HOT','NEW','LIVE','ONLINE RN'] },
+  { icons: ['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','padlock','rose','towel'],
+    headline: ['NO ONE HAS TO KNOW','MASC4MASC ONLY','STR8 BUT CURIOUS?','HE KEEPS THE KEY','YOUR {RELATION} ALREADY KNOWS'],
+    sub: ['discretion guaranteed*','no pic no reply','can host tonight','he won\'t tell if you won\'t'],
+    cta: ['YES IM DL','UNLOCK CHAT','MEET TRADE >>','CRUISE NOW'],
+    badge: ['DISCREET','NSA','18+','DL'] },
+  { icons: ['girl1','girl2','girl3','girl4','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','slave','gummygirl'],
+    headline: ['{N} DL {TYPE}S IN YOUR AREA','TRADE IS WAITING','HE\'S DL. HE\'S {DIST} MILES AWAY.','T4T CUTIES ONLINE RN','MEET {TYPE}S NEAR YOU TONIGHT'],
+    sub: ['sent you {N} pics','he is {DIST} miles away','looking rn','ur profile got ({N}) taps'],
+    cta: ['MEET TRADE >>','DM HIM','SEE PICS','IM READY'],
+    badge: ['ONLINE RN','M4M','DL','LIVE'] },
+  { icons: ['logo','shield','pfiercer','hazard','pendant'],
+    headline: ['YOUR {RELATION} IS ON HERE','THIS APP WON\'T STAY UP','DADDIES HATE THIS APP','WARNING: TOO EFFECTIVE'],
+    sub: ['as seen on the internet','100% discreet (it is not)','no sign up. no shame. some shame.'],
+    cta: ['TAP IN','WATCH FREE','CRUISE NOW','UNLOCK CHAT'],
+    badge: ['18+','AD','SPONSORED','NEW'] },
+];
+function themeFor(assetId) {
+  const n = String(assetId || '').replace('builtin-', '');
+  return THEMES.find(t => t.icons.includes(n)) || null;
+}
+function themedRoll(slot, assetId) {
+  const th = themeFor(assetId);
+  const pool = (th && th[slot] && th[slot].length) ? th[slot] : COPY[slot];
+  return fill(pick(pool));
+}
+const roll = slot => themedRoll(slot, selectedAsset?.id);
 
 /* ============ library (IndexedDB) ============ */
 let db, assets = [], selectedAsset = null, selectedIds = [];
@@ -771,10 +807,27 @@ function enableEditing(ad, template) {
       n.focus();
       const range = document.createRange(); range.selectNodeContents(n);
       const selx = window.getSelection(); selx.removeAllRanges(); selx.addRange(range);
+      // typing applies DIRECTLY: persist + mirror live on every keystroke (no re-render under the caret)
+      n.oninput = () => {
+        const v = n.innerText.replace(/\n+$/, '');
+        const field = document.getElementById('c-' + key);
+        if (field) field.value = v;
+        if (window.ACTIVE === template || (window.ACTIVE && window.ACTIVE !== template)) {
+          const P = ((LAYOUT[template] ??= {}).props ??= {});
+          (P.copy ??= { ...effCopy(template) })[key] = v;
+        } else {
+          for (const t2 of Object.keys(TPL)) { const P = LAYOUT[t2]?.props; if (P?.copy) P.copy[key] = v; }
+          // live-mirror into the other ads' same slot
+          document.querySelectorAll('#previewWrap .crtv').forEach(a => {
+            if (a.contains(n)) return;
+            a.querySelectorAll(`[data-slot="${key}"]`).forEach(m => { m.textContent = v; });
+          });
+        }
+        saveLayout();
+      };
       n.onblur = () => {
         n.contentEditable = 'false';
-        const field = document.getElementById('c-' + key);
-        if (field) field.value = n.innerText.replace(/\n+$/, '');
+        n.oninput = null;
         renderPreview();
       };
     };
@@ -785,10 +838,17 @@ function enableEditing(ad, template) {
       n.setPointerCapture(e.pointerId);
       const o = (L.off[key] ??= { dx: 0, dy: 0, s: 1 });
       const sx = e.clientX - o.dx, sy = e.clientY - o.dy;
+      const startDx = o.dx, startDy = o.dy;
       let moved = false;
       const move = ev => {
-        o.dx = Math.round(ev.clientX - sx);
-        o.dy = Math.round(ev.clientY - sy);
+        let ndx = Math.round(ev.clientX - sx);
+        let ndy = Math.round(ev.clientY - sy);
+        if (ev.shiftKey) {
+          // shift-drag locks to the dominant axis
+          if (Math.abs(ndx - startDx) >= Math.abs(ndy - startDy)) ndy = startDy;
+          else ndx = startDx;
+        }
+        o.dx = ndx; o.dy = ndy;
         moved = true;
         n.style.transform = `translate(${o.dx}px, ${o.dy}px) scale(${o.s})`;
         n.style.transformOrigin = 'center';
@@ -841,11 +901,16 @@ function buildOptions() {
   const template = window.ACTIVE || sel('template');
   const pool = assets.length ? assets : [{ dataUrl: PLACEHOLDER, name: 'placeholder' }];
   const skinNames = Object.keys(SKINS);
+  const rnd12 = a => a[Math.floor(Math.random() * a.length)];
   for (let i = 0; i < 12; i++) {
-    const skin = skinNames[i % skinNames.length];
-    const img = pool[i % pool.length];
-    const copy = { headline: roll('headline'), sub: roll('sub'), cta: roll('cta'), badge: roll('badge') };
-    const ad = makeAd(template, skin, copy, img.dataUrl, effFx(template), effMotion(template));
+    const skin = rnd12(skinNames);
+    const img = rnd12(pool);
+    const copy = { headline: themedRoll('headline', img.id), sub: themedRoll('sub', img.id),
+                   cta: themedRoll('cta', img.id), badge: themedRoll('badge', img.id) };
+    const fx12 = ['glow','sparkle','glitter'].filter(() => Math.random() < 0.35).join(' ') || 'none';
+    const mo12 = rnd12(['static','static','appear','twitch','slideup']);
+    const ad = makeAd(template, skin, copy, img.dataUrl, fx12, mo12);
+    ad._fx12 = fx12; ad._mo12 = mo12;
     const card = document.createElement('div');
     card.className = 'opt';
     const box = document.createElement('div');
@@ -862,7 +927,7 @@ function buildOptions() {
     meta.innerHTML = `<span>${skin}</span>`;
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
-    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: effFx(template), motion: effMotion(template) }, `${template}-${skin}-${i+1}`);
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: ad._fx12, motion: ad._mo12 }, `${template}-${skin}-${i+1}`);
     meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
@@ -1393,8 +1458,8 @@ function init() {
     const rnd = a => a[Math.floor(Math.random() * a.length)];
     document.getElementById('template').value = rnd(Object.keys(TPL));
     document.getElementById('skin').value = rnd(Object.keys(SKINS));
-    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
     if (assets.length) { selectedAsset = rnd(assets); selectedIds = [selectedAsset.id]; }
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = themedRoll(k, selectedAsset?.id);
     document.getElementById('fx-glow').checked = Math.random() < 0.5;
     document.getElementById('fx-sparkle').checked = Math.random() < 0.5;
     document.getElementById('fx-glitter').checked = Math.random() < 0.35;
