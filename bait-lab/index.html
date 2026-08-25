@@ -408,6 +408,43 @@ document.addEventListener('keydown', e => {
     saveLayout(); renderPreview();
     return;
   }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (String(window.getSelection()).length) return; // let native text copy work
+    if (window.SEL) {
+      const { t, k } = window.SEL;
+      window.CLIP = { kind: 'slot', srcSlot: k,
+        off: JSON.parse(JSON.stringify(LAYOUT[t]?.off?.[k] ?? null)),
+        text: JSON.parse(JSON.stringify(LAYOUT[t]?.text?.[k] ?? null)),
+        content: k !== 'pic' ? effCopy(t)[k] : null };
+      e.preventDefault();
+    } else if (window.ACTIVE) {
+      window.CLIP = { kind: 'crtv', data: JSON.parse(JSON.stringify(LAYOUT[window.ACTIVE] ?? {})) };
+      e.preventDefault();
+    }
+    return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v' && window.CLIP) {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (window.CLIP.kind === 'slot' && window.SEL) {
+      e.preventDefault();
+      snapshotLayout();
+      const { t, k } = window.SEL;
+      const L = (LAYOUT[t] ??= {});
+      if (window.CLIP.off) (L.off ??= {})[k] = JSON.parse(JSON.stringify(window.CLIP.off));
+      if (window.CLIP.text) (L.text ??= {})[k] = JSON.parse(JSON.stringify(window.CLIP.text));
+      if (window.CLIP.content != null && k !== 'pic') {
+        ((L.props ??= {}).copy ??= { ...effCopy(t) })[k] = window.CLIP.content;
+      }
+      saveLayout(); renderPreview();
+    } else if (window.CLIP.kind === 'crtv' && window.ACTIVE) {
+      e.preventDefault();
+      snapshotLayout();
+      LAYOUT[window.ACTIVE] = JSON.parse(JSON.stringify(window.CLIP.data));
+      saveLayout(); syncControls(); renderPreview();
+    }
+    return;
+  }
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     e.preventDefault();
