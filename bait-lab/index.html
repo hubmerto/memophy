@@ -197,6 +197,7 @@
       <option value="diamond">diamond plate</option>
       <option value="holo">holographic</option>
       <option value="crystal">crystal</option>
+      <option value="gummy">sugary gummy</option>
       <option value="camo">camo</option>
     </select>
     <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
@@ -554,7 +555,15 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       d.className = 'tint';
       const u = `url("${imgUrl || PLACEHOLDER}")`;
       d.style.webkitMaskImage = d.style.maskImage = u;
-      if (pat && CSS_PATTERNS[pat]) {
+      if (pat === 'gummy') {
+        d.style.background = [
+          'radial-gradient(circle at 32% 24%, rgba(255,255,255,.65), rgba(255,255,255,0) 42%)',
+          'repeating-radial-gradient(circle at 3px 3px, rgba(255,255,255,.7) 0 .8px, rgba(255,255,255,0) .8px 4px)',
+          'repeating-radial-gradient(circle at 1px 5px, rgba(255,255,255,.45) 0 .7px, rgba(255,255,255,0) .7px 5px)',
+          `linear-gradient(155deg, ${col} 0%, ${col} 55%, rgba(0,0,0,.35) 100%)`
+        ].join(',');
+        d.style.backgroundSize = '100% 100%, 5px 5px, 6px 6px, 100% 100%';
+      } else if (pat && CSS_PATTERNS[pat]) {
         d.style.background = CSS_PATTERNS[pat];
         if (pat === 'diamond') d.style.backgroundSize = '18px 18px';
       } else if (pat) {
