@@ -326,13 +326,23 @@ function recordTake(view){
     .catch(function(){ $('status').textContent='local render engine not running \u2014 start it on the Mac:  node recorder/server.js'; btnRec.disabled=false; });
 }
 
+function recWhen(t){
+  var d=new Date(t), now=new Date();
+  var hm=('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
+  var sameDay=d.toDateString()===now.toDateString();
+  var yd=new Date(now); yd.setDate(now.getDate()-1);
+  if(sameDay) return 'today '+hm;
+  if(d.toDateString()===yd.toDateString()) return 'yesterday '+hm;
+  return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' '+hm;
+}
 function refreshRecs(){
   fetch(API+'/api/list').then(r=>r.json()).then(function(j){
     var el=$('recs'); el.innerHTML='';
-    (j.files||[]).forEach(function(f){
+    (j.files||[]).forEach(function(entry){
+      var f=entry.path||entry, when=entry.t?recWhen(entry.t):'';
       var d=document.createElement('div'); d.className='item';
       var nm=f.split('/').pop();
-      d.innerHTML='<video controls preload="metadata" src="'+API+'/'+f+'"></video><div class="nm">'+nm+'</div><a class="dl" href="'+API+'/'+f+'?dl=1" download target="_blank" rel="noopener">&#11015; download</a><button class="del" title="delete">&#10005;</button>';
+      d.innerHTML='<video controls preload="metadata" src="'+API+'/'+f+'"></video><div class="nm"><b style="color:#b0006e">'+when+'</b><br>'+nm+'</div><a class="dl" href="'+API+'/'+f+'?dl=1" download target="_blank" rel="noopener">&#11015; download</a><button class="del" title="delete">&#10005;</button>';
       d.querySelector('.del').onclick=function(){ fetch(API+'/api/delete/'+encodeURIComponent(nm),{method:'POST'}).then(refreshRecs); };
       el.appendChild(d);
     });
