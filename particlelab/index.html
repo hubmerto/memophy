@@ -60,7 +60,6 @@
 
   <div class="btns presets" id="presets"></div>
   <div class="btns"><button id="bFront" style="flex:1;padding:8px">◎ FRONT VIEW</button><button id="bExport" class="acc" style="flex:2;padding:8px">⬇ EXPORT MP4 (one loop)</button></div>
-  <div id="g_strength"></div>
   <div class="status" id="expStatus"></div>
 
   <details open><summary>TRANSITION</summary>
@@ -177,7 +176,7 @@ const P={
   // camera
   fov:40, clickZoom:true, zoomAmt:1.8, zoomSpeed:0.05, zoomBack:0.05, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
   // render
-  strength:1.0, trans:1.0, transAuto:true, transStart:1.0, transDur:2.5, transGlitch:0.8,
+  trans:1.0, transAuto:true, transStart:1.0, transDur:2.5, transGlitch:0.8,
   bg:'#000000', bloom:0.25, bloomThr:0.55, bloomRad:0.4, ratio:'source', recScale:1, recLoop:true,
 };
 const GLYPH_SETS={
@@ -216,8 +215,6 @@ function text(g,key,label,onchange){const r=row(g,label);const i=document.create
 function fmt(x){return typeof x==='number'?(Number.isInteger(x)?x:(+x).toFixed(2)):x;}
 
 const gD=$('#g_depth'),gP=$('#g_part'),gS=$('#g_style'),gF=$('#g_fx'),gC=$('#g_cam'),gR=$('#g_render');
-const gStr=$('#g_strength');
-slider(gStr,'strength','FX STRENGTH',0,1,0.005);
 const gT=$('#g_trans');
 check(gT,'transAuto','auto intro (video clock)');
 slider(gT,'transStart','particles in at s',0,10,0.1);
@@ -771,12 +768,12 @@ let flyT=-1;
 $('#bFly').onclick=()=>{ flyT=0; P.orbit=false; ctls.orbit.set(false); };
 const shakeV=new THREE.Vector3();
 function applyShake(t){
-  const E=Math.sin(Math.PI*Math.min(1,Math.max(0,P.trans)))*P.transGlitch*P.strength;
+  const E=Math.sin(Math.PI*Math.min(1,Math.max(0,P.trans)))*P.transGlitch;
   if(E>0.01){ const a=E*0.012; shakeV.set((Math.random()-0.5)*a,(Math.random()-0.5)*a,0); camera.position.add(shakeV); }
   if(P.shake<=0)return;
   const ph=(t*P.burstRate)%1; const sm=Math.min(1,ph/0.12); const pulse=(sm*sm*(3-2*sm))*Math.exp(-Math.max(ph-0.12,0)*3.5)*P.burst;
   const ep=Math.floor(t*P.glitchRate); const hh=(x,y)=>{const v=Math.sin(x*12.9898+y*78.233)*43758.5453;return v-Math.floor(v);}; const evt=hh(ep,42)>1-P.glitchChance?1:0; const gk=evt*(hh(ep,1)>0.5?P.glitch:P.glitch*0.3);
-  const amp=P.trans*P.strength*P.shake*0.02*(pulse*1.5+gk+evt*P.uvGlitch*0.3);
+  const amp=P.trans*P.shake*0.02*(pulse*1.5+gk+evt*P.uvGlitch*0.3);
   shakeV.set((Math.random()-0.5)*amp,(Math.random()-0.5)*amp,0);
   camera.position.add(shakeV);
 }
@@ -865,8 +862,8 @@ $('#bPng').onclick=()=>{ renderFrame(0); const a=document.createElement('a'); a.
 /* ───────────── main loop ───────────── */
 const clock=new THREE.Clock(); let fps=0,fc=0,ft=performance.now(); let thumbT=0;
 function syncUniforms(t){
-  const T=P.trans*P.strength;
-  const E=Math.sin(Math.PI*Math.min(1,Math.max(0,P.trans)))*P.transGlitch*P.strength; // spikes mid-transition, 0 at both ends
+  const T=P.trans;
+  const E=Math.sin(Math.PI*Math.min(1,Math.max(0,T)))*P.transGlitch; // spikes mid-transition, 0 at both ends
   U.uGlobal.value=T; if(points)points.visible=T>0.002;
   U.uTime.value=t; U.uDepthScale.value=P.depthScale*T; U.uDepthCurve.value=P.depthCurve; U.uNear.value=P.depthNear; U.uFar.value=P.depthFar; U.uEdgePin.value=P.edgePin; U.uInvert.value=P.depthInvert?1:0;
   U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=1+(P.contrast-1)*T; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw*T; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
@@ -883,8 +880,8 @@ function renderFrame(dt){
   const t=clock.getElapsedTime();
   tickTransition(t); autoCam(t,dt); tickPressZoom(); controls.update(); applyShake(t); tickAudio();
   syncUniforms(t);
-  if(P.audio&&curNode){ bloomPass.strength=P.bloom*P.trans*P.strength*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06*P.trans*P.strength; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
-  if(P.bloom*P.trans*P.strength>0.001)composer.render(); else renderer.render(scene,camera);
+  if(P.audio&&curNode){ bloomPass.strength=P.bloom*P.trans*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06*P.trans; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
+  if(P.bloom*P.trans>0.001)composer.render(); else renderer.render(scene,camera);
 }
 function loop(){
   requestAnimationFrame(loop);
