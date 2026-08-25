@@ -214,20 +214,6 @@
       <button id="glow-auto" style="width:auto;flex:none;padding:2px 8px;font-size:10px;margin:0;" title="use icon colors">auto</button>
     </div>
     <input type="range" id="glow-strength" min="0" max="100" value="55" style="width:100%;">
-    <div class="row" style="align-items:center;margin-top:6px;">
-      <label class="fxopt" style="margin:0;flex:1;"><input type="checkbox" id="fx-overlay"> color overlay (recolor icon)</label>
-      <input type="color" id="overlay-color" value="#ff2ec4" style="height:26px;width:40px;flex:none;">
-    </div>
-    <select id="overlay-pattern">
-      <option value="">solid color</option>
-      <option value="chrome">chrome</option>
-      <option value="gold">gold</option>
-      <option value="diamond">diamond plate</option>
-      <option value="holo">holographic</option>
-      <option value="crystal">crystal</option>
-      <option value="gummy">sugary gummy</option>
-      <option value="camo">camo</option>
-    </select>
     <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
     <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
 
@@ -324,14 +310,14 @@ const TPL = {
   'show-mac': { w:360, h:200, mac:true, html:'<div class="macbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mactitle" data-slot="badge"></span></div><div class="macbody"><div class="pic macicon"><img data-slot="image"></div><div class="mactext"><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div></div></div><div class="macbtns"><span class="macbtn ghost">Ignore</span><span class="cta macbtn" data-slot="cta" data-blink></span></div>' },
 };
 const SCENARIOS = {
-  sellPill:     { label:'Sell a pill',        weight:3, skins:['alert','midnight','fax'],      fx:['chrome','gold','shadow'],     motion:['static','rise'] },
+  sellPill:     { label:'Sell a pill',        weight:3, skins:['alert','midnight','fax'],      fx:['shadow'],     motion:['static','rise'] },
   meetTrade:    { label:'Meet trade',         weight:5, skins:['magenta','midnight','reply'],  fx:['shadow','sparkle','glitter'], motion:['swap','twitch','lineup'] },
-  t4tCuties:    { label:'T4T cuties',          weight:4, skins:['magenta','reply'],             fx:['gummy','sparkle','shadow'],   motion:['rise','lineup'] },
-  camLive:      { label:'Cam is live',         weight:4, skins:['magenta','midnight','aqua'],   fx:['glitter','shadow','overlay'], motion:['twitch','swap'] },
+  t4tCuties:    { label:'T4T cuties',          weight:4, skins:['magenta','reply'],             fx:['sparkle','shadow'],   motion:['rise','lineup'] },
+  camLive:      { label:'Cam is live',         weight:4, skins:['magenta','midnight','aqua'],   fx:['glitter','shadow'], motion:['twitch','swap'] },
   fakeNotif:    { label:'Fake notification',   weight:3, skins:['reply','aqua'],                fx:['shadow'],                     motion:['rise','static'] },
   scareWarning: { label:'Scare warning',       weight:3, skins:['alert','fax','macos'],         fx:['shadow'],                     motion:['twitch','static'] },
   macDialog:    { label:'macOS dialog',        weight:2, skins:['macos','aqua'],                fx:['none'],                       motion:['static'] },
-  prize:        { label:'You won a prize',     weight:3, skins:['magenta','alert','aqua'],      fx:['sparkle','gold','glitter'],   motion:['swap','twitch'] },
+  prize:        { label:'You won a prize',     weight:3, skins:['magenta','alert','aqua'],      fx:['sparkle','glitter'],   motion:['swap','twitch'] },
 };
 
 const COPY = {
@@ -438,8 +424,6 @@ function fxSpec(fxName) {
   if (fxName === 'shadow')  return { keys:['glow'] };
   if (fxName === 'sparkle') return { keys:['sparkle'] };
   if (fxName === 'glitter') return { keys:['glitter'] };
-  if (fxName === 'overlay') return { keys:['overlay'] };
-  if (['chrome','gold','gummy','diamond','holo','crystal','camo'].includes(fxName)) return { keys:['overlay'], pattern:fxName };
   return { keys:[] };
 }
 
@@ -767,7 +751,7 @@ function applyLayout(el, template) {
   }
 }
 
-const FX_KEYS = ['glow','sparkle','glitter','overlay'];
+const FX_KEYS = ['glow','sparkle','glitter'];
 const BG_GRADIENTS = {
   'grad-pink':  'linear-gradient(180deg,#ff3fa4,#b0106a)',
   'grad-red':   'linear-gradient(180deg,#ff5560,#e0101a 55%,#7a0000)',
@@ -1408,7 +1392,7 @@ async function loadCamo() {
   if (cam) { dropAsset('builtin-camo'); assets = assets.filter(a => a.id !== 'builtin-camo'); }
 }
 async function loadBuiltins() {
-  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','hazard','pfiercer','gummygirl','slave','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop'];
+  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','hazard','pfiercer','gummygirl','slave','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop','cart','giftbox','spinwheel','padlockopen','shieldcheck','scangear','ringlight','tripod','token','heartspam','webcam','bubble','notifdot','battery','cursor','parcel','priceburst','pumpbottle'];
   for (const n of names) {
     const id = 'builtin-' + n;
     if (DELETED.includes(id)) continue;
@@ -1491,7 +1475,6 @@ function init() {
     fx: currentFx(),
     iconIds: [...selectedIds],
     glowColor: window.GLOW_COLOR, glowStrength: window.GLOW_STRENGTH,
-    overlayColor: window.OVERLAY_COLOR, overlayPattern: window.OVERLAY_PATTERN,
   });
   const applyState = st => {
     LAYOUT = JSON.parse(JSON.stringify(st.layout || {}));
@@ -1501,7 +1484,6 @@ function init() {
     FX_KEYS.forEach(k => document.getElementById('fx-' + k).checked = (st.fx || '').includes(k));
     selectedIds = st.iconIds || []; selectedAsset = selectedAssets()[0] ?? null;
     window.GLOW_COLOR = st.glowColor ?? null; window.GLOW_STRENGTH = st.glowStrength ?? 55;
-    window.OVERLAY_COLOR = st.overlayColor ?? '#ff2ec4'; window.OVERLAY_PATTERN = st.overlayPattern ?? '';
     window.ACTIVE = null;
     saveLayout(); drawLib(); syncControls(); renderPreview();
   };
@@ -1592,25 +1574,6 @@ function init() {
     localStorage.setItem('mph-glow-strength', window.GLOW_STRENGTH);
     if (window.ACTIVE) { (LAYOUT[window.ACTIVE] ??= {}).glowStrength = window.GLOW_STRENGTH; saveLayout(); }
     renderPreview();
-  };
-  window.OVERLAY_COLOR = localStorage.getItem('mph-overlay-color') || '#ff2ec4';
-  window.OVERLAY_PATTERN = localStorage.getItem('mph-overlay-pattern') || '';
-  tp('overlay-color').value = window.OVERLAY_COLOR;
-  tp('overlay-pattern').value = window.OVERLAY_PATTERN;
-  tp('overlay-color').oninput = () => {
-    window.OVERLAY_COLOR = tp('overlay-color').value; localStorage.setItem('mph-overlay-color', window.OVERLAY_COLOR);
-    if (window.ACTIVE) { ((LAYOUT[window.ACTIVE] ??= {}).overlay ??= {}).color = window.OVERLAY_COLOR; saveLayout(); }
-    renderPreview();
-  };
-  tp('overlay-pattern').onchange = () => {
-    window.OVERLAY_PATTERN = tp('overlay-pattern').value; localStorage.setItem('mph-overlay-pattern', window.OVERLAY_PATTERN);
-    if (window.ACTIVE) { ((LAYOUT[window.ACTIVE] ??= {}).overlay ??= {}).pattern = window.OVERLAY_PATTERN; saveLayout(); }
-    renderPreview();
-  };
-  tp('glow-auto').onclick = () => {
-    window.GLOW_COLOR = null; localStorage.removeItem('mph-glow-color');
-    if (window.ACTIVE && LAYOUT[window.ACTIVE]) delete LAYOUT[window.ACTIVE].glowColor;
-    saveLayout(); renderPreview();
   };
   tp('mirror-icon').onchange = () => {
     snapshotLayout();
@@ -1779,7 +1742,6 @@ function init() {
     if (r.iconIds && r.iconIds.length) { selectedIds = [...r.iconIds]; selectedAsset = selectedAssets()[0] || selectedAsset; }
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = r.copy[k];
     FX_KEYS.forEach(k => { const el = document.getElementById('fx-' + k); if (el) el.checked = r.fx.includes(k); });
-    if (r.overlayPattern) { window.OVERLAY_PATTERN = r.overlayPattern; const op = document.getElementById('overlay-pattern'); if (op) op.value = r.overlayPattern; }
     document.getElementById('motion').value = r.motion;
     // apply to every ad (ALL mode) so the whole set reads as one scenario
     window.ACTIVE = null;
