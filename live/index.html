@@ -2485,11 +2485,24 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
   });
   if(document.readyState!=='loading') dlInit(); else document.addEventListener('DOMContentLoaded',dlInit);
 
+  // zoom timeline parser: "3-6, 10-14" = in@3 out@6, in@10 out@14; a bare "3" stays in until the end
+  function parseZoomSeq(str){
+    if(!str) return [];
+    return String(str).split(',').map(function(tok){
+      var mm=/^\s*([\d.]+)\s*(?:-\s*([\d.]+))?\s*$/.exec(tok);
+      if(!mm) return null;
+      var tin=parseFloat(mm[1]); if(!isFinite(tin)||tin<0) return null;
+      var tout=mm[2]!=null?parseFloat(mm[2]):null;
+      if(tout!=null && (!isFinite(tout)||tout<=tin)) tout=null;
+      return {tin:tin, tout:tout};
+    }).filter(Boolean).sort(function(a,b){return a.tin-b.tin;});
+  }
+
   // ---- offline RENDER mode: stepped frame-by-frame, driven over CDP (no screen recording) ----
   if(qs.get('renderjob')!=null){
     window._recjobMode=true;   // no caller rotation
     var R={ caller:qs.get('caller'), clip:qs.get('clip'), start:parseFloat(qs.get('start'))||0,
-            zoomAt:(function(){var z=parseFloat(qs.get('zoomat'));return isFinite(z)&&z>=0?z:null;})(),
+            zoomSeq:parseZoomSeq(qs.get('zoomat')),
             len:(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})(),
             calIn:(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})(),
             view:qs.get('view')||'room',
@@ -2584,17 +2597,47 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
             for(var q2=0;q2<els.length;q2++) els[q2].style.opacity=fop;
           }); }catch(e){}
         }
-        if(R.zoomAt!=null && t>=R.CONNECT+R.zoomAt && !rr.committed){
-          try{
-            window._overHer=true; window._autoDive=true; pressOn=false; document.body.classList.add('diving');
-            var per=Math.max(1,Math.round(60/R.fps));   // live ease runs at ~60fps; step it dt-normalized
-            for(var k=0;k<per;k++){
-              if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
-              loopStep();
-              if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
-              if(insideMode){ rr.committed=true; break; }
-            }
-          }catch(e){}
+        var ev=(R.zoomSeq&&R.zoomSeq[rr.zi||0])||null;
+        if(ev){
+          var tin=R.CONNECT+ev.tin, tout=(ev.tout!=null)?R.CONNECT+ev.tout:null;
+          var per=Math.max(1,Math.round(60/R.fps));   // live ease runs at ~60fps; step it dt-normalized
+          if(!rr.committed && t>=tin && (tout==null || t<tout)){
+            try{
+              window._overHer=true; window._autoDive=true; pressOn=false; document.body.classList.add('diving');
+              for(var k=0;k<per;k++){
+                if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+                loopStep();
+                if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+                if(insideMode){ rr.committed=true; break; }
+              }
+            }catch(e){}
+          } else if(tout!=null && t>=tout && (rr.committed || window._autoDive)){
+            try{
+              if(!rr.reversing){
+                rr.reversing=true;
+                if(insideMode) exitInside();               // restores the UI at full zoom, ready to ease out
+                else { window._autoDive=false; document.body.classList.remove('diving'); }
+                window._overHer=false;
+                if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+                rr.outT0=t;
+              }
+              for(var k2=0;k2<per;k2++){
+                if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+                if(zoomP>0.004) loopStep(); 
+                if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
+              }
+              // overlays fade back in as the camera pulls out
+              var rop=Math.min(1,(t-rr.outT0)/1.2).toFixed(3);
+              ['hearts','wmark','livebadge','tiptotal'].forEach(function(cl){
+                var els=document.getElementsByClassName(cl);
+                for(var q3=0;q3<els.length;q3++) els[q3].style.opacity=rop;
+              });
+              if(zoomP<=0.004){
+                zoomP=0; applyZoom(0);
+                rr.zi=(rr.zi||0)+1; rr.committed=false; rr.reversing=false; rr.diveT0=null;
+              }
+            }catch(e){}
+          }
         }
         try{ if(window.__advanceVirtual) __advanceVirtual(1000/R.fps); }catch(e){}
         try{ if(window.__cssAnimPass) __cssAnimPass(t); }catch(e){}
@@ -2610,7 +2653,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
   if(!jobId && !jobPrev) return;
   window._recjobMode=true;
   var jobCaller=qs.get('caller'), jobClip=qs.get('clip'), jobStart=parseFloat(qs.get('start'))||0;
-  var jobZoom=(function(){var z=parseFloat(qs.get('zoomat')); return isFinite(z)&&z>=0?z:null;})();
+  var jobZoomSeq=parseZoomSeq(qs.get('zoomat'));
   document.title='REC '+jobId;
 
   function whenLoaded(cb){ if(typeof clips!=='undefined'&&clips.length) cb(); else setTimeout(function(){whenLoaded(cb);},150); }
@@ -2777,11 +2820,17 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
       var _plen=(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})();
       var _ciT=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
       probe('clips/'+jobCaller, function(D){ var run=_plen||(D>0?Math.max(0.5,D-_ciT):60); setTimeout(fin, run*1000+600); });
-      if(jobZoom!=null){
+      jobZoomSeq.forEach(function(ev){
         setTimeout(function(){
           try{ window._overHer=true; window._autoDive=true; pressOn=false; document.body.classList.add('diving'); startLoop(); }catch(e){}
-        }, jobZoom*1000);
-      }
+        }, ev.tin*1000);
+        if(ev.tout!=null) setTimeout(function(){
+          try{
+            if(insideMode) exitInside();                      // live reverse glide back to the UI
+            else { window._autoDive=false; window._overHer=false; document.body.classList.remove('diving'); }
+          }catch(e){}
+        }, ev.tout*1000);
+      });
       try{ if(window.parent!==window) window.parent.postMessage({memphyTake:'running'},'*'); }catch(e){}
     }, 200);
   }

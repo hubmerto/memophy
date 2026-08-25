@@ -73,7 +73,7 @@ button:disabled{opacity:.5;cursor:default;}
       <div class="row">
         start at <input id="start" type="number" min="0" step="0.1" style="width:80px"> s
         &nbsp;&nbsp; length <input id="len" type="number" min="0.5" step="0.1" style="width:80px"> s <span class="hint" id="lenhint"></span>
-        &nbsp;&nbsp; zoom-in transition at <input id="zoom" type="number" min="0" step="0.1" style="width:80px" placeholder="never"> s <span class="hint">(seconds into the take)</span>
+        &nbsp;&nbsp; zoom moments <input id="zoom" type="text" style="width:150px" placeholder="e.g. 3-6, 10-14"> <span class="hint">in-out pairs in seconds; a single number stays in until the end</span>
       </div>
     </div>
 
@@ -268,7 +268,7 @@ function takeSpec(){
     start:parseFloat($('start').value)||0,
     calIn:calIn()||null,
     len:(isFinite(L)&&L>0)?L:null,
-    zoomAt:(function(){ var z=parseFloat($('zoom').value); return isFinite(z)&&z>=0?z:null; })() };
+    zoomAt:(function(){ var z=($('zoom').value||'').trim(); return z?z:null; })() };
 }
 
 var prevState={room:'idle',pshow:'idle'};
