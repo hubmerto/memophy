@@ -1008,6 +1008,17 @@ function renderPreviewInner() {
     row.appendChild(ad);
     enableEditing(ad, template);
     fitText(ad);
+    // scale ads that are wider than the preview pane so the whole ad is visible
+    const paneW = (wrap.clientWidth || 900) - 24;
+    if (TPL[template].w > paneW) {
+      const sc = paneW / TPL[template].w;
+      ad.style.transformOrigin = '0 0';
+      ad.style.transform = `scale(${sc})`;
+      const holder = document.createElement('div');
+      holder.style.cssText = `height:${TPL[template].h * sc}px;width:${paneW}px;overflow:hidden;`;
+      row.insertBefore(holder, ad);
+      holder.appendChild(ad);
+    }
     ad.ondragover = e => e.preventDefault();
     ad.ondrop = e => {
       e.preventDefault();
