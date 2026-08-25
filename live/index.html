@@ -60,7 +60,10 @@ body.pshow #tabprivate{background:#fff;color:#ff3fa4;}
 /* private show ad units: leaderboard over her screen + 1:1 square under the chat */
 #adbanner,#adsquare{display:none;}
 body.pshow #adbanner{display:block;position:relative;margin:0 0 8px;border:none;background:#000;}
-#adbanner .bn{position:relative;height:62px;background:#000;overflow:hidden;display:flex;align-items:center;padding:0 16px;white-space:nowrap;}
+#adbanner .bn{position:relative;height:62px;background:#000;overflow:hidden;}
+#adbanner .bnslide{position:absolute;inset:0;display:none;}
+#adbanner .bnslide.on{display:block;}
+#adbanner .bnslide img{width:100%;height:100%;object-fit:cover;display:block;}
 #adbanner .btxt{display:flex;flex-direction:row;align-items:baseline;margin:0 auto;}
 #adbanner .t1{font:bold 24px Arial,Helvetica,sans-serif;color:#fff;animation:bntx .22s steps(1) infinite;}
 #adbanner .t2{font:bold 13px Arial;color:#fff;letter-spacing:2px;margin:0 10px;animation:bntx .22s steps(1) infinite;}
@@ -562,7 +565,7 @@ html,body{overflow:auto;}
 
     <!-- ===== left: the two screens ===== -->
     <div id="left">
-      <div id="adbanner"><span class="adlbl2">Advertisement</span><div class="bn"><!-- banner creatives go here: <img src="assets/YOUR-1852x124.gif" style="width:100%;height:100%;object-fit:cover;display:block"> --></div></div>
+      <div id="adbanner"><span class="adlbl2">Advertisement</span><div class="bn"><div class="bnslide on"><img src="assets/bn_jocks.gif" alt=""></div><div class="bnslide"><img src="assets/bn_str8.gif" alt=""></div></div></div>
       <div id="camrow">
         <div class="camcol" id="hcol">
           <div id="subject" class="box">
@@ -2155,6 +2158,7 @@ function togglePrivate(){
 }
 if(location.search.indexOf('private')>-1){ document.body.classList.add('pshow'); }   // direct link: /live/?private
 (function(){ var i=0; setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adsquare .adslide'); if(!sl.length) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // square ad rotates every 5s
+(function(){ var i=0; setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adbanner .bnslide'); if(sl.length<2) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // banner rotates every 5s
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
