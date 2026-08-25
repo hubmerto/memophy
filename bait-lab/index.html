@@ -14,7 +14,9 @@
   main { display:flex; gap:0; min-height:calc(100vh - 51px); }
   #side { width:300px; flex:none; border-right:1px solid var(--ui-line); padding:14px; overflow-y:auto; }
   #stage { flex:1; padding:20px; overflow:auto; }
-  h2 { font:bold 11px Arial; text-transform:uppercase; letter-spacing:1px; color:var(--ui-dim); margin:18px 0 8px; }
+  h2 { font:bold 11px Arial; text-transform:uppercase; letter-spacing:1px; color:var(--ui-dim); margin:18px 0 8px; cursor:pointer; user-select:none; }
+  h2::before { content:'▾ '; font-size:9px; }
+  h2.collapsed::before { content:'▸ '; }
   h2:first-child { margin-top:0; }
   select, input[type=text], textarea, button {
     width:100%; background:#222; color:var(--ui-txt); border:1px solid #3a3a3a;
@@ -734,7 +736,9 @@ function buildOptions() {
     const box = document.createElement('div');
     box.className = 'scalebox';
     const t = TPL[template];
-    const scale = Math.min(1, 340 / t.w);
+    const isBanner = template === 'show-banner';
+    const scale = isBanner ? Math.min(1, 900 / t.w) : Math.min(1, 340 / t.w);
+    if (isBanner) card.style.width = '100%';
     box.style.width = t.w * scale + 'px'; box.style.height = t.h * scale + 'px';
     ad.style.transformOrigin = '0 0'; ad.style.transform = `scale(${scale})`;
     box.appendChild(ad); card.appendChild(box);
@@ -997,6 +1001,22 @@ function init() {
     applyState(keep);
   };
   setTimeout(drawSaves, 100);
+  const COLL = JSON.parse(localStorage.getItem('mph-collapsed') || '{}');
+  document.querySelectorAll('#side h2').forEach((h, idx) => {
+    const key = 'sec' + idx;
+    const sibs = [];
+    let n = h.nextElementSibling;
+    while (n && n.tagName !== 'H2') { sibs.push(n); n = n.nextElementSibling; }
+    const apply = () => { sibs.forEach(el => el.style.display = h.classList.contains('collapsed') ? 'none' : ''); };
+    if (COLL[key]) h.classList.add('collapsed');
+    apply();
+    h.onclick = () => {
+      h.classList.toggle('collapsed');
+      COLL[key] = h.classList.contains('collapsed');
+      localStorage.setItem('mph-collapsed', JSON.stringify(COLL));
+      apply();
+    };
+  });
   window.syncControls = () => {
     const bar = document.getElementById('activeBar');
     bar.firstChild.textContent = 'Editing: ' + (window.ACTIVE ? window.ACTIVE.toUpperCase() : 'ALL ADS') + ' ';
