@@ -160,7 +160,7 @@ const stage=$('#stage'), canvas=$('#gl'), hud=$('#hud');
 /* ───────────── params ───────────── */
 const P={
   // depth
-  depthSize:378, depthDtype:'fp32', depthSmooth:0.25, depthScale:0.9, depthCurve:1.0, depthNear:0.0, depthFar:1.0, depthInvert:false, depthLive:true, edgePin:0.15,
+  depthSize:378, depthDtype:'fp32', depthSmooth:0.25, depthScale:0.9, depthCurve:1.0, depthNear:0.0, depthFar:1.0, depthInvert:false, depthLive:true, edgePin:0.15, depthBlur:3,
   // particles
   density:120, size:1.0, shape:'glyph', glyphs:'ascii', custom:'MEMPHY', gamma:1.0, contrast:1.0, detail:0.6, detailRad:1.5, bw:0.0, lift:0.2, lumaCull:0.0, brightness:1.0, blend:'normal', jitter:0, edgeFade:0.0,
   volume:4, volDepth:1.0, volFade:0.8, volJitter:0.35,
@@ -169,7 +169,7 @@ const P={
   // fx
   wave:0.0, waveFreq:12, waveSpeed:2.0, glitch:0.0, glitchRate:6, glitchChance:0.3, uvGlitch:0.0, block:0.0, chroma:0.0, dropout:0.0, scatter:0.0, scatterSpeed:0.6, explode:0.0, burst:0.0, burstRate:0.25, shake:0.0,
   // plate
-  plate:0.5, plateDepth:1, plateBlur:0.0, plateDark:0.25, plateTint:0.0, plateMono:0.0, plateScan:0.0, plateZ:0.0, plateShade:0.6, plateFog:0.45, plateEdge:0.35, plateDepthMix:0.3, plateCut:0.5, gapFill:0.7,
+  plate:0.5, plateDepth:1, plateBlur:0.0, plateDark:0.25, plateTint:0.0, plateMono:0.0, plateScan:0.0, plateZ:0.0, plateShade:0.6, plateFog:0.45, plateEdge:0.35, plateDepthMix:0.3, plateCut:0.25, gapFill:0.7,
   // audio
   audio:false, audioAmt:0.6, audioSrc:'video', audioVol:0.8,
   // camera
@@ -226,6 +226,7 @@ slider(gD,'depthScale','depth scale',0,3,0.01);
 slider(gD,'depthCurve','depth curve',0.3,3,0.01);
 slider(gD,'depthNear','cull near',0,1,0.01);
 slider(gD,'depthFar','cull far',0,1,0.01);
+slider(gD,'depthBlur','smooth depth (curve)',0,12,0.5);
 slider(gD,'edgePin','pin edges flat',0,0.4,0.01);
 check(gD,'depthInvert','invert');
 check(gD,'depthLive','live depth');
@@ -324,7 +325,7 @@ check(gR,'recLoop','stop after one loop');
 
 const presetsEl=$('#presets');
 for(const name of Object.keys(PRESETS)){const b=document.createElement('button');b.textContent=name;b.onclick=()=>applyPreset(name);presetsEl.appendChild(b);}
-const FX_RESET={plate:0.5,plateDepth:1,plateBlur:0,plateDark:0.25,plateTint:0,plateMono:0,plateScan:0,plateShade:0.6,plateFog:0.45,plateEdge:0.35,plateDepthMix:0.3,plateCut:0.5,gapFill:0.7,rain:0,holoScan:0,flicker:0,rgbSplit:0,sweep:0,echo:0,wave:0,glitch:0,uvGlitch:0,block:0,chroma:0,dropout:0,scatter:0,explode:0,burst:0,shake:0,jitter:0,tintAmt:0,lift:0.2,lumaCull:0,brightness:1,size:1,gamma:1};
+const FX_RESET={plate:0.5,plateDepth:1,plateBlur:0,plateDark:0.25,plateTint:0,plateMono:0,plateScan:0,plateShade:0.6,plateFog:0.45,plateEdge:0.35,plateDepthMix:0.3,plateCut:0.25,gapFill:0.7,rain:0,holoScan:0,flicker:0,rgbSplit:0,sweep:0,echo:0,wave:0,glitch:0,uvGlitch:0,block:0,chroma:0,dropout:0,scatter:0,explode:0,burst:0,shake:0,jitter:0,tintAmt:0,lift:0.2,lumaCull:0,brightness:1,size:1,gamma:1};
 function applyPreset(name){const p=Object.assign({},FX_RESET,PRESETS[name]);const hadEcho=P.echo>0;const needGrid=(p.density!==undefined&&p.density!==P.density)||((p.echo>0)!==hadEcho);const needAtlas=p.glyphs!==undefined&&p.glyphs!==P.glyphs;Object.assign(P,p);for(const k in p){ctls[k]&&ctls[k].set(P[k]);}scene.background.set(P.bg);applyBlend();if(needGrid)buildGrid();if(needAtlas)buildAtlas();}
 
 /* ───────────── three setup ───────────── */
@@ -656,9 +657,29 @@ function normalizeDepth(data,w,h,u8,smooth){
   else { const k=1-smooth; for(let i=0;i<data.length;i++){const v=(data[i]-dMin)/rng; dSmooth[i]+=(v-dSmooth[i])*k;} }
   for(let i=0;i<data.length;i++){let v=dSmooth[i]; v=v<0?0:v>1?1:v; u8[i]=(v*255)|0;}
 }
+let dBlurA=null,dBlurB=null;
+function boxBlur(src,dst,w,h,r){
+  // horizontal then vertical running-sum box blur, src->dst (dst may equal src after temp)
+  const tmp=dBlurB; const inv=1/(2*r+1);
+  for(let y=0;y<h;y++){ const o=y*w; let acc=0;
+    for(let x=-r;x<=r;x++)acc+=src[o+Math.min(w-1,Math.max(0,x))];
+    for(let x=0;x<w;x++){ tmp[o+x]=acc*inv; const xa=Math.min(w-1,x+r+1), xr=Math.max(0,x-r); acc+=src[o+xa]-src[o+xr]; }
+  }
+  for(let x=0;x<w;x++){ let acc=0;
+    for(let y=-r;y<=r;y++)acc+=tmp[Math.min(h-1,Math.max(0,y))*w+x];
+    for(let y=0;y<h;y++){ dst[y*w+x]=acc*inv; const ya=Math.min(h-1,y+r+1), yr=Math.max(0,y-r); acc+=tmp[ya*w+x]-tmp[yr*w+x]; }
+  }
+}
 function applyDepth(data,w,h){
   if(!dU8||dW!==w||dH!==h){ dU8=new Uint8Array(w*h); dW=w; dH=h; dSmooth=null; depthTex.dispose(); depthTex=new THREE.DataTexture(dU8,w,h,THREE.RedFormat,THREE.UnsignedByteType); depthTex.minFilter=depthTex.magFilter=THREE.LinearFilter; depthTex.flipY=false; U.uDepth.value=depthTex; }
   normalizeDepth(data,w,h,dU8,P.depthSmooth);
+  const r=Math.round(P.depthBlur);
+  if(r>=1){
+    if(!dBlurA||dBlurA.length!==w*h){dBlurA=new Float32Array(w*h);dBlurB=new Float32Array(w*h);}
+    for(let i=0;i<w*h;i++)dBlurA[i]=dU8[i];
+    boxBlur(dBlurA,dBlurA,w,h,r);
+    for(let i=0;i<w*h;i++)dU8[i]=dBlurA[i]|0;
+  }
   depthTex.needsUpdate=true;
   drawDepthThumb();
 }
