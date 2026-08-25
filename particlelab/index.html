@@ -72,6 +72,7 @@
       <button id="bSample">sample</button>
       <button id="bCam">webcam</button>
       <button id="bPlay">pause</button>
+      <button id="bRestart">⟲ restart</button>
     </div>
     <input type="file" id="file" accept="video/*,image/*">
     <div class="status" id="srcStatus">drop a video or image anywhere</div>
@@ -169,7 +170,7 @@ const P={
   // fx
   wave:0.0, waveFreq:12, waveSpeed:2.0, glitch:0.0, glitchRate:6, glitchChance:0.3, uvGlitch:0.0, block:0.0, chroma:0.0, dropout:0.0, scatter:0.0, scatterSpeed:0.6, explode:0.0, burst:0.0, burstRate:0.25, shake:0.0,
   // plate
-  plate:0.5, plateDepth:1, plateBlur:0.0, plateDark:0.25, plateTint:0.0, plateMono:0.0, plateScan:0.0, plateZ:0.0, plateShade:0.6, plateFog:0.45, plateEdge:0.35, plateDepthMix:0.3, plateCut:0.25, gapFill:0.7,
+  plate:0.5, plateDepth:1, plateBlur:0.0, plateDark:0.25, plateTint:0.0, plateMono:0.0, plateScan:0.0, plateZ:0.0, plateShade:0.6, plateFog:0.45, plateEdge:0.35, plateDepthMix:0.3, plateCut:0.25, gapFill:0.0,
   // audio
   audio:false, audioAmt:0.6, audioSrc:'video', audioVol:0.8,
   // camera
@@ -325,7 +326,7 @@ check(gR,'recLoop','stop after one loop');
 
 const presetsEl=$('#presets');
 for(const name of Object.keys(PRESETS)){const b=document.createElement('button');b.textContent=name;b.onclick=()=>applyPreset(name);presetsEl.appendChild(b);}
-const FX_RESET={plate:0.5,plateDepth:1,plateBlur:0,plateDark:0.25,plateTint:0,plateMono:0,plateScan:0,plateShade:0.6,plateFog:0.45,plateEdge:0.35,plateDepthMix:0.3,plateCut:0.25,gapFill:0.7,rain:0,holoScan:0,flicker:0,rgbSplit:0,sweep:0,echo:0,wave:0,glitch:0,uvGlitch:0,block:0,chroma:0,dropout:0,scatter:0,explode:0,burst:0,shake:0,jitter:0,tintAmt:0,lift:0.2,lumaCull:0,brightness:1,size:1,gamma:1};
+const FX_RESET={plate:0.5,plateDepth:1,plateBlur:0,plateDark:0.25,plateTint:0,plateMono:0,plateScan:0,plateShade:0.6,plateFog:0.45,plateEdge:0.35,plateDepthMix:0.3,plateCut:0.25,gapFill:0,rain:0,holoScan:0,flicker:0,rgbSplit:0,sweep:0,echo:0,wave:0,glitch:0,uvGlitch:0,block:0,chroma:0,dropout:0,scatter:0,explode:0,burst:0,shake:0,jitter:0,tintAmt:0,lift:0.2,lumaCull:0,brightness:1,size:1,gamma:1};
 function applyPreset(name){const p=Object.assign({},FX_RESET,PRESETS[name]);const hadEcho=P.echo>0;const needGrid=(p.density!==undefined&&p.density!==P.density)||((p.echo>0)!==hadEcho);const needAtlas=p.glyphs!==undefined&&p.glyphs!==P.glyphs;Object.assign(P,p);for(const k in p){ctls[k]&&ctls[k].set(P[k]);}scene.background.set(P.bg);applyBlend();if(needGrid)buildGrid();if(needAtlas)buildAtlas();}
 
 /* ───────────── three setup ───────────── */
@@ -620,6 +621,7 @@ $('#file').onchange=(e)=>{const f=e.target.files[0]; if(f)loadFile(f);};
 $('#bSample').onclick=()=>useVideo('samples/sample.mp4','sample.mp4');
 $('#bCam').onclick=useWebcam;
 $('#bPlay').onclick=togglePlay;
+$('#bRestart').onclick=()=>{ if(src.kind!=='video')return; video.currentTime=0; lastBakedIdx=-1; if(audioEl&&P.audio&&P.audioSrc==='file'){audioEl.currentTime=0;} video.play().catch(()=>{}); $('#bPlay').textContent='pause'; };
 function togglePlay(){ if(src.kind!=='video')return; if(video.paused){video.play();$('#bPlay').textContent='pause';}else{video.pause();$('#bPlay').textContent='play';} }
 ['dragenter','dragover'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.add('drag');}));
 ['dragleave','drop'].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.remove('drag');}));
