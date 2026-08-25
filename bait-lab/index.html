@@ -108,6 +108,22 @@
   .t-show-rect .sub { position:absolute; bottom:44px; left:0; right:0; padding:0 12px; font:13px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
   .t-show-rect .cta { position:absolute; bottom:10px; left:0; right:0; text-align:center; font:bold 20px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; overflow:hidden; }
 
+  .t-show-rect-side { width:346px; height:258px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-rect-side .pic { position:absolute; left:0; top:0; width:150px; height:256px; overflow:hidden; }
+  .t-show-rect-side .pic img { width:150px; height:256px; }
+  .t-show-rect-side .badge { position:absolute; top:6px; left:6px; padding:3px 9px; font-size:13px; z-index:2; }
+  .t-show-rect-side .hl { position:absolute; left:154px; top:34px; right:8px; font-size:30px; line-height:30px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:92px; overflow:hidden; }
+  .t-show-rect-side .sub { position:absolute; left:154px; bottom:62px; right:8px; font:13px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-show-rect-side .cta { position:absolute; left:154px; bottom:20px; right:8px; text-align:center; font:bold 20px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; overflow:hidden; }
+  /* deleted copy frees its space: empty slots collapse, neighbors stretch */
+  .ad div[data-slot]:empty, .ad span[data-slot]:empty { display:none !important; }
+  .t-show-rect:has(.sub:empty) .hl { max-height:96px; }
+  .t-show-rect:has(.cta:empty) .sub { bottom:14px; }
+  .t-show-rect:has(.sub:empty):has(.cta:empty) .hl { max-height:128px; }
+  .t-show-rect-side:has(.sub:empty) .hl { top:24px; max-height:150px; }
+  .t-show-rect-side:has(.cta:empty) .sub { bottom:20px; }
+  .t-show-rect-side:has(.sub:empty):has(.cta:empty) .hl { top:16px; max-height:196px; }
+  .t-show-banner:has(.sub:empty) .hl { max-width:640px; }
   .ad.skin-acid { border:2px dotted var(--cta-border) !important; }
   .ad.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .ad.skin-plain .hl, .ad.skin-inverted .hl { font-weight:bold; }
@@ -154,9 +170,10 @@
     <button id="resetLayout">reset layout (this format)</button>
 
     <h2>Build</h2>
+    <button class="acc" id="randomAll">&#127922; RANDOMIZE ALL</button>
     <button class="acc" id="build">BUILD 12 OPTIONS</button>
     <button id="export">export GIF @2x (blinking)</button>
-    <label style="display:block;color:var(--ui-dim);margin-top:4px;"><input type="checkbox" id="blink" checked> blink preview</label>
+    <label style="display:block;color:var(--ui-dim);margin-top:4px;"><input type="checkbox" id="blink" checked> animate preview (blink + motion)</label>
   </div>
 
   <div id="stage">
@@ -186,6 +203,7 @@ const SKINS = {
 const TPL = {
   'show-banner':{ w:926, h:62,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
   'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-rect-side': { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
 };
 const COPY = {
   headline: ["{N} DL {TYPE}S IN YOUR AREA","TRADE IS WAITING","MEET {TYPE}S NEAR YOU TONIGHT","STR8 BUT CURIOUS?","HE'S DL. HE'S {DIST} MILES AWAY.","MASC4MASC ONLY","NO ONE HAS TO KNOW","YOUR {RELATION} IS ON HERE","T4T CUTIES ONLINE RN","DADDIES HATE THIS {THING}","ONLY 1% CAN HANDLE THIS {TYPE}","{TYPE}S {STATE} OVER THIS APP"],
@@ -298,8 +316,11 @@ function applyLayout(el, template) {
       margin: '0', right: 'auto', bottom: 'auto', float: 'none',
       boxSizing: 'border-box', overflow: 'hidden', maxWidth: 'none', maxHeight: 'none',
     });
-    const img = n.tagName === 'IMG' ? n : n.querySelector('img');
-    if (img) { img.style.width = '100%'; img.style.height = '100%'; }
+    const imgs = n.tagName === 'IMG' ? [n] : [...n.querySelectorAll('img')];
+    for (const img of imgs) {
+      img.style.width = img.classList.contains('li') ? '25%' : '100%';
+      img.style.height = '100%';
+    }
     if (k !== 'pic') {
       Object.assign(n.style, {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -676,6 +697,19 @@ function init() {
   });
   document.getElementById('rollAll').onclick = () => {
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
+    renderPreview();
+  };
+  document.getElementById('randomAll').onclick = () => {
+    const rnd = a => a[Math.floor(Math.random() * a.length)];
+    document.getElementById('template').value = rnd(Object.keys(TPL));
+    document.getElementById('skin').value = rnd(Object.keys(SKINS));
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
+    if (assets.length) selectedAsset = rnd(assets);
+    document.getElementById('fx-glow').checked = Math.random() < 0.5;
+    document.getElementById('fx-sparkle').checked = Math.random() < 0.5;
+    document.getElementById('fx-glitter').checked = Math.random() < 0.35;
+    document.getElementById('motion').value = rnd(['static','static','appear','lineup','twitch']);
+    drawLib();
     renderPreview();
   };
   document.getElementById('build').onclick = buildOptions;
