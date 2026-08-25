@@ -257,6 +257,7 @@
       <label class="fxopt"><input type="checkbox" id="tp-italic"> italic</label>
       <label class="fxopt"><input type="checkbox" id="tp-underline"> underline</label>
       <label class="fxopt"><input type="checkbox" id="tp-blink"> blinking</label>
+      <div class="row"><button id="tp-copystyle">copy style</button><button id="tp-pastestyle">apply style</button></div>
       <button id="tp-reset">reset this text style</button>
     </div>
 
@@ -458,6 +459,14 @@ document.addEventListener('keydown', e => {
     L.hidden = [...new Set([...(L.hidden ?? []), window.SEL.k])];
     saveLayout(); renderPreview();
     return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    e.preventDefault(); window.copyTextStyle?.(); return;
+  }
+  if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'v') {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+    e.preventDefault(); window.pasteTextStyle?.(); return;
   }
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'c') {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
@@ -1549,6 +1558,26 @@ function init() {
   tp('tp-italic').onchange = () => updateText({ italic: tp('tp-italic').checked });
   tp('tp-underline').onchange = () => updateText({ underline: tp('tp-underline').checked });
   tp('tp-blink').onchange = () => updateText({ blink: tp('tp-blink').checked });
+  const copyTextStyle = () => {
+    if (!window.SEL || window.SEL.k === 'pic') return;
+    const { t, k } = window.SEL;
+    window.STYLECLIP = {
+      text: JSON.parse(JSON.stringify(LAYOUT[t]?.text?.[k] ?? {})),
+      s: LAYOUT[t]?.off?.[k]?.s,
+    };
+  };
+  const pasteTextStyle = () => {
+    if (!window.SEL || window.SEL.k === 'pic' || !window.STYLECLIP) return;
+    snapshotLayout();
+    const { t, k } = window.SEL;
+    const L = (LAYOUT[t] ??= {});
+    (L.text ??= {})[k] = JSON.parse(JSON.stringify(window.STYLECLIP.text));
+    if (window.STYLECLIP.s != null) ((L.off ??= {})[k] ??= { dx: 0, dy: 0, s: 1 }).s = window.STYLECLIP.s;
+    saveLayout(); renderPreview(); selectSlot(t, k);
+  };
+  tp('tp-copystyle').onclick = copyTextStyle;
+  tp('tp-pastestyle').onclick = pasteTextStyle;
+  window.copyTextStyle = copyTextStyle; window.pasteTextStyle = pasteTextStyle;
   tp('tp-reset').onclick = () => {
     if (!window.SEL) return;
     snapshotLayout();
