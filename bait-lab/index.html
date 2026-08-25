@@ -1141,8 +1141,23 @@ function init() {
     if (mode==='top') { const m = Math.min(...boxes.map(b=>b.y)); boxes.forEach(b=>setOff(b, undefined, m-b.y)); }
     if (mode==='bottom') { const m = Math.max(...boxes.map(b=>b.y+b.h)); boxes.forEach(b=>setOff(b, undefined, m-(b.y+b.h))); }
     if (mode==='vcenter') { const c = boxes.reduce((a,b)=>a+b.y+b.h/2,0)/boxes.length; boxes.forEach(b=>setOff(b, undefined, c-(b.y+b.h/2))); }
-    if (mode==='dist-h' && boxes.length>2) { const s2=[...boxes].sort((a,b)=>a.x-b.x); const lo=s2[0].x, hi=s2[s2.length-1].x; const step=(hi-lo)/(s2.length-1); s2.forEach((b,i)=>setOff(b, lo+step*i-b.x, undefined)); }
-    if (mode==='dist-v' && boxes.length>2) { const s2=[...boxes].sort((a,b)=>a.y-b.y); const lo=s2[0].y, hi=s2[s2.length-1].y; const step=(hi-lo)/(s2.length-1); s2.forEach((b,i)=>setOff(b, undefined, lo+step*i-b.y)); }
+    if (mode==='dist-h' && boxes.length>2) {
+      // equal gaps BETWEEN elements across the selection's span (sizes respected)
+      const s2=[...boxes].sort((a,b)=>a.x-b.x);
+      const span=(s2[s2.length-1].x+s2[s2.length-1].w)-s2[0].x;
+      const totalW=s2.reduce((a,b)=>a+b.w,0);
+      const gap=(span-totalW)/(s2.length-1);
+      let cur=s2[0].x;
+      s2.forEach(b=>{ setOff(b, cur-b.x, undefined); cur+=b.w+gap; });
+    }
+    if (mode==='dist-v' && boxes.length>2) {
+      const s2=[...boxes].sort((a,b)=>a.y-b.y);
+      const span=(s2[s2.length-1].y+s2[s2.length-1].h)-s2[0].y;
+      const totalH=s2.reduce((a,b)=>a+b.h,0);
+      const gap=(span-totalH)/(s2.length-1);
+      let cur=s2[0].y;
+      s2.forEach(b=>{ setOff(b, undefined, cur-b.y); cur+=b.h+gap; });
+    }
     saveLayout(); renderPreview();
   };
   document.querySelectorAll('[data-align]').forEach(b => b.onclick = () => doAlign(b.dataset.align));
