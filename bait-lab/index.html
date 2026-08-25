@@ -157,7 +157,7 @@
 </header>
 <main>
   <div id="side">
-    <div id="activeBar">Editing: ALL ADS &nbsp;<button id="editAll" style="width:auto;padding:2px 8px;font-size:10px;margin:0;">deselect</button></div>
+    <div id="activeBar">Editing: ALL ADS &nbsp;<button id="editAll" style="width:auto;padding:2px 8px;font-size:10px;margin:0;">deselect</button> <button id="resetAll" style="width:auto;padding:2px 8px;font-size:10px;margin:0;" title="clear all layout/edits">reset all</button></div>
     <h2>Saves</h2>
     <div class="row"><button class="acc" id="saveBtn">&#128190; SAVE</button><button id="dlAll">&#11015; download all</button></div>
     <div id="saves" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
@@ -1024,6 +1024,11 @@ function init() {
     saveLayout(); renderPreview();
   };
   document.getElementById('editAll').onclick = () => { window.ACTIVE = null; syncControls(); renderPreview(); };
+  document.getElementById('resetAll').onclick = () => {
+    if (!confirm('Reset all layout, positions, edits and background? (saves and library kept)')) return;
+    LAYOUT = {}; localStorage.removeItem('mph-bait-layout'); window.ACTIVE = null; UNDO.length = 0;
+    syncControls(); renderPreview();
+  };
   const nodeBox = (adEl, k) => {
     const n = layoutNodes(adEl)[k]; if (!n) return null;
     const ar = adEl.getBoundingClientRect(), r = n.getBoundingClientRect();
