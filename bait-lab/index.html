@@ -126,6 +126,10 @@
   .t-show-rect-side:has(.cta:empty) .sub { bottom:20px; }
   .t-show-rect-side:has(.sub:empty):has(.cta:empty) .hl { top:16px; max-height:196px; }
   .t-show-banner:has(.sub:empty) .hl { max-width:640px; }
+  /* elements are never clipped by their internal frames — only the ad edge bounds them */
+  .ad .pic { overflow:visible; }
+  .ad .hl { max-height:none; overflow:visible; }
+  .ad .sub, .ad .cta, .ad .badge { overflow:visible; }
   .ad.skin-acid { border:2px dotted var(--cta-border) !important; }
   .ad.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .ad.skin-plain .hl, .ad.skin-inverted .hl { font-weight:bold; }
