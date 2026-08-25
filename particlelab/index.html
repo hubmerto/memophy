@@ -169,7 +169,7 @@ const P={
   // fx
   wave:0.0, waveFreq:12, waveSpeed:2.0, glitch:0.0, glitchRate:6, glitchChance:0.3, uvGlitch:0.0, block:0.0, chroma:0.0, dropout:0.0, scatter:0.0, scatterSpeed:0.6, explode:0.0, burst:0.0, burstRate:0.25, shake:0.0,
   // plate
-  plate:0.5, plateDepth:1, plateBlur:0.0, plateDark:0.25, plateTint:0.0, plateMono:0.0, plateScan:0.0, plateZ:0.0, plateShade:0.6, plateFog:0.45, plateEdge:0.35, plateDepthMix:0.3, plateCut:0.5,
+  plate:0.5, plateDepth:1, plateBlur:0.0, plateDark:0.25, plateTint:0.0, plateMono:0.0, plateScan:0.0, plateZ:0.0, plateShade:0.6, plateFog:0.45, plateEdge:0.35, plateDepthMix:0.3, plateCut:0.5, gapFill:0.7,
   // audio
   audio:false, audioAmt:0.6, audioSrc:'video', audioVol:0.8,
   // camera
@@ -260,6 +260,7 @@ slider(gPl,'plateFog','depth fog',0,1,0.01);
 slider(gPl,'plateEdge','depth edge rim',0,1,0.01);
 slider(gPl,'plateDepthMix','depth blend',0,1,0.01);
 slider(gPl,'plateCut','cut depth skirt',0,1,0.01);
+slider(gPl,'gapFill','gap fill (back video)',0,1,0.01);
 slider(gPl,'plateBlur','blur',0,1,0.01);
 slider(gPl,'plateDark','darken',0,1,0.01);
 slider(gPl,'plateTint','tint',0,1,0.01);
@@ -323,7 +324,7 @@ check(gR,'recLoop','stop after one loop');
 
 const presetsEl=$('#presets');
 for(const name of Object.keys(PRESETS)){const b=document.createElement('button');b.textContent=name;b.onclick=()=>applyPreset(name);presetsEl.appendChild(b);}
-const FX_RESET={plate:0.5,plateDepth:1,plateBlur:0,plateDark:0.25,plateTint:0,plateMono:0,plateScan:0,plateShade:0.6,plateFog:0.45,plateEdge:0.35,plateDepthMix:0.3,plateCut:0.5,rain:0,holoScan:0,flicker:0,rgbSplit:0,sweep:0,echo:0,wave:0,glitch:0,uvGlitch:0,block:0,chroma:0,dropout:0,scatter:0,explode:0,burst:0,shake:0,jitter:0,tintAmt:0,lift:0.2,lumaCull:0,brightness:1,size:1,gamma:1};
+const FX_RESET={plate:0.5,plateDepth:1,plateBlur:0,plateDark:0.25,plateTint:0,plateMono:0,plateScan:0,plateShade:0.6,plateFog:0.45,plateEdge:0.35,plateDepthMix:0.3,plateCut:0.5,gapFill:0.7,rain:0,holoScan:0,flicker:0,rgbSplit:0,sweep:0,echo:0,wave:0,glitch:0,uvGlitch:0,block:0,chroma:0,dropout:0,scatter:0,explode:0,burst:0,shake:0,jitter:0,tintAmt:0,lift:0.2,lumaCull:0,brightness:1,size:1,gamma:1};
 function applyPreset(name){const p=Object.assign({},FX_RESET,PRESETS[name]);const hadEcho=P.echo>0;const needGrid=(p.density!==undefined&&p.density!==P.density)||((p.echo>0)!==hadEcho);const needAtlas=p.glyphs!==undefined&&p.glyphs!==P.glyphs;Object.assign(P,p);for(const k in p){ctls[k]&&ctls[k].set(P[k]);}scene.background.set(P.bg);applyBlend();if(needGrid)buildGrid();if(needAtlas)buildAtlas();}
 
 /* ───────────── three setup ───────────── */
@@ -544,6 +545,11 @@ void main(){ vec3 c;
  c*=(1.0-uDark);
  gl_FragColor=vec4(c,uOpacity); }`});
 const plate=new THREE.Mesh(new THREE.PlaneGeometry(1,1,256,144),plateMat); plate.renderOrder=-1; plate.frustumCulled=false; scene.add(plate);
+/* gap-fill: flat dim video at the back of the volume so depth gaps never show black */
+const PB={uColor:U.uColor,uDepth:U.uDepth,uAspect:U.uAspect,uTime:U.uTime,uDepthScale:U.uDepthScale,uDepthCurve:U.uDepthCurve,uInvert:U.uInvert,uTint:U.uTint,uEdgePin:U.uEdgePin,uScanFreq:U.uScanFreq,uBW:U.uBW,uContrast:U.uContrast,uTexel:PU.uTexel,
+  uOpacity:{value:0.7},uFollow:{value:0},uZ:{value:0.03},uBlur:{value:0.25},uDark:{value:0.45},uTintAmt:{value:0},uMono:{value:0},uScan:{value:0},uShade:{value:0},uFog:{value:0.3},uEdge:{value:0},uDepthMix:{value:0},uCut:{value:0}};
+const backPlate=new THREE.Mesh(plate.geometry,new THREE.ShaderMaterial({uniforms:PB,transparent:true,depthWrite:false,side:THREE.DoubleSide,vertexShader:plateMat.vertexShader,fragmentShader:plateMat.fragmentShader}));
+backPlate.renderOrder=-2; backPlate.frustumCulled=false; scene.add(backPlate);
 function buildGrid(){
   const rows=Math.max(8,Math.round(P.density)); const cols=Math.max(8,Math.round(rows*U.uAspect.value));
   const K=Math.max(1,Math.round(P.volume)); gridEcho=P.echo>0; const E=gridEcho?2:1;
@@ -836,6 +842,7 @@ function syncUniforms(t){
   U.uUvGlitch.value=P.uvGlitch*T; U.uGlitchChance.value=P.glitchChance; U.uBlock.value=P.block*T; U.uChroma.value=P.chroma*T; U.uDropout.value=P.dropout*T; U.uBurst.value=P.burst*T; U.uBurstRate.value=P.burstRate; U.uSweep.value=P.sweep*T; U.uSweepSpeed.value=P.sweepSpeed; U.uEcho.value=P.echo*T; U.uEchoOff.value=P.echoOff;
   U.uProj.value=(canvas.height)/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2));
   PU.uOpacity.value=1+(P.plate-1)*T; PU.uFollow.value=P.plateDepth*T; PU.uZ.value=P.plateZ*T; PU.uBlur.value=P.plateBlur*T; PU.uDark.value=P.plateDark*T; PU.uTintAmt.value=P.plateTint*T; PU.uMono.value=P.plateMono*T; PU.uScan.value=P.plateScan*T; PU.uShade.value=P.plateShade*T; PU.uCut.value=P.plateCut; PU.uFog.value=P.plateFog*T; PU.uEdge.value=P.plateEdge*T; PU.uDepthMix.value=P.plateDepthMix*T; if(dW)PU.uTexel.value.set(1/dW,1/dH); plate.visible=(P.plate>0.001)||T<0.999;
+  PB.uOpacity.value=P.gapFill*T; PB.uDark.value=Math.min(1,P.plateDark+0.25); PB.uBlur.value=Math.min(1,P.plateBlur+0.25); PB.uTintAmt.value=P.plateTint*T; PB.uMono.value=P.plateMono*T; PB.uScan.value=P.plateScan*T*0.5; PB.uFog.value=P.plateFog*0.5*T; backPlate.visible=P.gapFill*T>0.002;
   bloomPass.strength=P.bloom; bloomPass.threshold=P.bloomThr; bloomPass.radius=P.bloomRad;
 }
 function renderFrame(dt){
