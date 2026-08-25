@@ -925,10 +925,22 @@ function buildOptions() {
     const meta = document.createElement('div');
     meta.className = 'meta';
     meta.innerHTML = `<span>${skin}</span>`;
+    const ed = document.createElement('button');
+    ed.textContent = 'EDIT';
+    ed.onclick = () => {
+      snapshotLayout();
+      if (img.id) { selectedAsset = img; selectedIds = [img.id]; }
+      window.ACTIVE = template;
+      const P = ((LAYOUT[template] ??= {}).props ??= {});
+      P.skin = skin; P.copy = { ...copy }; P.fx = ad._fx12 === 'none' ? '' : ad._fx12; P.motion = ad._mo12;
+      freezeOthers(template);
+      saveLayout(); drawLib(); syncControls(); renderPreview();
+      document.getElementById('previewWrap').scrollIntoView({ behavior: 'smooth' });
+    };
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
     dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: ad._fx12, motion: ad._mo12 }, `${template}-${skin}-${i+1}`);
-    meta.appendChild(dl); card.appendChild(meta);
+    meta.appendChild(ed); meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
 }
