@@ -65,11 +65,12 @@
   .ad .pic img[data-slot="image"] { position:relative; z-index:2; }
   .ad .hl, .ad .sub, .ad .cta, .ad .badge { position:relative; z-index:3; }
   .ad .pic { position:relative; }
-  .ad .glowcopy { position:absolute; inset:-30%; pointer-events:none; z-index:0;
-    filter:blur(calc(12px + var(--glowk,.55) * 34px)) saturate(1.7) brightness(1.1); opacity:var(--glowk,.55);
-    -webkit-mask:radial-gradient(closest-side, #000 55%, transparent 100%); mask:radial-gradient(closest-side, #000 55%, transparent 100%); }
+  .ad .glowcopy { position:absolute; inset:0; pointer-events:none; z-index:0;
+    transform:translateY(calc(2px + var(--glowk,.55) * 8px));
+    filter:blur(calc(4px + var(--glowk,.55) * 20px)); opacity:calc(.35 + var(--glowk,.55) * .5); }
   .ad .glowcopy img { width:100%; height:100%; object-fit:contain; display:block; }
-  .ad .glowtint { position:absolute; inset:-30%; pointer-events:none; z-index:0; }
+  .ad .glowtint { position:absolute; inset:0; pointer-events:none; z-index:0;
+    transform:translateY(calc(2px + var(--glowk,.55) * 8px)); }
   .ad .tint { position:absolute; inset:0; pointer-events:none; z-index:2;
     -webkit-mask-size:contain; mask-size:contain; -webkit-mask-repeat:no-repeat; mask-repeat:no-repeat;
     -webkit-mask-position:center; mask-position:center; background-size:cover; }
@@ -157,6 +158,10 @@
 <main>
   <div id="side">
     <div id="activeBar">Editing: ALL ADS &nbsp;<button id="editAll" style="width:auto;padding:2px 8px;font-size:10px;margin:0;">deselect</button></div>
+    <h2>Saves</h2>
+    <div class="row"><button class="acc" id="saveBtn">&#128190; SAVE</button><button id="dlAll">&#11015; download all</button></div>
+    <div id="saves" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;"></div>
+
     <h2>Library (PNG / JPG / SVG)</h2>
     <div id="drop">drop / paste (&#8984;V) / click to add</div>
     <input type="file" id="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" multiple style="display:none">
@@ -176,8 +181,8 @@
     </select>
     <h2>Image FX (stackable)</h2>
     <div class="row" style="align-items:center;">
-      <label class="fxopt" style="margin:0;flex:1;"><input type="checkbox" id="fx-glow"> glow / halo behind</label>
-      <input type="color" id="glow-color" value="#ff00cc" style="height:26px;width:40px;flex:none;" title="halo color (default: icon colors)">
+      <label class="fxopt" style="margin:0;flex:1;"><input type="checkbox" id="fx-glow"> shadow (gaussian, behind)</label>
+      <input type="color" id="glow-color" value="#ff00cc" style="height:26px;width:40px;flex:none;" title="shadow color (default: icon colors)">
       <button id="glow-auto" style="width:auto;flex:none;padding:2px 8px;font-size:10px;margin:0;" title="use icon colors">auto</button>
     </div>
     <input type="range" id="glow-strength" min="0" max="100" value="55" style="width:100%;">
@@ -485,8 +490,8 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
         gt.style.webkitMaskSize = gt.style.maskSize = 'contain';
         gt.style.webkitMaskRepeat = gt.style.maskRepeat = 'no-repeat';
         gt.style.webkitMaskPosition = gt.style.maskPosition = 'center';
-        gt.style.filter = `blur(${6 + glowK * 22}px)`;
-        gt.style.opacity = String(0.35 + glowK * 0.6);
+        gt.style.filter = `blur(${4 + glowK * 20}px)`;
+        gt.style.opacity = String(0.35 + glowK * 0.5);
         n.parentNode.insertBefore(gt, n);
       } else {
         const gc = document.createElement('div');
@@ -882,6 +887,72 @@ function init() {
     renderPreview();
   };
   const tp = id => document.getElementById(id);
+  let SAVES = JSON.parse(localStorage.getItem('mph-saves') || '[]');
+  const captureState = () => ({
+    layout: JSON.parse(JSON.stringify(LAYOUT)),
+    skin: document.getElementById('skin').value,
+    motion: document.getElementById('motion').value,
+    copy: currentCopy(),
+    fx: currentFx(),
+    iconIds: [...selectedIds],
+    glowColor: window.GLOW_COLOR, glowStrength: window.GLOW_STRENGTH,
+    overlayColor: window.OVERLAY_COLOR, overlayPattern: window.OVERLAY_PATTERN,
+  });
+  const applyState = st => {
+    LAYOUT = JSON.parse(JSON.stringify(st.layout || {}));
+    document.getElementById('skin').value = st.skin || 'magenta';
+    document.getElementById('motion').value = st.motion || 'static';
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = st.copy?.[k] ?? '';
+    FX_KEYS.forEach(k => document.getElementById('fx-' + k).checked = (st.fx || '').includes(k));
+    selectedIds = st.iconIds || []; selectedAsset = selectedAssets()[0] ?? null;
+    window.GLOW_COLOR = st.glowColor ?? null; window.GLOW_STRENGTH = st.glowStrength ?? 55;
+    window.OVERLAY_COLOR = st.overlayColor ?? '#ff2ec4'; window.OVERLAY_PATTERN = st.overlayPattern ?? '';
+    window.ACTIVE = null;
+    saveLayout(); drawLib(); syncControls(); renderPreview();
+  };
+  const thumbOf = async () => {
+    const t = TPL['show-rect'];
+    const data = await rasterizeAd(makeAd('show-rect', effSkin('show-rect'), effCopy('show-rect'), selectedAsset?.dataUrl, effFx('show-rect'), 'static'), t);
+    const c = document.createElement('canvas'); c.width = t.w*2; c.height = t.h*2;
+    c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(data), t.w*2, t.h*2), 0, 0);
+    const c2 = document.createElement('canvas'); c2.width = 96; c2.height = 72;
+    c2.getContext('2d').drawImage(c, 0, 0, 96, 72);
+    return c2.toDataURL('image/png');
+  };
+  const drawSaves = () => {
+    const el = document.getElementById('saves'); el.innerHTML = '';
+    SAVES.forEach((sv, i) => {
+      const d = document.createElement('div');
+      d.className = 'asset'; d.style.width = '72px'; d.style.height = '54px';
+      d.style.backgroundImage = `url("${sv.thumb}")`; d.style.backgroundSize = 'cover';
+      d.title = 'save ' + (i+1); d.onclick = () => applyState(sv.state);
+      const x = document.createElement('div'); x.className = 'del'; x.textContent = '×';
+      x.onclick = ev => { ev.stopPropagation(); SAVES.splice(i,1); localStorage.setItem('mph-saves', JSON.stringify(SAVES)); drawSaves(); };
+      d.appendChild(x); el.appendChild(d);
+    });
+  };
+  document.getElementById('saveBtn').onclick = async () => {
+    const thumb = await thumbOf();
+    SAVES.push({ id: 's' + SAVES.length, ts: SAVES.length, state: captureState(), thumb });
+    localStorage.setItem('mph-saves', JSON.stringify(SAVES));
+    drawSaves();
+  };
+  document.getElementById('dlAll').onclick = async () => {
+    if (!SAVES.length) { alert('no saves yet'); return; }
+    const keep = captureState();
+    for (let i = 0; i < SAVES.length; i++) {
+      applyState(SAVES[i].state);
+      await new Promise(r => setTimeout(r, 200));
+      for (const template of Object.keys(TPL)) {
+        await exportCreative({ template, skin: effSkin(template), copy: effCopy(template),
+          imgUrl: selectedAsset?.dataUrl, icons: selectedAssets().map(a => a.dataUrl),
+          fx: effFx(template), motion: effMotion(template) }, `save${i+1}-${template}`);
+        await new Promise(r => setTimeout(r, 400));
+      }
+    }
+    applyState(keep);
+  };
+  setTimeout(drawSaves, 100);
   window.syncControls = () => {
     const bar = document.getElementById('activeBar');
     bar.firstChild.textContent = 'Editing: ' + (window.ACTIVE ? window.ACTIVE.toUpperCase() : 'ALL ADS') + ' ';
