@@ -61,10 +61,13 @@
   .ad.frame2 .cta[data-blink] { visibility:hidden; }
   .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
   .ad img { display:block; object-fit:contain; }
+  .ad .pic { z-index:1; }
+  .ad .hl, .ad .sub, .ad .cta, .ad .badge { position:relative; z-index:3; }
   .ad .pic { position:relative; }
-  .ad .glowcopy { position:absolute; inset:0; pointer-events:none; z-index:-1;
-    filter:blur(7px) saturate(1.5) brightness(1.15); opacity:.85; }
+  .ad .glowcopy { position:absolute; inset:-14%; pointer-events:none; z-index:0;
+    filter:blur(calc(6px + var(--glowk,.55) * 22px)) saturate(1.6) brightness(1.15); opacity:var(--glowk,.55); }
   .ad .glowcopy img { width:100%; height:100%; object-fit:contain; display:block; }
+  .ad .glowtint { position:absolute; inset:-14%; pointer-events:none; z-index:0; }
   .ad .sparkles { position:absolute; inset:0; pointer-events:none; background-size:100% 100%; }
   .ad .sparkles.s1 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M18 12 l1.6 6.4 L26 20 l-6.4 1.6 L18 28 l-1.6-6.4 L10 20 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M78 55 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M88 14 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M36 78 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M18 12 l1.6 6.4 L26 20 l-6.4 1.6 L18 28 l-1.6-6.4 L10 20 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M78 55 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M88 14 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M36 78 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); }
   .ad .sparkles.s2 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); display:none; }
@@ -79,6 +82,9 @@
   .editable { cursor:move; }
   .editable:hover { outline:1px dashed rgba(255,136,0,.85); outline-offset:1px; }
   .selected { outline:2px solid #ff8800 !important; outline-offset:1px; }
+  .adrow { border:2px solid transparent; padding:6px; border-radius:3px; cursor:pointer; }
+  .adrow.active { border-color:#ff8800; }
+  #activeBar { color:var(--ui-acc); font-size:12px; margin-bottom:8px; font-weight:bold; }
   .rzhandle { position:absolute; right:-7px; bottom:-7px; width:14px; height:14px; background:#ff8800;
     border:2px solid #fff; border-radius:2px; cursor:nwse-resize; z-index:20; pointer-events:auto; }
   #layoutHint { color:var(--ui-dim); font-size:11px; margin:4px 0 6px; }
@@ -127,14 +133,9 @@
   .t-show-rect-side .sub { position:absolute; left:154px; bottom:62px; right:8px; font:13px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
   .t-show-rect-side .cta { position:absolute; left:154px; bottom:20px; right:8px; text-align:center; font:bold 20px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; overflow:hidden; }
   /* deleted copy frees its space: empty slots collapse, neighbors stretch */
-  .ad div[data-slot]:empty, .ad span[data-slot]:empty { display:none !important; }
-  .t-show-rect:has(.sub:empty) .hl { max-height:96px; }
-  .t-show-rect:has(.cta:empty) .sub { bottom:14px; }
-  .t-show-rect:has(.sub:empty):has(.cta:empty) .hl { max-height:128px; }
-  .t-show-rect-side:has(.sub:empty) .hl { top:24px; max-height:150px; }
-  .t-show-rect-side:has(.cta:empty) .sub { bottom:20px; }
-  .t-show-rect-side:has(.sub:empty):has(.cta:empty) .hl { top:16px; max-height:196px; }
-  .t-show-banner:has(.sub:empty) .hl { max-width:640px; }
+  .ad [data-slot].d-hidden { display:none !important; }
+  /* empty slots stay present & selectable (never auto-vanish); give them a click target in edit */
+  #previewWrap .ad [data-slot]:empty { min-width:24px; min-height:16px; outline:1px dotted rgba(255,136,0,.35); }
   /* elements move freely but stay clipped to the ad frame (.ad is overflow:hidden) */
   .ad .hl { max-height:none; }
   .ad .hl, .ad .sub, .ad .cta { white-space:normal; height:auto; }
@@ -151,6 +152,7 @@
 </header>
 <main>
   <div id="side">
+    <div id="activeBar">Editing: ALL ADS &nbsp;<button id="editAll" style="width:auto;padding:2px 8px;font-size:10px;margin:0;">deselect</button></div>
     <h2>Library (PNG / JPG / SVG)</h2>
     <div id="drop">drop / paste (&#8984;V) / click to add</div>
     <input type="file" id="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" multiple style="display:none">
@@ -169,7 +171,12 @@
       <option value="slideup">rise from below</option>
     </select>
     <h2>Image FX (stackable)</h2>
-    <label class="fxopt"><input type="checkbox" id="fx-glow"> glow (color halo)</label>
+    <div class="row" style="align-items:center;">
+      <label class="fxopt" style="margin:0;flex:1;"><input type="checkbox" id="fx-glow"> glow</label>
+      <input type="color" id="glow-color" value="#ff00cc" style="height:26px;width:40px;flex:none;" title="glow color">
+      <button id="glow-auto" style="width:auto;flex:none;padding:2px 8px;font-size:10px;margin:0;" title="use icon colors">auto</button>
+    </div>
+    <input type="range" id="glow-strength" min="0" max="100" value="55" style="width:100%;">
     <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
     <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
 
@@ -382,7 +389,7 @@ function applyLayout(el, template) {
     }
   }
   for (const k of L.hidden ?? []) {
-    if (nodes[k]) nodes[k].style.display = 'none';
+    if (nodes[k]) nodes[k].classList.add('d-hidden');
   }
   for (const [k, ts] of Object.entries(L.text ?? {})) {
     const n = nodes[k];
@@ -403,6 +410,23 @@ function applyLayout(el, template) {
 }
 
 const FX_KEYS = ['glow','sparkle','glitter'];
+window.ACTIVE = null;
+function propsFor(t) { return LAYOUT[t]?.props ?? {}; }
+function effSkin(t) { return propsFor(t).skin ?? document.getElementById('skin').value; }
+function effMotion(t) { return propsFor(t).motion ?? document.getElementById('motion').value; }
+function effFx(t) { const p = propsFor(t).fx; return p != null ? p : currentFx(); }
+function effCopy(t) {
+  const base = currentCopy(); const ov = propsFor(t).copy ?? {};
+  return { ...base, ...ov };
+}
+function writeProp(patch) {
+  if (!window.ACTIVE) return false;
+  snapshotLayout();
+  const P = ((LAYOUT[window.ACTIVE] ??= {}).props ??= {});
+  Object.assign(P, patch);
+  saveLayout(); renderPreview();
+  return true;
+}
 function currentFx() {
   return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
 }
@@ -413,6 +437,8 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   const el = document.createElement('div');
   el.className = `ad t-${template} skin-${skin}`;
   const glowOn = fx.includes('glow');
+  const glowK = (LAYOUT[template]?.glowStrength ?? window.GLOW_STRENGTH ?? 55) / 100;
+  el.style.setProperty('--glowk', String(glowK));
   el.innerHTML = t.html;
   for (const [k,v] of Object.entries(SKINS[skin])) el.style.setProperty(k, v);
   const _bg = LAYOUT[template]?.bg;
@@ -438,12 +464,28 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   el.querySelectorAll('[data-slot="image"]').forEach(n => {
     n.src = imgUrl || PLACEHOLDER;
     if (glowOn && n.parentNode) {
-      const gc = document.createElement('div');
-      gc.className = 'glowcopy';
-      const gi = document.createElement('img');
-      gi.src = imgUrl || PLACEHOLDER;
-      gc.appendChild(gi);
-      n.parentNode.insertBefore(gc, n);
+      const gcol = LAYOUT[template]?.glowColor ?? (window.GLOW_COLOR ?? null);
+      if (gcol) {
+        // colored halo: black-silhouette blur behind a solid color wash masked to the icon
+        const gt = document.createElement('div');
+        gt.className = 'glowtint';
+        gt.style.background = gcol;
+        const u = `url("${imgUrl || PLACEHOLDER}")`;
+        gt.style.webkitMaskImage = gt.style.maskImage = u;
+        gt.style.webkitMaskSize = gt.style.maskSize = 'contain';
+        gt.style.webkitMaskRepeat = gt.style.maskRepeat = 'no-repeat';
+        gt.style.webkitMaskPosition = gt.style.maskPosition = 'center';
+        gt.style.filter = `blur(${6 + glowK * 22}px)`;
+        gt.style.opacity = String(0.35 + glowK * 0.6);
+        n.parentNode.insertBefore(gt, n);
+      } else {
+        const gc = document.createElement('div');
+        gc.className = 'glowcopy';
+        const gi = document.createElement('img');
+        gi.src = imgUrl || PLACEHOLDER;
+        gc.appendChild(gi);
+        n.parentNode.insertBefore(gc, n);
+      }
     }
     if (motion === 'lineup') {
       n.classList.add('li', 'li0');
@@ -500,8 +542,14 @@ function renderPreview() {
   wrap.innerHTML = '';
   for (const template of Object.keys(TPL)) {
     const row = document.createElement('div');
-    row.style.cssText = 'margin-bottom:20px;';
-    const ad = makeAd(template, sel('skin'), currentCopy(), selectedAsset?.dataUrl);
+    row.className = 'adrow' + (window.ACTIVE === template ? ' active' : '');
+    row.style.marginBottom = '14px';
+    row.onclick = e => {
+      if (e.target.closest('[data-slot], .rzhandle, button')) return;
+      window.ACTIVE = window.ACTIVE === template ? null : template;
+      syncControls(); renderPreview();
+    };
+    const ad = makeAd(template, effSkin(template), effCopy(template), selectedAsset?.dataUrl, effFx(template), effMotion(template));
     const urls = selectedAssets().map(a => a.dataUrl);
     if (urls.length > 1) ad._icons = urls;
     row.appendChild(ad);
@@ -520,9 +568,9 @@ function renderPreview() {
     const btn = document.createElement('button');
     btn.textContent = 'GIF';
     btn.style.cssText = 'width:auto; margin:0; padding:3px 14px; font-size:11px;';
-    btn.onclick = () => exportCreative({ template, skin: sel('skin'), copy: currentCopy(),
+    btn.onclick = () => exportCreative({ template, skin: effSkin(template), copy: effCopy(template),
       imgUrl: selectedAsset?.dataUrl, icons: selectedAssets().map(a => a.dataUrl),
-      fx: currentFx(), motion: sel('motion') }, `${template}-${sel('skin')}`);
+      fx: effFx(template), motion: effMotion(template) }, `${template}-${effSkin(template)}`);
     meta.appendChild(lbl); meta.appendChild(btn);
     row.appendChild(meta);
     wrap.appendChild(row);
@@ -754,7 +802,7 @@ function persist() {
   }));
 }
 async function loadBuiltins() {
-  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop'];
+  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop'];
   for (const n of names) {
     const id = 'builtin-' + n;
     try {
@@ -787,8 +835,17 @@ function init() {
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
   }
 
-  ts.onchange = renderPreview; ss.onchange = renderPreview; FX_KEYS.forEach(k => document.getElementById('fx-' + k).onchange = renderPreview); document.getElementById('motion').onchange = renderPreview;
-  for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).oninput = renderPreview;
+  ts.onchange = renderPreview;
+  ss.onchange = () => { if (!writeProp({ skin: ss.value })) renderPreview(); };
+  document.getElementById('motion').onchange = () => { if (!writeProp({ motion: document.getElementById('motion').value })) renderPreview(); };
+  FX_KEYS.forEach(k => document.getElementById('fx-' + k).onchange = () => {
+    if (window.ACTIVE) writeProp({ fx: currentFx() });
+    else renderPreview();
+  });
+  for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).oninput = () => {
+    if (window.ACTIVE) { const c = { ...(propsFor(window.ACTIVE).copy ?? {}) }; c[k] = document.getElementById('c-' + k).value; writeProp({ copy: c }); }
+    else renderPreview();
+  };
   document.querySelectorAll('.dice').forEach(b => b.onclick = () => {
     document.getElementById('c-' + b.dataset.roll).value = roll(b.dataset.roll); renderPreview();
   });
@@ -797,6 +854,39 @@ function init() {
     renderPreview();
   };
   const tp = id => document.getElementById(id);
+  window.syncControls = () => {
+    const bar = document.getElementById('activeBar');
+    bar.firstChild.textContent = 'Editing: ' + (window.ACTIVE ? window.ACTIVE.toUpperCase() : 'ALL ADS') + ' ';
+    if (!window.ACTIVE) return;
+    const p = propsFor(window.ACTIVE);
+    if (p.skin) document.getElementById('skin').value = p.skin;
+    if (p.motion) document.getElementById('motion').value = p.motion;
+    const c = effCopy(window.ACTIVE);
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = c[k] ?? '';
+    if (p.fx != null) FX_KEYS.forEach(k => document.getElementById('fx-' + k).checked = p.fx.includes(k));
+  };
+  window.GLOW_COLOR = localStorage.getItem('mph-glow-color') || null;
+  if (window.GLOW_COLOR) tp('glow-color').value = window.GLOW_COLOR;
+  tp('glow-color').oninput = () => {
+    window.GLOW_COLOR = tp('glow-color').value;
+    localStorage.setItem('mph-glow-color', window.GLOW_COLOR);
+    if (window.ACTIVE) writeProp({}), (LAYOUT[window.ACTIVE].glowColor = window.GLOW_COLOR), saveLayout();
+    renderPreview();
+  };
+  window.GLOW_STRENGTH = Number(localStorage.getItem('mph-glow-strength') || 55);
+  tp('glow-strength').value = window.GLOW_STRENGTH;
+  tp('glow-strength').oninput = () => {
+    window.GLOW_STRENGTH = Number(tp('glow-strength').value);
+    localStorage.setItem('mph-glow-strength', window.GLOW_STRENGTH);
+    if (window.ACTIVE) { (LAYOUT[window.ACTIVE] ??= {}).glowStrength = window.GLOW_STRENGTH; saveLayout(); }
+    renderPreview();
+  };
+  tp('glow-auto').onclick = () => {
+    window.GLOW_COLOR = null; localStorage.removeItem('mph-glow-color');
+    if (window.ACTIVE && LAYOUT[window.ACTIVE]) delete LAYOUT[window.ACTIVE].glowColor;
+    saveLayout(); renderPreview();
+  };
+  document.getElementById('editAll').onclick = () => { window.ACTIVE = null; syncControls(); renderPreview(); };
   const nodeBox = (adEl, k) => {
     const n = layoutNodes(adEl)[k]; if (!n) return null;
     const ar = adEl.getBoundingClientRect(), r = n.getBoundingClientRect();
