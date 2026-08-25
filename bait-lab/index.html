@@ -79,6 +79,8 @@
   .editable { cursor:move; }
   .editable:hover { outline:1px dashed rgba(255,136,0,.85); outline-offset:1px; }
   .selected { outline:2px solid #ff8800 !important; outline-offset:1px; }
+  .rzhandle { position:absolute; right:-7px; bottom:-7px; width:14px; height:14px; background:#ff8800;
+    border:2px solid #fff; border-radius:2px; cursor:nwse-resize; z-index:20; pointer-events:auto; }
   #layoutHint { color:var(--ui-dim); font-size:11px; margin:4px 0 6px; }
   /* motion: appear = image blinks; lineup = 4 copies marching in */
   .ad.m-appear.ph1 .pic img { visibility:hidden; }
@@ -181,8 +183,22 @@
     <button id="rollAll">🎲 roll all copy</button>
 
     <h2>Layout</h2>
-    <div id="layoutHint">drag anywhere (overlap is fine) - scroll resizes - double-click to type (Enter = new line) - click + Delete removes - &#8984;-click thumbs for multi-icon cycling - &#8984;Z undo</div>
+    <div id="layoutHint">drag to move - drag the corner handle to resize (ratio locked) - double-click to type - click + Delete removes - &#8984;-click thumbs to cycle icons - &#8984;Z undo</div>
     <button id="resetLayout">reset layout (this format)</button>
+
+    <h2>Background</h2>
+    <div class="row"><input type="color" id="bg-color" value="#000000" style="height:30px;"><button id="bg-clear">skin default</button></div>
+    <select id="bg-pattern">
+      <option value="">no pattern</option>
+      <option value="camo">camo tile</option>
+    </select>
+    <div class="row"><span style="color:var(--ui-dim);font-size:11px;align-self:center;">pattern size</span><input type="number" id="bg-patsize" value="120" min="20" max="600"></div>
+
+    <h2>Align (shift-click elements)</h2>
+    <div id="alignHint" style="color:var(--ui-dim); font-size:11px; margin-bottom:4px;">shift-click 2+ elements</div>
+    <div class="row"><button data-align="left">&#8676; L</button><button data-align="hcenter">&#8596; C</button><button data-align="right">R &#8677;</button></div>
+    <div class="row"><button data-align="top">&#8672; T</button><button data-align="vcenter">&#8597; M</button><button data-align="bottom">B</button></div>
+    <div class="row"><button data-align="dist-h">distribute &#8596;</button><button data-align="dist-v">distribute &#8597;</button></div>
 
     <h2>Text (click a text element)</h2>
     <div id="textPanel" style="display:none">
@@ -402,6 +418,19 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   const glowOn = fx.includes('glow');
   el.innerHTML = t.html;
   for (const [k,v] of Object.entries(SKINS[skin])) el.style.setProperty(k, v);
+  const _bg = LAYOUT[template]?.bg;
+  if (_bg) {
+    if (_bg.color) el.style.background = _bg.color;
+    if (_bg.pattern) {
+      const pa = assets.find(a => a.id === 'builtin-' + _bg.pattern) || assets.find(a => a.name === _bg.pattern);
+      if (pa) {
+        if (_bg.color) el.style.backgroundColor = _bg.color;
+        el.style.backgroundImage = `url("${pa.dataUrl}")`;
+        el.style.backgroundRepeat = 'repeat';
+        el.style.backgroundSize = (_bg.patsize || 120) + 'px';
+      }
+    }
+  }
   for (const [slot, text] of Object.entries(copy))
     el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => {
       n.textContent = text;
@@ -541,7 +570,7 @@ function enableEditing(ad, template) {
         n.removeEventListener('pointermove', move);
         n.removeEventListener('pointerup', up);
         saveLayout();
-        if (!moved) selectSlot(template, key);
+        if (!moved) selectSlot(template, key, ev.shiftKey);
       };
       n.addEventListener('pointermove', move);
       n.addEventListener('pointerup', up);
@@ -770,11 +799,78 @@ function init() {
     renderPreview();
   };
   const tp = id => document.getElementById(id);
-  window.selectSlot = (t, k) => {
-    window.SEL = { t, k };
-    document.querySelectorAll('#previewWrap .selected').forEach(x => x.classList.remove('selected'));
+  const nodeBox = (adEl, k) => {
+    const n = layoutNodes(adEl)[k]; if (!n) return null;
+    const ar = adEl.getBoundingClientRect(), r = n.getBoundingClientRect();
+    return { k, n, x: r.left - ar.left, y: r.top - ar.top, w: r.width, h: r.height };
+  };
+  const doAlign = mode => {
+    const t = window.SEL?.t || sel('template');
     const adEl = document.querySelector('#previewWrap .t-' + t);
-    if (adEl) layoutNodes(adEl)[k]?.classList.add('selected');
+    if (!adEl || window.selKeys.length < 2) return;
+    snapshotLayout();
+    const L = (LAYOUT[t] ??= {}); L.off ??= {};
+    const boxes = window.selKeys.map(k => nodeBox(adEl, k)).filter(Boolean);
+    const setOff = (b, dx, dy) => { const o = (L.off[b.k] ??= { dx:0, dy:0, s:1 }); if (dx!==undefined) o.dx = Math.round((o.dx||0)+dx); if (dy!==undefined) o.dy = Math.round((o.dy||0)+dy); };
+    if (mode==='left') { const m = Math.min(...boxes.map(b=>b.x)); boxes.forEach(b=>setOff(b, m-b.x, undefined)); }
+    if (mode==='right') { const m = Math.max(...boxes.map(b=>b.x+b.w)); boxes.forEach(b=>setOff(b, m-(b.x+b.w), undefined)); }
+    if (mode==='hcenter') { const c = boxes.reduce((a,b)=>a+b.x+b.w/2,0)/boxes.length; boxes.forEach(b=>setOff(b, c-(b.x+b.w/2), undefined)); }
+    if (mode==='top') { const m = Math.min(...boxes.map(b=>b.y)); boxes.forEach(b=>setOff(b, undefined, m-b.y)); }
+    if (mode==='bottom') { const m = Math.max(...boxes.map(b=>b.y+b.h)); boxes.forEach(b=>setOff(b, undefined, m-(b.y+b.h))); }
+    if (mode==='vcenter') { const c = boxes.reduce((a,b)=>a+b.y+b.h/2,0)/boxes.length; boxes.forEach(b=>setOff(b, undefined, c-(b.y+b.h/2))); }
+    if (mode==='dist-h' && boxes.length>2) { const s2=[...boxes].sort((a,b)=>a.x-b.x); const lo=s2[0].x, hi=s2[s2.length-1].x; const step=(hi-lo)/(s2.length-1); s2.forEach((b,i)=>setOff(b, lo+step*i-b.x, undefined)); }
+    if (mode==='dist-v' && boxes.length>2) { const s2=[...boxes].sort((a,b)=>a.y-b.y); const lo=s2[0].y, hi=s2[s2.length-1].y; const step=(hi-lo)/(s2.length-1); s2.forEach((b,i)=>setOff(b, undefined, lo+step*i-b.y)); }
+    saveLayout(); renderPreview();
+  };
+  document.querySelectorAll('[data-align]').forEach(b => b.onclick = () => doAlign(b.dataset.align));
+  const setBg = patch => {
+    snapshotLayout();
+    const t = sel('template');
+    const cur = (LAYOUT[t] ??= {}).bg ??= {};
+    Object.assign(cur, patch);
+    saveLayout(); renderPreview();
+  };
+  tp('bg-color').oninput = () => setBg({ color: tp('bg-color').value });
+  tp('bg-clear').onclick = () => { snapshotLayout(); const t = sel('template'); if (LAYOUT[t]) delete LAYOUT[t].bg; saveLayout(); renderPreview(); };
+  tp('bg-pattern').onchange = () => setBg({ pattern: tp('bg-pattern').value || undefined });
+  tp('bg-patsize').onchange = () => setBg({ patsize: Number(tp('bg-patsize').value) || 120 });
+  window.selKeys = window.selKeys || [];
+  window.selectSlot = (t, k, additive) => {
+    window.SEL = { t, k };
+    if (additive) { window.selKeys = window.selKeys.includes(k) ? window.selKeys.filter(x=>x!==k) : [...window.selKeys, k]; }
+    else window.selKeys = [k];
+    document.querySelectorAll('#previewWrap .selected').forEach(x => x.classList.remove('selected'));
+    document.querySelectorAll('.rzhandle').forEach(h => h.remove());
+    document.querySelectorAll('#previewWrap .selected').forEach(x => x.classList.remove('selected'));
+    const adEl0 = document.querySelector('#previewWrap .t-' + t);
+    if (adEl0) for (const sk of window.selKeys) layoutNodes(adEl0)[sk]?.classList.add('selected');
+    const adEl = document.querySelector('#previewWrap .t-' + t);
+    const node = adEl ? layoutNodes(adEl)[k] : null;
+    if (node) {
+      node.classList.add('selected');
+      if (getComputedStyle(node).position === 'static') node.style.position = 'relative';
+      const h = document.createElement('div');
+      h.className = 'rzhandle';
+      h.onpointerdown = ev => {
+        ev.preventDefault(); ev.stopPropagation();
+        h.setPointerCapture(ev.pointerId);
+        snapshotLayout();
+        const L2 = (LAYOUT[t] ??= {}); L2.off ??= {};
+        const o = (L2.off[k] ??= { dx: 0, dy: 0, s: 1 });
+        const startS = o.s || 1, startX = ev.clientX, startY = ev.clientY;
+        const base = node.getBoundingClientRect();
+        const diag0 = Math.hypot(base.width, base.height) / startS || 1;
+        const mv = e2 => {
+          const dd = Math.hypot(e2.clientX - startX + base.width, e2.clientY - startY + base.height);
+          o.s = Math.min(6, Math.max(0.2, startS + (e2.clientX - startX + e2.clientY - startY) / 200));
+          node.style.transform = `translate(${o.dx||0}px, ${o.dy||0}px) scale(${o.s})`;
+          node.style.transformOrigin = 'center';
+        };
+        const upp = () => { h.removeEventListener('pointermove', mv); h.removeEventListener('pointerup', upp); saveLayout(); };
+        h.addEventListener('pointermove', mv); h.addEventListener('pointerup', upp);
+      };
+      node.appendChild(h);
+    }
     if (k === 'pic') { tp('textPanel').style.display = 'none'; return; }
     const st = LAYOUT[t]?.text?.[k] ?? {};
     tp('textPanel').style.display = 'block';
