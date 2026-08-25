@@ -192,7 +192,12 @@
     </div>
     <select id="overlay-pattern">
       <option value="">solid color</option>
-      <option value="camo">camo pattern</option>
+      <option value="chrome">chrome</option>
+      <option value="gold">gold</option>
+      <option value="diamond">diamond plate</option>
+      <option value="holo">holographic</option>
+      <option value="crystal">crystal</option>
+      <option value="camo">camo</option>
     </select>
     <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
     <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
@@ -425,6 +430,13 @@ function applyLayout(el, template) {
 }
 
 const FX_KEYS = ['glow','sparkle','glitter','overlay'];
+const CSS_PATTERNS = {
+  chrome: 'linear-gradient(180deg,#e9edf2 0%,#9aa6b4 18%,#4a5666 32%,#c7d0da 50%,#6f7c8c 62%,#aeb9c6 78%,#3c4655 92%,#dfe6ee 100%)',
+  gold:   'linear-gradient(180deg,#fff3b0 0%,#f4c430 22%,#8a5a00 42%,#ffe07a 55%,#b8860b 70%,#fff0a8 88%,#7a5200 100%)',
+  diamond:'repeating-linear-gradient(45deg,#8892a0 0 6px,#c3ccd6 6px 12px), repeating-linear-gradient(-45deg,rgba(0,0,0,.28) 0 6px,rgba(255,255,255,.28) 6px 12px)',
+  holo:   'linear-gradient(115deg,#ff2ec4 0%,#ff8a00 18%,#ffe600 34%,#3cff8e 52%,#00e5ff 68%,#7a5cff 84%,#ff2ec4 100%)',
+  crystal:'conic-gradient(from 0deg,#ff9ff3,#a29bfe,#74b9ff,#55efc4,#ffeaa7,#fd79a8,#ff9ff3)',
+};
 window.ACTIVE = null;
 function propsFor(t) { return LAYOUT[t]?.props ?? {}; }
 function effSkin(t) { return propsFor(t).skin ?? document.getElementById('skin').value; }
@@ -542,7 +554,10 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       d.className = 'tint';
       const u = `url("${imgUrl || PLACEHOLDER}")`;
       d.style.webkitMaskImage = d.style.maskImage = u;
-      if (pat) {
+      if (pat && CSS_PATTERNS[pat]) {
+        d.style.background = CSS_PATTERNS[pat];
+        if (pat === 'diamond') d.style.backgroundSize = '18px 18px';
+      } else if (pat) {
         const pa = assets.find(a => a.id === 'builtin-' + pat) || assets.find(a => a.name === pat);
         d.style.background = pa ? `url("${pa.dataUrl}") center/cover` : col;
       } else d.style.background = col;
