@@ -100,7 +100,7 @@ body.pshow #chatbox .ctabs .jp{display:none;}
 *{scrollbar-width:none;-ms-overflow-style:none;}
 *::-webkit-scrollbar{display:none;width:0;height:0;}
 /* the overlays ON her cam fade out as her screen takes over (not a sudden disappear) */
-.hearts,.wmark,.livebadge,.tiptotal{transition:opacity 1.8s ease;}
+.hearts,.wmark,.livebadge,.tiptotal{transition:opacity .4s ease;}
 body.diving .hearts,body.diving .wmark,body.diving .livebadge,body.diving .tiptotal{opacity:0;}
 
 /* pink tab-style buttons (reference: cam-site tabs, made pink) */
@@ -2163,7 +2163,7 @@ var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;
   var s=window._fitS||1;                                  // base fit-scale of the locked 16:9 UI
-  if(p<=0){ w.style.transform='scale('+s+')'; w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; window._diving=false; if(!window._autoDive){window._autoZmax=null; window._herC=null; window._hsH0=null; window._destX=null; var hs0=document.getElementById('hstage'); if(hs0) hs0.style.height='';} document.body.classList.remove('diving'); if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
+  if(p<=0){ w.style.transform='scale('+s+')'; if(!window._recjobMode) w.style.willChange=''; var fd0=document.getElementById('fdisp'); if(fd0) fd0.setAttribute('scale','0'); window._portalFish=0; window._diving=false; window._revFast=false; window._diveU=null; if(!window._autoDive){window._autoZmax=null; window._herC=null; window._hsH0=null; window._destX=null; var hs0=document.getElementById('hstage'); if(hs0) hs0.style.height='';} document.body.classList.remove('diving'); if(typeof updateCRT==='function') updateCRT(); composeWrapFilter(); return; }
   var S=1+p*((window._autoZmax||PORTAL.zmax)-1);
   // zoom is computed in the fixed 1280x720 design space (wrap origin 0,0), then the whole thing is fit-scaled
   var lx=zc.cx, ly=zc.cy;
@@ -2203,8 +2203,16 @@ function loopStep(){
   // camera move: pans+zooms so her frame ends up filling the whole screen (no fading, just the move)
   var dx = auto ? 640 : zc.cx, dy = auto ? 360 : zc.cy;
   zc.vx += (dx-zc.vx)*0.12; zc.vy += (dy-zc.vy)*0.12;
-  var sp = auto ? 0.035 : PORTAL.speed;                    // auto takeover eases in slowly and smoothly
-  zoomP += (target-zoomP)*sp;
+  if(auto || window._revFast){
+    // fixed 0.3s glide with smootherstep easing — silky in, silky out
+    var du=1/18;   // ~18 frames at 60fps
+    if(window._diveU==null) window._diveU=Math.max(0,Math.min(1,zoomP));
+    window._diveU=Math.max(0,Math.min(1, window._diveU + (target===1?du:-du)));
+    var u=window._diveU;
+    zoomP = u*u*u*(u*(u*6-15)+10);
+  } else {
+    zoomP += (target-zoomP)*PORTAL.speed;
+  }
   // only when her screen fully fills the viewport do we swap to the raw video (invisible switch)
   if(goHer && auto && zoomP>ZTHRESH){ zoomAnim=null; commitInside(); return; }
   applyZoom(zoomP);
@@ -2302,6 +2310,7 @@ function exitInside(){
     if(window._dlHold){ gvid.muted=true; gvid.play().catch(function(){}); }
     else if(typeof rotateCaller==='function') rotateCaller();
   }catch(e){}
+  window._revFast=true; window._diveU=1;                     // pull-out: same 0.3s silky glide
   if(!zoomAnim) zoomAnim=requestAnimationFrame(loopStep);   // eases zoomP -> 0; applyZoom(0) does the final cleanup
 }
 (function(){
@@ -2490,6 +2499,19 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
   });
   if(document.readyState!=='loading') dlInit(); else document.addEventListener('DOMContentLoaded',dlInit);
 
+  function instantInside(){
+    try{
+      var hsEl=document.getElementById('hstage');
+      window._herC=herCenterDesign();
+      var hw=hsEl?hsEl.offsetWidth:632, hh=hsEl?hsEl.offsetHeight:537;
+      window._autoZmax=Math.max(1280/hw, 720/hh)*1.02;
+      window._overHer=true; window._autoDive=true; pressOn=false;
+      document.body.classList.add('diving');
+      zc.cx=window._herC.x; zc.cy=window._herC.y; zc.vx=640; zc.vy=360;
+      zoomP=0.99; window._diveU=1; applyZoom(zoomP);
+      commitInside();
+    }catch(e){}
+  }
   // zoom timeline parser: "3-6, 10-14" = in@3 out@6, in@10 out@14; a bare "3" stays in until the end
   function parseZoomSeq(str){
     if(!str) return [];
@@ -2551,6 +2573,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           var finned={};
           function fin(){ if(finned.done) return; if(++got<GATES) return; finned.done=1;
             rr.dur=R.CONNECT+(R.len||Math.max(0.5,rr.callerDur-R.calIn))+R.TAIL;
+            if(R.zoomSeq && R.zoomSeq[0] && R.zoomSeq[0].tin<=0.05){ instantInside(); rr.committed=true; rr.zi=0; }
             res({duration:rr.dur, fps:R.fps, frames:Math.ceil(rr.dur*R.fps)}); }
           vv.onloadedmetadata=function(){ rr.callerDur=vv.duration||8; fin(); };
           vv.onerror=function(){ rr.callerDur=8; fin(); };
@@ -2602,7 +2625,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
         }
         if(window._diving && !insideMode){
           if(rr.diveT0==null) rr.diveT0=t;
-          var fop=Math.max(0,1-(t-rr.diveT0)/1.8).toFixed(3);
+          var fop=Math.max(0,1-(t-rr.diveT0)/0.4).toFixed(3);
           try{ ['hearts','wmark','livebadge','tiptotal'].forEach(function(cl){
             var els=document.getElementsByClassName(cl);
             for(var q2=0;q2<els.length;q2++) els[q2].style.opacity=fop;
@@ -2638,7 +2661,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
                 if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; }
               }
               // overlays fade back in as the camera pulls out
-              var rop=Math.min(1,(t-rr.outT0)/1.2).toFixed(3);
+              var rop=Math.min(1,(t-rr.outT0)/0.4).toFixed(3);
               ['hearts','wmark','livebadge','tiptotal'].forEach(function(cl){
                 var els=document.getElementsByClassName(cl);
                 for(var q3=0;q3<els.length;q3++) els[q3].style.opacity=rop;
@@ -2837,8 +2860,9 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
       var _plen=(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})();
       var _ciT=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
       probe('clips/'+jobCaller, function(D){ var run=_plen||(D>0?Math.max(0.5,D-_ciT):60); setTimeout(fin, run*1000+600); });
-      jobZoomSeq.forEach(function(ev){
-        setTimeout(function(){
+      if(jobZoomSeq[0] && jobZoomSeq[0].tin<=0.05 && !insideMode){ instantInside(); }
+      jobZoomSeq.forEach(function(ev,evi){
+        if(!(evi===0 && ev.tin<=0.05)) setTimeout(function(){
           try{ window._overHer=true; window._autoDive=true; pressOn=false; document.body.classList.add('diving'); startLoop(); }catch(e){}
         }, ev.tin*1000);
         if(ev.tout!=null) setTimeout(function(){
