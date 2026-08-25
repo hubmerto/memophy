@@ -143,17 +143,19 @@ const TPL = {
   'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
 };
 const COPY = {
-  headline: ["{N} {THING} IN YOUR AREA","DOCTORS HATE THIS {THING}","MY {RELATION} IS {STATE}","YOU WON'T BELIEVE #{N}","ONLY 1% CAN {VERB} THIS","{RELATION} DISCOVERS ODD {THING}","THIS {THING} WON'T STAY UP LONG","1 WEIRD {THING} EXPERTS HATE","LOCALS {STATE} OVER THIS {THING}","CAN YOU {VERB} FASTER THAN A {RELATION}?"],
-  sub: ["results not typical","watch before it gets deleted","she is 2.3 miles away","trick discovered by a local {RELATION}","you have (1) new reward waiting","sent you {N} messages","no credit card required*","as seen on the internet","offer expires in 04:59","this is 100% real (it is not)"],
-  cta: ["CLICK HERE","MEET NOW >>","CLAIM PRIZE","WATCH FREE","DOWNLOAD ⬇","SEE PHOTOS","OK","REPLY"],
-  badge: ["LIVE","NEW","18+... jk","AD","SPONSORED","HOT","2 min ago"],
+  headline: ["{N} DL {TYPE}S IN YOUR AREA","TRADE IS WAITING","MEET {TYPE}S NEAR YOU TONIGHT","STR8 BUT CURIOUS?","HE'S DL. HE'S {DIST} MILES AWAY.","MASC4MASC ONLY","NO ONE HAS TO KNOW","YOUR {RELATION} IS ON HERE","T4T CUTIES ONLINE RN","DADDIES HATE THIS {THING}","ONLY 1% CAN HANDLE THIS {TYPE}","{TYPE}S {STATE} OVER THIS APP"],
+  sub: ["he is {DIST} miles away","discretion guaranteed*","no pic no reply","can host tonight","ur profile got ({N}) taps","wife thinks he's at the gym","100% discreet (it is not)","no sign up. no shame. some shame.","looking rn","sent you {N} pics","ur type is online","he won't tell if you won't"],
+  cta: ["MEET TRADE >>","TAP IN","CRUISE NOW","SEE PICS","DM HIM","IM READY","YES IM DL","UNLOCK CHAT","WATCH FREE"],
+  badge: ["DL","M4M","T4T","DISCREET","18+","ONLINE RN","NEW BOYS","NSA","LIVE"],
 };
 const BANKS = {
   N:["3","7","12","17","23","41","99"],
-  THING:["TRICK","SPICE","PIXEL","VASE","CHAIR","FONT","GRADIENT","LOOPHOLE","PLANT"],
-  RELATION:["NEIGHBOR","DENTIST","LANDLORD","INTERN","GRANDMA","ROOMMATE"],
-  STATE:["FURIOUS","SHOOK","GLOWING","RICH NOW","SPEECHLESS","BANNED"],
-  VERB:["SEE","SOLVE","RENDER","PRONOUNCE","RESIST","UNSEE"],
+  TYPE:["TWINK","BEAR","OTTER","DADDY","JOCK","PAPI","MASC","TRADE"],
+  DIST:["0.4","0.7","1.2","2.3"],
+  RELATION:["NEIGHBOR","LANDLORD","BARBER","GYM BRO","ROOMMATE","DENTIST"],
+  THING:["TRICK","APP","LOOPHOLE","FILTER","ANGLE"],
+  STATE:["FURIOUS","SHOOK","SPEECHLESS","FERAL","BANNED"],
+  VERB:["SEE","HANDLE","RESIST","UNSEE"],
 };
 const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7300"/><stop offset="1" stop-color="#5500aa"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="160" font-family="Arial" font-size="42" font-weight="bold" fill="#fff" text-anchor="middle" opacity=".85">IMG?</text></svg>');
