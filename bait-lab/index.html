@@ -60,7 +60,7 @@
     -webkit-text-fill-color:transparent;
     filter:var(--glow,none);
   }
-  .crtv.frame2 .cta[data-blink] { visibility:hidden; }
+  .crtv.frame2 [data-blink] { visibility:hidden; }
   .crtv .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
   .crtv img { display:block; object-fit:contain; }
   .crtv .pic { z-index:1; }
@@ -248,6 +248,7 @@
       <label class="fxopt"><input type="checkbox" id="tp-bold"> bold</label>
       <label class="fxopt"><input type="checkbox" id="tp-italic"> italic</label>
       <label class="fxopt"><input type="checkbox" id="tp-underline"> underline</label>
+      <label class="fxopt"><input type="checkbox" id="tp-blink"> blinking</label>
       <button id="tp-reset">reset this text style</button>
     </div>
 
@@ -440,6 +441,8 @@ function applyLayout(el, template) {
     if (ts.bold) n.style.fontWeight = 'bold';
     if (ts.italic) n.style.fontStyle = 'italic';
     if (ts.underline) n.style.textDecoration = 'underline';
+    if (ts.blink === true) n.setAttribute('data-blink', '');
+    if (ts.blink === false) n.removeAttribute('data-blink');
     if (ts.w) { n.style.width = ts.w + 'px'; n.style.marginLeft = 'auto'; n.style.marginRight = 'auto'; }
     if (ts.color) {
       // solid color override wins over the gradient-clip treatment
@@ -1200,6 +1203,8 @@ function init() {
     tp('tp-bold').checked = !!st.bold;
     tp('tp-italic').checked = !!st.italic;
     tp('tp-underline').checked = !!st.underline;
+    const nodeB = document.querySelector('#previewWrap .t-' + t)?.querySelector(`[data-slot="${k}"]`);
+    tp('tp-blink').checked = st.blink ?? !!(nodeB && nodeB.hasAttribute('data-blink'));
     if (st.color) tp('tp-color').value = st.color;
   };
   const updateText = patch => {
@@ -1217,6 +1222,7 @@ function init() {
   tp('tp-bold').onchange = () => updateText({ bold: tp('tp-bold').checked });
   tp('tp-italic').onchange = () => updateText({ italic: tp('tp-italic').checked });
   tp('tp-underline').onchange = () => updateText({ underline: tp('tp-underline').checked });
+  tp('tp-blink').onchange = () => updateText({ blink: tp('tp-blink').checked });
   tp('tp-reset').onclick = () => {
     if (!window.SEL) return;
     snapshotLayout();
