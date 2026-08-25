@@ -263,6 +263,13 @@
 </main>
 
 <script>
+window.onerror = (msg) => {
+  let b = document.getElementById('errbar');
+  if (!b) { b = document.createElement('div'); b.id = 'errbar';
+    b.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:#a00;color:#fff;font:11px monospace;padding:4px 10px;z-index:999;';
+    document.body.appendChild(b); }
+  b.textContent = 'error: ' + String(msg).slice(0, 180);
+};
 /* ============ data ============ */
 const SKINS = {
   magenta: { '--bg':'#0d000d','--grad-a':'#ffffff','--grad-b':'#ffd9ff','--grad-c':'#ff33cc','--headline-font':'Impact,"Arial Black",Arial,sans-serif','--headline-color':'#ffffff','--stroke':'#ff00aa','--cta-bg':'#ff00aa','--cta-border':'#550044','--glow':'drop-shadow(0 0 6px #ff00cc) drop-shadow(0 0 12px rgba(255,0,170,.7))' },
@@ -451,7 +458,7 @@ const CSS_PATTERNS = {
 };
 window.ACTIVE = null;
 function propsFor(t) { return LAYOUT[t]?.props ?? {}; }
-function effSkin(t) { return propsFor(t).skin ?? document.getElementById('skin').value; }
+function effSkin(t) { const v = propsFor(t).skin ?? document.getElementById('skin').value; return SKINS[v] ? v : Object.keys(SKINS)[0]; }
 function effMotion(t) { return propsFor(t).motion ?? document.getElementById('motion').value; }
 function effFx(t) { const p = propsFor(t).fx; return p != null ? p : currentFx(); }
 function effCopy(t) {
@@ -472,6 +479,7 @@ function currentFx() {
 function makeAd(template, skin, copy, imgUrl, fx, motion) {
   fx = fx ?? currentFx();
   motion = motion ?? (document.getElementById('motion')?.value || 'static');
+  if (!SKINS[skin]) skin = Object.keys(SKINS)[0];
   const t = TPL[template];
   const el = document.createElement('div');
   el.className = `ad t-${template} skin-${skin}`;
@@ -603,7 +611,20 @@ function currentCopy() {
     badge: document.getElementById('c-badge').value,
   };
 }
+let RP_RECOVERED = false;
 function renderPreview() {
+  try { renderPreviewInner(); }
+  catch (err) {
+    if (!RP_RECOVERED) {
+      RP_RECOVERED = true;
+      LAYOUT = {}; localStorage.removeItem('mph-bait-layout'); window.ACTIVE = null;
+      try { renderPreviewInner(); return; } catch (e2) { err = e2; }
+    }
+    const wrap = document.getElementById('previewWrap');
+    wrap.innerHTML = '<div style="color:#f66;font:12px monospace;padding:20px;">render error: ' + String(err).slice(0, 200) + ' — try the reset all button</div>';
+  }
+}
+function renderPreviewInner() {
   const wrap = document.getElementById('previewWrap');
   wrap.innerHTML = '';
   for (const template of Object.keys(TPL)) {
@@ -948,7 +969,7 @@ function init() {
   });
   const applyState = st => {
     LAYOUT = JSON.parse(JSON.stringify(st.layout || {}));
-    document.getElementById('skin').value = st.skin || 'magenta';
+    document.getElementById('skin').value = SKINS[st.skin] ? st.skin : Object.keys(SKINS)[0];
     document.getElementById('motion').value = st.motion || 'static';
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = st.copy?.[k] ?? '';
     FX_KEYS.forEach(k => document.getElementById('fx-' + k).checked = (st.fx || '').includes(k));
