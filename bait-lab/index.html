@@ -31,7 +31,7 @@
   #drop { border:2px dashed #3a3a3a; padding:14px 8px; text-align:center; color:var(--ui-dim); cursor:pointer; margin-bottom:8px; }
   #drop.over { border-color:var(--ui-acc); color:var(--ui-acc); }
   #lib { display:flex; flex-wrap:wrap; gap:6px; }
-  .asset { position:relative; width:62px; height:62px; background:#000 center/cover no-repeat; border:2px solid #333; cursor:pointer; }
+  .asset { position:relative; width:62px; height:62px; border:2px solid #333; cursor:pointer; background-color:#2a2a2a; background-repeat:no-repeat, repeat; background-position:center, 0 0; background-size:contain, 14px 14px; }
   .asset.sel { border-color:var(--ui-acc); }
   .asset .del { position:absolute; top:-6px; right:-6px; width:16px; height:16px; line-height:14px; text-align:center;
     background:#c00; color:#fff; font:bold 10px Arial; border:1px solid #fff; border-radius:0; display:none; }
@@ -58,7 +58,7 @@
   }
   .ad.frame2 .cta[data-blink] { visibility:hidden; }
   .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
-  .ad img { display:block; }
+  .ad img { display:block; object-fit:contain; }
   .ad .pic { position:relative; }
   .ad.fx-glow .pic img { filter:drop-shadow(0 0 6px var(--grad-b,#f0f)) drop-shadow(0 0 16px var(--grad-b,#f0f)) drop-shadow(0 0 30px var(--grad-b,#f0f)) saturate(1.2); }
   .ad .sparkles { position:absolute; inset:0; pointer-events:none; background-size:100% 100%; }
@@ -66,6 +66,14 @@
   .ad .sparkles.s2 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); display:none; }
   .ad.frame2 .sparkles.s1 { display:none; }
   .ad.frame2 .sparkles.s2 { display:block; }
+  .ad .glit { position:absolute; inset:0; pointer-events:none; background-repeat:repeat; background-size:72px 72px; }
+  .ad .glit.g1 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'><path d='M8 7.6 L10.4 10 L8 12.4 L5.6 10 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M30 4.4 L31.6 6 L30 7.6 L28.4 6 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M52 11.2 L54.8 14 L52 16.8 L49.2 14 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M66 28.5 L67.5 30 L66 31.5 L64.5 30 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M14 32.2 L15.8 34 L14 35.8 L12.2 34 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M38 37.4 L40.6 40 L38 42.6 L35.4 40 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M60 48.3 L61.7 50 L60 51.7 L58.3 50 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M22 55.8 L24.2 58 L22 60.2 L19.8 58 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M46 62.5 L47.5 64 L46 65.5 L44.5 64 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M4 48.6 L5.4 50 L4 51.4 L2.6 50 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M8 7.6 L10.4 10 L8 12.4 L5.6 10 Z' fill='white' opacity='.92'/><path d='M30 4.4 L31.6 6 L30 7.6 L28.4 6 Z' fill='#ffd9f2' opacity='.92'/><path d='M52 11.2 L54.8 14 L52 16.8 L49.2 14 Z' fill='white' opacity='.92'/><path d='M66 28.5 L67.5 30 L66 31.5 L64.5 30 Z' fill='#d2fffb' opacity='.92'/><path d='M14 32.2 L15.8 34 L14 35.8 L12.2 34 Z' fill='white' opacity='.92'/><path d='M38 37.4 L40.6 40 L38 42.6 L35.4 40 Z' fill='#fff' opacity='.92'/><path d='M60 48.3 L61.7 50 L60 51.7 L58.3 50 Z' fill='#ffd9f2' opacity='.92'/><path d='M22 55.8 L24.2 58 L22 60.2 L19.8 58 Z' fill='white' opacity='.92'/><path d='M46 62.5 L47.5 64 L46 65.5 L44.5 64 Z' fill='#d2fffb' opacity='.92'/><path d='M4 48.6 L5.4 50 L4 51.4 L2.6 50 Z' fill='white' opacity='.92'/></svg>"); }
+  .ad .glit.g2 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72'><path d='M18 6.3 L19.7 8 L18 9.7 L16.3 8 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M44 7.5 L46.5 10 L44 12.5 L41.5 10 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M64 4.5 L65.5 6 L64 7.5 L62.5 6 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M6 23.4 L8.6 26 L6 28.6 L3.4 26 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M34 24.5 L35.5 26 L34 27.5 L32.5 26 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M56 33.7 L58.3 36 L56 38.3 L53.7 36 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M12 44.5 L13.5 46 L12 47.5 L10.5 46 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M40 49.3 L42.7 52 L40 54.7 L37.3 52 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M66 60.2 L67.8 62 L66 63.8 L64.2 62 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M26 66.5 L27.5 68 L26 69.5 L24.5 68 Z' fill='rgb(40,0,40)' opacity='.35' transform='translate(1,1)'/><path d='M18 6.3 L19.7 8 L18 9.7 L16.3 8 Z' fill='#d2fffb' opacity='.92'/><path d='M44 7.5 L46.5 10 L44 12.5 L41.5 10 Z' fill='white' opacity='.92'/><path d='M64 4.5 L65.5 6 L64 7.5 L62.5 6 Z' fill='white' opacity='.92'/><path d='M6 23.4 L8.6 26 L6 28.6 L3.4 26 Z' fill='white' opacity='.92'/><path d='M34 24.5 L35.5 26 L34 27.5 L32.5 26 Z' fill='#ffd9f2' opacity='.92'/><path d='M56 33.7 L58.3 36 L56 38.3 L53.7 36 Z' fill='white' opacity='.92'/><path d='M12 44.5 L13.5 46 L12 47.5 L10.5 46 Z' fill='white' opacity='.92'/><path d='M40 49.3 L42.7 52 L40 54.7 L37.3 52 Z' fill='#ffd9f2' opacity='.92'/><path d='M66 60.2 L67.8 62 L66 63.8 L64.2 62 Z' fill='white' opacity='.92'/><path d='M26 66.5 L27.5 68 L26 69.5 L24.5 68 Z' fill='#d2fffb' opacity='.92'/></svg>"); display:none; }
+  .ad.frame2 .glit.g1 { display:none; }
+  .ad.frame2 .glit.g2 { display:block; }
+  .ad .holo { position:absolute; inset:0; pointer-events:none;
+    background:linear-gradient(115deg, rgba(255,0,150,.38), rgba(0,255,255,.30) 35%, rgba(255,255,0,.26) 65%, rgba(140,0,255,.38)); }
+  .fxopt { display:block; color:var(--ui-txt); font-size:12px; margin-bottom:4px; }
   /* motion: appear = image blinks; lineup = 4 copies marching in */
   .ad.m-appear.ph1 .pic img { visibility:hidden; }
   .ad .pic img.li { display:inline-block; width:25%; height:100%; vertical-align:top; }
@@ -79,7 +87,7 @@
 
 
   .t-show-banner { width:926px; height:62px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
-  .t-show-banner .pic { float:left; width:80px; height:60px; overflow:hidden; background:#111; }
+  .t-show-banner .pic { float:left; width:80px; height:60px; overflow:hidden; }
   .t-show-banner .pic img { width:80px; height:60px; }
   .t-show-banner .badge { float:left; margin:16px 0 0 14px; padding:4px 10px; font-size:14px; letter-spacing:2px; }
   .t-show-banner .hl { float:left; margin:5px 0 0 18px; max-width:520px; font-size:42px; line-height:50px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
@@ -87,7 +95,7 @@
   .t-show-banner .cta { position:absolute; right:16px; top:16px; font:bold 22px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
 
   .t-show-rect { width:346px; height:258px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
-  .t-show-rect .pic { width:344px; height:110px; overflow:hidden; background:#111; }
+  .t-show-rect .pic { width:344px; height:110px; overflow:hidden; }
   .t-show-rect .pic img { width:344px; height:110px; }
   .t-show-rect .badge { position:absolute; top:5px; left:5px; padding:3px 9px; font-size:13px; }
   .t-show-rect .hl { padding:6px 8px 2px; font-size:32px; line-height:32px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:64px; overflow:hidden; }
@@ -122,13 +130,11 @@
       <option value="appear">appear / disappear</option>
       <option value="lineup">line up one by one</option>
     </select>
-    <h2>Image FX</h2>
-    <select id="fx">
-      <option value="none">none</option>
-      <option value="glow">glow (skin-tinted)</option>
-      <option value="sparkle">sparkle (twinkles)</option>
-      <option value="glow-sparkle">glow + sparkle</option>
-    </select>
+    <h2>Image FX (stackable)</h2>
+    <label class="fxopt"><input type="checkbox" id="fx-glow"> glow (skin-tinted overshadow)</label>
+    <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
+    <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
+    <label class="fxopt"><input type="checkbox" id="fx-holo"> holo sheen</label>
 
     <h2>Copy</h2>
     <div class="row"><input type="text" id="c-headline" placeholder="headline"><button class="dice" data-roll="headline">🎲</button></div>
@@ -232,7 +238,7 @@ function drawLib() {
   for (const a of assets) {
     const d = document.createElement('div');
     d.className = 'asset' + (selectedAsset && selectedAsset.id === a.id ? ' sel' : '');
-    d.style.backgroundImage = `url("${a.dataUrl}")`;
+    d.style.backgroundImage = `url("${a.dataUrl}"), repeating-conic-gradient(#3d3d3d 0% 25%, #262626 0% 50%)`;
     d.title = a.name;
     d.onclick = () => { selectedAsset = a; drawLib(); renderPreview(); };
     const x = document.createElement('div');
@@ -245,8 +251,12 @@ function drawLib() {
 }
 
 /* ============ ad composition ============ */
+const FX_KEYS = ['glow','sparkle','glitter','holo'];
+function currentFx() {
+  return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
+}
 function makeAd(template, skin, copy, imgUrl, fx, motion) {
-  fx = fx ?? (document.getElementById('fx')?.value || 'none');
+  fx = fx ?? currentFx();
   motion = motion ?? (document.getElementById('motion')?.value || 'static');
   const t = TPL[template];
   const el = document.createElement('div');
@@ -275,6 +285,18 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       d.className = 'sparkles ' + c;
       pic.appendChild(d);
     }
+  }
+  if (fx.includes('glitter')) {
+    const pic = el.querySelector('.pic');
+    if (pic) for (const c of ['g1','g2']) {
+      const d = document.createElement('div');
+      d.className = 'glit ' + c;
+      pic.appendChild(d);
+    }
+  }
+  if (fx.includes('holo')) {
+    const pic = el.querySelector('.pic');
+    if (pic) { const d = document.createElement('div'); d.className = 'holo'; pic.appendChild(d); }
   }
   return el;
 }
@@ -335,7 +357,7 @@ function buildOptions() {
     meta.innerHTML = `<span>${skin}</span>`;
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
-    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: sel('fx'), motion: sel('motion') }, `${template}-${skin}-${i+1}`);
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: currentFx(), motion: sel('motion') }, `${template}-${skin}-${i+1}`);
     meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
@@ -452,20 +474,21 @@ async function exportCreative(spec, name) {
 /* ============ wiring ============ */
 function persist() {
   localStorage.setItem('mph-bait-lab', JSON.stringify({
-    template: sel('template'), skin: sel('skin'), fx: sel('fx'), motion: sel('motion'), copy: currentCopy(),
+    template: sel('template'), skin: sel('skin'), fx: currentFx(), motion: sel('motion'), copy: currentCopy(),
   }));
 }
 async function loadBuiltins() {
   const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8'];
   for (const n of names) {
     const id = 'builtin-' + n;
-    if (assets.some(a => a.id === id)) continue;
     try {
       const blob = await (await fetch('icons/icon-' + n + '.png')).blob();
       if (!blob.type.startsWith('image')) continue;
       const dataUrl = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
       const a = { id, name: n, dataUrl };
-      assets.push(a); saveAsset(a);
+      const idx = assets.findIndex(x => x.id === id);
+      if (idx >= 0) assets[idx] = a; else assets.push(a);
+      saveAsset(a);
     } catch (e) {}
   }
 }
@@ -480,7 +503,7 @@ function init() {
   if (saved) {
     ts.value = saved.template in TPL ? saved.template : 'show-banner';
     ss.value = saved.skin in SKINS ? saved.skin : 'flame';
-    if (saved.fx) document.getElementById('fx').value = saved.fx;
+    if (saved.fx) FX_KEYS.forEach(k => { const el = document.getElementById('fx-' + k); if (el) el.checked = saved.fx.includes(k); });
     if (saved.motion) document.getElementById('motion').value = saved.motion;
     for (const k of ['headline','sub','cta','badge'])
       document.getElementById('c-' + k).value = saved.copy?.[k] ?? roll(k);
@@ -488,7 +511,7 @@ function init() {
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
   }
 
-  ts.onchange = renderPreview; ss.onchange = renderPreview; document.getElementById('fx').onchange = renderPreview; document.getElementById('motion').onchange = renderPreview;
+  ts.onchange = renderPreview; ss.onchange = renderPreview; FX_KEYS.forEach(k => document.getElementById('fx-' + k).onchange = renderPreview); document.getElementById('motion').onchange = renderPreview;
   for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).oninput = renderPreview;
   document.querySelectorAll('.dice').forEach(b => b.onclick = () => {
     document.getElementById('c-' + b.dataset.roll).value = roll(b.dataset.roll); renderPreview();
@@ -500,7 +523,7 @@ function init() {
   document.getElementById('build').onclick = buildOptions;
   document.getElementById('export').onclick = () =>
     exportCreative({ template: sel('template'), skin: sel('skin'), copy: currentCopy(),
-      imgUrl: selectedAsset?.dataUrl, fx: sel('fx'), motion: sel('motion') }, `${sel('template')}-${sel('skin')}`);
+      imgUrl: selectedAsset?.dataUrl, fx: currentFx(), motion: sel('motion') }, `${sel('template')}-${sel('skin')}`);
 
   const drop = document.getElementById('drop'), file = document.getElementById('file');
   drop.onclick = () => file.click();
