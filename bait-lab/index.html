@@ -135,6 +135,7 @@
   .ad .pic { overflow:visible; }
   .ad .hl { max-height:none; overflow:visible; }
   .ad .sub, .ad .cta, .ad .badge { overflow:visible; }
+  .ad .hl, .ad .sub, .ad .cta { white-space:normal; height:auto; }
   .ad.skin-acid { border:2px dotted var(--cta-border) !important; }
   .ad.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .ad.skin-plain .hl, .ad.skin-inverted .hl { font-weight:bold; }
@@ -195,6 +196,7 @@
         <option value='Verdana, Geneva, sans-serif'>Verdana</option>
       </select>
       <div class="row"><input type="number" id="tp-size" placeholder="size px" min="8" max="140"><input type="color" id="tp-color" value="#ffffff" style="height:30px;"></div>
+      <input type="number" id="tp-width" placeholder="box width px (blank = auto)" min="20" max="930">
       <label class="fxopt"><input type="checkbox" id="tp-bold"> bold</label>
       <label class="fxopt"><input type="checkbox" id="tp-italic"> italic</label>
       <label class="fxopt"><input type="checkbox" id="tp-underline"> underline</label>
@@ -375,6 +377,7 @@ function applyLayout(el, template) {
     if (ts.bold) n.style.fontWeight = 'bold';
     if (ts.italic) n.style.fontStyle = 'italic';
     if (ts.underline) n.style.textDecoration = 'underline';
+    if (ts.w) { n.style.width = ts.w + 'px'; n.style.marginLeft = 'auto'; n.style.marginRight = 'auto'; }
     if (ts.color) {
       // solid color override wins over the gradient-clip treatment
       n.style.color = ts.color; n.style.background = 'none';
@@ -767,6 +770,7 @@ function init() {
     tp('tp-slot').textContent = k + ' @ ' + t;
     tp('tp-font').value = st.font ?? '';
     tp('tp-size').value = st.size ?? '';
+    tp('tp-width').value = st.w ?? '';
     tp('tp-bold').checked = !!st.bold;
     tp('tp-italic').checked = !!st.italic;
     tp('tp-underline').checked = !!st.underline;
@@ -782,6 +786,7 @@ function init() {
   };
   tp('tp-font').onchange = () => updateText({ font: tp('tp-font').value || undefined });
   tp('tp-size').onchange = () => updateText({ size: Number(tp('tp-size').value) || undefined });
+  tp('tp-width').onchange = () => updateText({ w: Number(tp('tp-width').value) || undefined });
   tp('tp-color').oninput = () => updateText({ color: tp('tp-color').value });
   tp('tp-bold').onchange = () => updateText({ bold: tp('tp-bold').checked });
   tp('tp-italic').onchange = () => updateText({ italic: tp('tp-italic').checked });
