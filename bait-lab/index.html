@@ -428,6 +428,21 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'Delete' || e.key === 'Backspace') && window.SEL) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
     e.preventDefault();
+    if (window.SEL.k.startsWith('x:')) {
+      e.preventDefault();
+      snapshotLayout();
+      const { t, k } = window.SEL;
+      const id = k.slice(2);
+      const L = LAYOUT[t];
+      if (L) {
+        L.extras = (L.extras ?? []).filter(x => String(x.id) !== id);
+        if (L.off) delete L.off[k];
+        if (L.text) delete L.text[k];
+      }
+      window.SEL = null;
+      saveLayout(); renderPreview();
+      return;
+    }
     // deleting the icon from the preview permanently removes it from the library
     if (window.SEL.k === 'pic' && selectedAsset) {
       const gone = selectedAsset.id;
@@ -449,10 +464,16 @@ document.addEventListener('keydown', e => {
     if (String(window.getSelection()).length) return; // let native text copy work
     if (window.SEL) {
       const { t, k } = window.SEL;
-      window.CLIP = { kind: 'slot', srcSlot: k,
-        off: JSON.parse(JSON.stringify(LAYOUT[t]?.off?.[k] ?? null)),
-        text: JSON.parse(JSON.stringify(LAYOUT[t]?.text?.[k] ?? null)),
-        content: k !== 'pic' ? effCopy(t)[k] : null };
+      const adEl = document.querySelector('#previewWrap .t-' + t);
+      const node = adEl ? layoutNodes(adEl)[k] : null;
+      if (k === 'pic' || (node && node.tagName === 'IMG')) {
+        const img = node ? (node.tagName === 'IMG' ? node : node.querySelector('img[data-slot], img[data-xtra], img')) : null;
+        window.CLIP = { kind: 'add-img', img: img?.src || selectedAsset?.dataUrl };
+      } else {
+        window.CLIP = { kind: 'add-text',
+          text: node ? node.innerText : (effCopy(t)[k] ?? 'TEXT'),
+          style: JSON.parse(JSON.stringify(LAYOUT[t]?.text?.[k] ?? null)) };
+      }
       e.preventDefault();
     } else if (window.ACTIVE) {
       window.CLIP = { kind: 'crtv', data: JSON.parse(JSON.stringify(LAYOUT[window.ACTIVE] ?? {})) };
@@ -462,15 +483,20 @@ document.addEventListener('keydown', e => {
   }
   if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'v' && window.CLIP) {
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
-    if (window.CLIP.kind === 'slot' && window.SEL) {
+    if (window.CLIP.kind === 'add-img' || window.CLIP.kind === 'add-text') {
+      // paste ADDS a new independent item into the target ad
+      const t = window.SEL?.t || window.ACTIVE || Object.keys(TPL)[0];
       e.preventDefault();
       snapshotLayout();
-      const { t, k } = window.SEL;
       const L = (LAYOUT[t] ??= {});
-      if (window.CLIP.off) (L.off ??= {})[k] = JSON.parse(JSON.stringify(window.CLIP.off));
-      if (window.CLIP.text) (L.text ??= {})[k] = JSON.parse(JSON.stringify(window.CLIP.text));
-      if (window.CLIP.content != null && k !== 'pic') {
-        ((L.props ??= {}).copy ??= { ...effCopy(t) })[k] = window.CLIP.content;
+      L.extras ??= [];
+      const id = 'e' + Date.now().toString(36) + Math.floor(Math.random() * 999);
+      const bump = 16 + L.extras.length * 14;
+      if (window.CLIP.kind === 'add-img' && window.CLIP.img) {
+        L.extras.push({ id, kind: 'img', img: window.CLIP.img, dx: bump, dy: bump, s: 1 });
+      } else {
+        L.extras.push({ id, kind: 'text', text: window.CLIP.text || 'TEXT', dx: bump, dy: bump, s: 1 });
+        if (window.CLIP.style) (L.text ??= {})['x:' + id] = JSON.parse(JSON.stringify(window.CLIP.style));
       }
       saveLayout(); renderPreview();
     } else if (window.CLIP.kind === 'crtv' && window.ACTIVE) {
@@ -495,7 +521,15 @@ for (const t of Object.keys(LAYOUT)) {
   delete LAYOUT[t].off;
   delete LAYOUT[t].boxes;
 }
-function saveLayout() { localStorage.setItem('mph-bait-layout', JSON.stringify(LAYOUT)); }
+function saveLayout() {
+  for (const t of Object.keys(LAYOUT)) {
+    for (const ex of (LAYOUT[t]?.extras ?? [])) {
+      const o = LAYOUT[t].off?.['x:' + ex.id];
+      if (o) { ex.dx = o.dx; ex.dy = o.dy; ex.s = o.s; }
+    }
+  }
+  localStorage.setItem('mph-bait-layout', JSON.stringify(LAYOUT));
+}
 function layoutNodes(el) {
   const map = {};
   const pic = el.querySelector('.pic');
@@ -504,6 +538,7 @@ function layoutNodes(el) {
     const n = el.querySelector(`[data-slot="${slot}"]`);
     if (n) map[slot] = n;
   }
+  el.querySelectorAll('[data-xtra]').forEach(n => { map['x:' + n.dataset.xtra] = n; });
   return map;
 }
 function applyLayout(el, template) {
@@ -716,6 +751,21 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       pic.appendChild(d);
     }
   }
+  for (const ex of (LAYOUT[template]?.extras ?? [])) {
+    let n;
+    if (ex.kind === 'img') {
+      n = document.createElement('img');
+      n.src = ex.img;
+      n.style.cssText = 'position:absolute;left:6px;top:6px;width:38%;height:auto;object-fit:contain;z-index:2;';
+    } else {
+      n = document.createElement('div');
+      n.textContent = ex.text || 'TEXT';
+      n.style.cssText = 'position:absolute;left:10px;top:10px;font:bold 16px Arial,Helvetica,sans-serif;color:#fff;z-index:3;white-space:pre-line;';
+    }
+    n.dataset.xtra = ex.id;
+    el.appendChild(n);
+    (((LAYOUT[template] ??= {}).off ??= {})['x:' + ex.id] ??= { dx: ex.dx || 0, dy: ex.dy || 0, s: ex.s || 1 });
+  }
   applyLayout(el, template);
   return el;
 }
@@ -816,6 +866,11 @@ function enableEditing(ad, template) {
       // typing applies DIRECTLY: persist + mirror live on every keystroke (no re-render under the caret)
       n.oninput = () => {
         const v = n.innerText.replace(/\n+$/, '');
+        if (key.startsWith('x:')) {
+          const ex = (LAYOUT[template]?.extras ?? []).find(x => 'x:' + x.id === key);
+          if (ex) { ex.text = v; saveLayout(); }
+          return;
+        }
         const field = document.getElementById('c-' + key);
         if (field) field.value = v;
         if (window.ACTIVE === template || (window.ACTIVE && window.ACTIVE !== template)) {
