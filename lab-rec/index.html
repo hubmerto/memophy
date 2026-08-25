@@ -136,17 +136,20 @@ window._tvGen=0; window._tv=null;
 var $=function(id){return document.getElementById(id);};
 
 var BPM=138, BAR=4*60/BPM;   // GO ALL NIGHT — measured 138bpm, 4/4
+var GRID_OFF=0.359;          // bar 1 lands at 0.359s into the song, not at 0 — the
+                             // pickup before the first downbeat. Snapping without this
+                             // starts every take 0.83 of a beat early.
 var SONG_OFF={'memphy_01.mp4':10.528,'memphy_02.mp4':118.059,'memphy_03.mp4':-15.941,'memphy_04.mp4':-0.920};   // songTime = clipTime + off
-function barOf(clip,t){ return ((t+(SONG_OFF[clip]||0))/BAR); }
-function snapBar(clip,t){ var off=SONG_OFF[clip]||0; return Math.max(0, Math.round((t+off)/BAR)*BAR - off); }
+function barOf(clip,t){ return ((t+(SONG_OFF[clip]||0)-GRID_OFF)/BAR); }
+function snapBar(clip,t){ var off=SONG_OFF[clip]||0; return Math.max(0, Math.round((t+off-GRID_OFF)/BAR)*BAR + GRID_OFF - off); }
 function drawBars(){
   var clip=$('clip').value, M=DUR['clips/'+clip]||0, host=$('bars');
   if(!host) return; host.innerHTML='';
   if(!M) return;
   var off=SONG_OFF[clip]||0;
-  var k0=Math.ceil((0+off)/BAR), k1=Math.floor((M+off)/BAR);
+  var k0=Math.ceil((0+off-GRID_OFF)/BAR), k1=Math.floor((M+off-GRID_OFF)/BAR);
   for(var k=k0;k<=k1;k++){
-    var t=k*BAR-off; if(t<0||t>M) continue;
+    var t=k*BAR+GRID_OFF-off; if(t<0||t>M) continue;
     var d=document.createElement('div'); d.className='bt'+(k%4===0?' b4':'');
     d.style.left=((t/M)*100)+'%';
     host.appendChild(d);
