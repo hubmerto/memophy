@@ -62,7 +62,9 @@
   .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
   .ad img { display:block; object-fit:contain; }
   .ad .pic { position:relative; }
-  .ad.fx-glow .pic img { filter:drop-shadow(0 0 6px var(--grad-b,#f0f)) drop-shadow(0 0 16px var(--grad-b,#f0f)) drop-shadow(0 0 30px var(--grad-b,#f0f)) saturate(1.2); }
+  .ad .glowcopy { position:absolute; inset:0; pointer-events:none; z-index:-1;
+    filter:blur(7px) saturate(1.5) brightness(1.15); opacity:.85; }
+  .ad .glowcopy img { width:100%; height:100%; object-fit:contain; display:block; }
   .ad .sparkles { position:absolute; inset:0; pointer-events:none; background-size:100% 100%; }
   .ad .sparkles.s1 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M18 12 l1.6 6.4 L26 20 l-6.4 1.6 L18 28 l-1.6-6.4 L10 20 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M78 55 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M88 14 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M36 78 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M18 12 l1.6 6.4 L26 20 l-6.4 1.6 L18 28 l-1.6-6.4 L10 20 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M78 55 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M88 14 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M36 78 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); }
   .ad .sparkles.s2 { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'><g><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='rgb(60,0,60)' opacity='.4' transform='scale(1.25)' transform-origin='center'/><path d='M64 18 l1.6 6.4 L72 26 l-6.4 1.6 L64 34 l-1.6-6.4 L56 26 l6.4-1.6 Z' fill='white' opacity='.95'/><path d='M22 60 l1 4 4 1 -4 1 -1 4 -1-4 -4-1 4-1 Z' fill='white' opacity='.9'/><path d='M86 74 l1.2 4.8 4.8 1.2 -4.8 1.2 -1.2 4.8 -1.2-4.8 -4.8-1.2 4.8-1.2 Z' fill='white' opacity='.85'/><path d='M44 8 l.8 3.2 3.2 .8 -3.2 .8 -.8 3.2 -.8-3.2 -3.2-.8 3.2-.8 Z' fill='white' opacity='.9'/></g></svg>"); display:none; }
@@ -167,7 +169,7 @@
       <option value="slideup">rise from below</option>
     </select>
     <h2>Image FX (stackable)</h2>
-    <label class="fxopt"><input type="checkbox" id="fx-glow"> glow (skin-tinted overshadow)</label>
+    <label class="fxopt"><input type="checkbox" id="fx-glow"> glow (color halo)</label>
     <label class="fxopt"><input type="checkbox" id="fx-sparkle"> sparkle stars (twinkle)</label>
     <label class="fxopt"><input type="checkbox" id="fx-glitter"> glitter overlay (twinkle)</label>
 
@@ -397,7 +399,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   const t = TPL[template];
   const el = document.createElement('div');
   el.className = `ad t-${template} skin-${skin}`;
-  if (fx.includes('glow')) el.classList.add('fx-glow');
+  const glowOn = fx.includes('glow');
   el.innerHTML = t.html;
   for (const [k,v] of Object.entries(SKINS[skin])) el.style.setProperty(k, v);
   for (const [slot, text] of Object.entries(copy))
@@ -408,6 +410,14 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   if (motion !== 'static') el.classList.add('m-' + motion);
   el.querySelectorAll('[data-slot="image"]').forEach(n => {
     n.src = imgUrl || PLACEHOLDER;
+    if (glowOn && n.parentNode) {
+      const gc = document.createElement('div');
+      gc.className = 'glowcopy';
+      const gi = document.createElement('img');
+      gi.src = imgUrl || PLACEHOLDER;
+      gc.appendChild(gi);
+      n.parentNode.insertBefore(gc, n);
+    }
     if (motion === 'lineup') {
       n.classList.add('li', 'li0');
       for (let k = 1; k < 4; k++) {
