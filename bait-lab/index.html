@@ -56,12 +56,7 @@
     -webkit-text-fill-color:transparent;
     filter:var(--glow,none);
   }
-  .ad .bevel {
-    color:#fff; text-shadow:0 -1px 0 rgba(0,0,0,.5); text-transform:uppercase;
-    background:var(--cta-bg,#4c9e22);
-    border-style:solid; border-color:#fff #333 #333 #fff; /* light top/left, dark bottom/right */
-  }
-  .ad.frame2 .bevel[data-blink] { color:var(--cta-bg,#4c9e22); text-shadow:none; border-color:#333 #fff #fff #333; }
+  .ad.frame2 .cta[data-blink] { visibility:hidden; }
   .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
   .ad img { display:block; }
 
@@ -76,7 +71,7 @@
   .t-show-banner .badge { float:left; margin:18px 0 0 14px; padding:3px 10px; font-size:12px; letter-spacing:2px; }
   .t-show-banner .hl { float:left; margin:8px 0 0 18px; max-width:480px; font-size:36px; line-height:44px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
   .t-show-banner .sub { float:left; margin:22px 0 0 16px; max-width:105px; font:italic bold 12px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
-  .t-show-banner .cta { position:absolute; right:12px; top:11px; padding:8px 20px; font:bold 16px Arial; border-width:3px; white-space:nowrap; }
+  .t-show-banner .cta { position:absolute; right:16px; top:18px; font:bold 18px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
 
   .t-show-rect { width:346px; height:258px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
   .t-show-rect .pic { width:344px; height:120px; overflow:hidden; background:#111; }
@@ -84,13 +79,11 @@
   .t-show-rect .badge { position:absolute; top:5px; left:5px; padding:2px 8px; font-size:11px; }
   .t-show-rect .hl { padding:6px 10px 2px; font-size:28px; line-height:28px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:56px; overflow:hidden; }
   .t-show-rect .sub { position:absolute; bottom:52px; left:0; right:0; padding:0 12px; font:11px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
-  .t-show-rect .cta { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); padding:7px 22px; font:bold 15px Arial; border-width:3px; white-space:nowrap; }
+  .t-show-rect .cta { position:absolute; bottom:12px; left:0; right:0; text-align:center; font:bold 16px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; overflow:hidden; }
 
   .ad.skin-acid { border:2px dotted var(--cta-border) !important; }
-  .ad.skin-acid .cta { border-style:dotted !important; }
   .ad.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .ad.skin-fax { border:3px double #000 !important; }
-  .ad.skin-bsod .cta, .ad.skin-bsod .btn.primary { color:#000 !important; text-shadow:none !important; }
 </style>
 </head>
 <body>
@@ -146,8 +139,8 @@ const SKINS = {
   bsod:    { '--bg':'#0000aa','--grad-a':'#ffffff','--grad-b':'#ffffff','--grad-c':'#ffffff','--headline-font':'Tahoma,Geneva,sans-serif','--headline-color':'#ffffff','--stroke':'transparent','--cta-bg':'#c0c0c0','--cta-border':'#ffffff','--glow':'none' },
 };
 const TPL = {
-  'show-banner':{ w:926, h:62,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta bevel" data-slot="cta" data-blink></span>' },
-  'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta bevel" data-slot="cta" data-blink></span>' },
+  'show-banner':{ w:926, h:62,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
 };
 const COPY = {
   headline: ["{N} {THING} IN YOUR AREA","DOCTORS HATE THIS {THING}","MY {RELATION} IS {STATE}","YOU WON'T BELIEVE #{N}","ONLY 1% CAN {VERB} THIS","{RELATION} DISCOVERS ODD {THING}","THIS {THING} WON'T STAY UP LONG","1 WEIRD {THING} EXPERTS HATE","LOCALS {STATE} OVER THIS {THING}","CAN YOU {VERB} FASTER THAN A {RELATION}?"],
