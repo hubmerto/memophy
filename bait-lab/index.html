@@ -74,6 +74,7 @@
   .fxopt { display:block; color:var(--ui-txt); font-size:12px; margin-bottom:4px; }
   .editable { cursor:move; }
   .editable:hover { outline:1px dashed rgba(255,136,0,.85); outline-offset:1px; }
+  .droptarget { outline:2px solid #ff8800 !important; outline-offset:2px; }
   #layoutHint { color:var(--ui-dim); font-size:11px; margin:4px 0 6px; }
   /* motion: appear = image blinks; lineup = 4 copies marching in */
   .ad.m-appear.ph1 .pic img { visibility:hidden; }
@@ -299,6 +300,13 @@ function applyLayout(el, template) {
     });
     const img = n.tagName === 'IMG' ? n : n.querySelector('img');
     if (img) { img.style.width = '100%'; img.style.height = '100%'; }
+    if (k !== 'pic') {
+      Object.assign(n.style, {
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        textAlign: 'center', padding: '0',
+      });
+      if (b.fs) { n.style.fontSize = b.fs + 'px'; n.style.lineHeight = 1.05; n.style.whiteSpace = 'normal'; }
+    }
   }
   for (const [k, o] of Object.entries(L.off ?? {})) {
     const n = nodes[k];
@@ -399,39 +407,54 @@ function enableEditing(ad, template) {
       const o = (L.off[key] ??= { dx: 0, dy: 0, s: 1 });
       const sx = e.clientX - o.dx, sy = e.clientY - o.dy;
       let moved = false;
+      const findTarget = ev => {
+        let best = null, bestDist = 90; // forgiving: nearest slot center within 90px
+        for (const [k2, n2] of Object.entries(nodes)) {
+          if (k2 === key) continue;
+          const r2 = n2.getBoundingClientRect();
+          const inside = ev.clientX >= r2.left && ev.clientX <= r2.right && ev.clientY >= r2.top && ev.clientY <= r2.bottom;
+          const d = Math.hypot(ev.clientX - (r2.left + r2.width/2), ev.clientY - (r2.top + r2.height/2));
+          if (inside) return [k2, n2];
+          if (d < bestDist) { bestDist = d; best = [k2, n2]; }
+        }
+        return best;
+      };
+      const clearHighlight = () => document.querySelectorAll('.droptarget').forEach(x => x.classList.remove('droptarget'));
       const move = ev => {
         o.dx = Math.round(ev.clientX - sx);
         o.dy = Math.round(ev.clientY - sy);
         moved = true;
         n.style.transform = `translate(${o.dx}px, ${o.dy}px) scale(${o.s})`;
         n.style.transformOrigin = 'center';
+        clearHighlight();
+        const t = findTarget(ev);
+        if (t) t[1].classList.add('droptarget');
       };
       const up = ev => {
         n.removeEventListener('pointermove', move);
         n.removeEventListener('pointerup', up);
+        clearHighlight();
         let swapped = false;
-        if (moved) {
-          for (const [k2, n2] of Object.entries(nodes)) {
-            if (k2 === key) continue;
-            const r2 = n2.getBoundingClientRect();
-            if (ev.clientX >= r2.left && ev.clientX <= r2.right && ev.clientY >= r2.top && ev.clientY <= r2.bottom) {
-              const adR = ad.getBoundingClientRect();
-              const rectOf = (node, off) => {
-                const r = node.getBoundingClientRect();
-                return { x: Math.round(r.left - adR.left - (off?.dx || 0)),
-                         y: Math.round(r.top - adR.top - (off?.dy || 0)),
-                         w: Math.round(r.width), h: Math.round(r.height) };
-              };
-              // trade boxes: dragged element takes the target's slot and vice versa
-              const ra = rectOf(n, o), rb = rectOf(n2, L.off[k2]);
-              L.boxes[key] = rb;
-              L.boxes[k2] = ra;
-              delete L.off[key];
-              delete L.off[k2];
-              swapped = true;
-              break;
-            }
-          }
+        const hit = moved ? findTarget(ev) : null;
+        if (hit) {
+          const [k2, n2] = hit;
+          const adR = ad.getBoundingClientRect();
+          const rectOf = (node, off) => {
+            const r = node.getBoundingClientRect();
+            return { x: Math.round(r.left - adR.left - (off?.dx || 0)),
+                     y: Math.round(r.top - adR.top - (off?.dy || 0)),
+                     w: Math.round(r.width), h: Math.round(r.height) };
+          };
+          // trade boxes: dragged element takes the target's slot and vice versa
+          const ra = rectOf(n, o), rb = rectOf(n2, L.off[k2]);
+          // text landing in a bigger/smaller box rescales to fill it
+          if (key !== 'pic') rb.fs = Math.max(11, Math.min(72, Math.round(rb.h * (rb.h > 60 ? 0.4 : 0.6))));
+          if (k2 !== 'pic') ra.fs = Math.max(11, Math.min(72, Math.round(ra.h * (ra.h > 60 ? 0.4 : 0.6))));
+          L.boxes[key] = rb;
+          L.boxes[k2] = ra;
+          delete L.off[key];
+          delete L.off[k2];
+          swapped = true;
         }
         saveLayout();
         if (swapped) renderPreview();
@@ -613,7 +636,7 @@ function persist() {
   }));
 }
 async function loadBuiltins() {
-  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8'];
+  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','padlock','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','camo','hazard','pfiercer','gummygirl','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3'];
   for (const n of names) {
     const id = 'builtin-' + n;
     try {
