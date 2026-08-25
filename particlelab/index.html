@@ -843,14 +843,14 @@ function syncUniforms(t){
   U.uProj.value=(canvas.height)/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2));
   PU.uOpacity.value=1+(P.plate-1)*T; PU.uFollow.value=P.plateDepth*T; PU.uZ.value=P.plateZ*T; PU.uBlur.value=P.plateBlur*T; PU.uDark.value=P.plateDark*T; PU.uTintAmt.value=P.plateTint*T; PU.uMono.value=P.plateMono*T; PU.uScan.value=P.plateScan*T; PU.uShade.value=P.plateShade*T; PU.uCut.value=P.plateCut; PU.uFog.value=P.plateFog*T; PU.uEdge.value=P.plateEdge*T; PU.uDepthMix.value=P.plateDepthMix*T; if(dW)PU.uTexel.value.set(1/dW,1/dH); plate.visible=(P.plate>0.001)||T<0.999;
   PB.uOpacity.value=P.gapFill*T; PB.uDark.value=Math.min(1,P.plateDark+0.25); PB.uBlur.value=Math.min(1,P.plateBlur+0.25); PB.uTintAmt.value=P.plateTint*T; PB.uMono.value=P.plateMono*T; PB.uScan.value=P.plateScan*T*0.5; PB.uFog.value=P.plateFog*0.5*T; backPlate.visible=P.gapFill*T>0.002;
-  bloomPass.strength=P.bloom; bloomPass.threshold=P.bloomThr; bloomPass.radius=P.bloomRad;
+  bloomPass.strength=P.bloom*T; bloomPass.threshold=P.bloomThr; bloomPass.radius=P.bloomRad;
 }
 function renderFrame(dt){
   const t=clock.getElapsedTime();
   tickTransition(t); autoCam(t,dt); tickPressZoom(); controls.update(); applyShake(t); tickAudio();
   syncUniforms(t);
-  if(P.audio&&curNode){ bloomPass.strength=P.bloom*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
-  if(P.bloom>0.001)composer.render(); else renderer.render(scene,camera);
+  if(P.audio&&curNode){ bloomPass.strength=P.bloom*P.trans*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
+  if(P.bloom*P.trans>0.001)composer.render(); else renderer.render(scene,camera);
 }
 function loop(){
   requestAnimationFrame(loop);
