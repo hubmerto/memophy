@@ -183,6 +183,7 @@
       <option value="slideup">rise from below</option>
     </select>
     <h2>Image FX (stackable)</h2>
+    <label class="fxopt"><input type="checkbox" id="mirror-icon"> mirror icon (flip &#8596;)</label>
     <div class="row" style="align-items:center;">
       <label class="fxopt" style="margin:0;flex:1;"><input type="checkbox" id="fx-glow"> shadow (gaussian, behind)</label>
       <input type="color" id="glow-color" value="#ff00cc" style="height:26px;width:40px;flex:none;" title="shadow color (default: icon colors)">
@@ -433,7 +434,8 @@ function applyLayout(el, template) {
   for (const [k, o] of Object.entries(L.off ?? {})) {
     const n = nodes[k];
     if (n) {
-      n.style.transform = `translate(${o.dx || 0}px, ${o.dy || 0}px) scale(${o.s || 1})`;
+      const flip = (k === 'pic' && L.mirror) ? ' scaleX(-1)' : '';
+      n.style.transform = `translate(${o.dx || 0}px, ${o.dy || 0}px) scale(${o.s || 1})` + flip;
       n.style.transformOrigin = 'center';
     }
   }
@@ -542,6 +544,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       if (String(text).includes('\n')) n.style.whiteSpace = 'pre-line';
     });
   if (motion !== 'static') el.classList.add('m-' + motion);
+  if (LAYOUT[template]?.mirror) { const pc = el.querySelector('.pic'); if (pc) pc.style.transform = 'scaleX(-1)'; }
   el.querySelectorAll('[data-slot="image"]').forEach(n => {
     n.src = imgUrl || PLACEHOLDER;
     if (glowOn && n.parentNode) {
@@ -1177,6 +1180,7 @@ function init() {
     const c = effCopy(window.ACTIVE);
     for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = c[k] ?? '';
     if (p.fx != null) FX_KEYS.forEach(k => document.getElementById('fx-' + k).checked = p.fx.includes(k));
+    document.getElementById('mirror-icon').checked = !!LAYOUT[window.ACTIVE]?.mirror;
   };
   window.GLOW_COLOR = localStorage.getItem('mph-glow-color') || null;
   if (window.GLOW_COLOR) tp('glow-color').value = window.GLOW_COLOR;
@@ -1211,6 +1215,13 @@ function init() {
   tp('glow-auto').onclick = () => {
     window.GLOW_COLOR = null; localStorage.removeItem('mph-glow-color');
     if (window.ACTIVE && LAYOUT[window.ACTIVE]) delete LAYOUT[window.ACTIVE].glowColor;
+    saveLayout(); renderPreview();
+  };
+  tp('mirror-icon').onchange = () => {
+    snapshotLayout();
+    const on = tp('mirror-icon').checked;
+    if (window.ACTIVE) (LAYOUT[window.ACTIVE] ??= {}).mirror = on;
+    else for (const t of Object.keys(TPL)) (LAYOUT[t] ??= {}).mirror = on;
     saveLayout(); renderPreview();
   };
   document.getElementById('editAll').onclick = () => { window.ACTIVE = null; syncControls(); renderPreview(); };
