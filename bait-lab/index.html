@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MPH BAIT LAB</title>
+<style>
+  :root { --ui-bg:#141414; --ui-panel:#1d1d1d; --ui-line:#2e2e2e; --ui-txt:#ddd; --ui-dim:#888; --ui-acc:#ff8800; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--ui-bg); color:var(--ui-txt); font:13px Arial, Helvetica, sans-serif; }
+  header { padding:14px 20px; border-bottom:1px solid var(--ui-line); display:flex; align-items:baseline; gap:14px; }
+  header h1 { margin:0; font:bold 20px Impact,"Arial Black",sans-serif; letter-spacing:1px; color:var(--ui-acc); }
+  header .tag { color:var(--ui-dim); font-size:11px; }
+  main { display:flex; gap:0; min-height:calc(100vh - 51px); }
+  #side { width:300px; flex:none; border-right:1px solid var(--ui-line); padding:14px; overflow-y:auto; }
+  #stage { flex:1; padding:20px; overflow:auto; }
+  h2 { font:bold 11px Arial; text-transform:uppercase; letter-spacing:1px; color:var(--ui-dim); margin:18px 0 8px; }
+  h2:first-child { margin-top:0; }
+  select, input[type=text], button {
+    width:100%; background:#222; color:var(--ui-txt); border:1px solid #3a3a3a;
+    padding:6px 8px; font:12px Arial; margin-bottom:6px;
+  }
+  select:focus, input:focus { outline:1px solid var(--ui-acc); }
+  button { cursor:pointer; }
+  button:hover { border-color:var(--ui-acc); }
+  button.acc { background:var(--ui-acc); color:#000; font-weight:bold; border-color:var(--ui-acc); }
+  .row { display:flex; gap:6px; }
+  .row > * { flex:1; }
+  .row .dice { flex:none; width:34px; }
+  /* library */
+  #drop { border:2px dashed #3a3a3a; padding:14px 8px; text-align:center; color:var(--ui-dim); cursor:pointer; margin-bottom:8px; }
+  #drop.over { border-color:var(--ui-acc); color:var(--ui-acc); }
+  #lib { display:flex; flex-wrap:wrap; gap:6px; }
+  .asset { position:relative; width:62px; height:62px; background:#000 center/cover no-repeat; border:2px solid #333; cursor:pointer; }
+  .asset.sel { border-color:var(--ui-acc); }
+  .asset .del { position:absolute; top:-6px; right:-6px; width:16px; height:16px; line-height:14px; text-align:center;
+    background:#c00; color:#fff; font:bold 10px Arial; border:1px solid #fff; border-radius:0; display:none; }
+  .asset:hover .del { display:block; }
+  /* preview + options */
+  #previewWrap { display:inline-block; border:1px solid var(--ui-line); background:#0d0d0d; padding:18px; }
+  #optGrid { display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; align-items:flex-start; }
+  .opt { background:var(--ui-panel); border:1px solid var(--ui-line); padding:8px; }
+  .opt .meta { display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:6px; }
+  .opt .meta span { font:10px Courier,monospace; color:var(--ui-dim); }
+  .opt .meta button { width:auto; margin:0; padding:3px 10px; font-size:11px; }
+  .scalebox { overflow:hidden; }
+
+  /* ============ AD TEMPLATES (ported from bait-lab/templates, scoped) ============ */
+  .ad { position:relative; font-family:Arial,Helvetica,sans-serif; cursor:default; overflow:hidden; flex:none; }
+  .ad .hl {
+    font-family:var(--headline-font, Impact,"Arial Black",Arial,sans-serif);
+    text-transform:uppercase;
+    color:var(--headline-color,#fff);
+    background:linear-gradient(to bottom, var(--grad-a,#ff0), var(--grad-b,#f80) 55%, var(--grad-c,#f00));
+    -webkit-background-clip:text; background-clip:text;
+    -webkit-text-fill-color:transparent;
+    filter:var(--glow,none);
+  }
+  .ad .bevel {
+    color:#fff; text-shadow:0 -1px 0 rgba(0,0,0,.5); text-transform:uppercase;
+    background:var(--cta-bg,#4c9e22);
+    border-style:solid; border-color:#fff #333 #333 #fff; /* light top/left, dark bottom/right */
+  }
+  .ad.frame2 .bevel[data-blink] { color:var(--cta-bg,#4c9e22); text-shadow:none; border-color:#333 #fff #fff #333; }
+  .ad .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
+  .ad img { display:block; }
+
+  .t-chum-tile { width:300px; height:250px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-chum-tile .pic { width:298px; height:140px; overflow:hidden; background:#111; border-bottom:2px solid var(--stroke,#000); }
+  .t-chum-tile .pic img { width:298px; height:140px; }
+  .t-chum-tile .badge { position:absolute; top:4px; left:4px; padding:1px 6px; font-size:10px; }
+  .t-chum-tile .hl { padding:6px 8px 2px; font-size:26px; line-height:26px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:54px; overflow:hidden; }
+  .t-chum-tile .sub { position:absolute; bottom:30px; left:0; right:0; padding:0 10px; font:11px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-chum-tile .cta { position:absolute; bottom:8px; left:0; right:0; text-align:center; font:bold 15px Arial; color:var(--cta-bg,#39f); text-decoration:underline; }
+  .t-chum-tile.frame2 .cta { color:var(--headline-color,#ff0); }
+
+  .t-banner { width:728px; height:90px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-banner .pic { float:left; width:118px; height:88px; overflow:hidden; border-right:2px solid var(--stroke,#000); background:#111; }
+  .t-banner .pic img { width:118px; height:88px; }
+  .t-banner .badge { position:absolute; top:3px; left:122px; padding:0 5px; font-size:9px; }
+  .t-banner .mid { float:left; width:440px; padding:14px 8px 0; text-align:center; }
+  .t-banner .hl { font-size:30px; line-height:32px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.2px var(--stroke,#000); }
+  .t-banner .sub { font:italic bold 12px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
+  .t-banner .cta { display:inline-block; margin-top:26px; padding:8px 14px; font:bold 14px Arial; border-width:2px; white-space:nowrap; }
+
+  .t-skyscraper { width:160px; height:600px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); text-align:center; }
+  .t-skyscraper .badge { display:inline-block; margin:10px auto 6px; padding:2px 10px; font-size:12px; letter-spacing:2px; }
+  .t-skyscraper .pic { width:140px; height:180px; margin:0 auto; overflow:hidden; border:2px solid var(--stroke,#000); background:#111; }
+  .t-skyscraper .pic img { width:140px; height:180px; }
+  .t-skyscraper .hl { padding:14px 6px 0; font-size:28px; line-height:29px; -webkit-text-stroke:1.4px var(--stroke,#000); }
+  .t-skyscraper .sub { padding:8px 8px 0; font:11px Verdana,Geneva,sans-serif; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-skyscraper .cta { position:absolute; bottom:24px; left:10px; right:10px; padding:10px 0; font:bold 16px Arial; border-width:3px; }
+
+  .t-dialog { width:420px; height:220px; background:var(--bg,#ece9d8); border:1px solid #0a246a; font-family:Tahoma,Geneva,sans-serif; }
+  .t-dialog .bar { height:24px; line-height:24px; padding:0 6px; font:bold 12px Tahoma; color:#fff;
+    background:linear-gradient(to bottom, var(--grad-a,#3a6ea5), var(--grad-b,#0a246a)); overflow:hidden; }
+  .t-dialog .bar .badge { float:left; background:none; border:none; padding:0; letter-spacing:0; }
+  .t-dialog .bar .x { float:right; margin-top:3px; width:18px; height:17px; line-height:16px; text-align:center; font:bold 11px Tahoma;
+    color:#fff; background:#c75050; border:1px solid; border-color:#fff #6d2020 #6d2020 #fff; }
+  .t-dialog .bodyc { padding:16px 14px 0; overflow:hidden; }
+  .t-dialog .warn { float:left; width:36px; height:36px; margin-right:12px; line-height:36px; text-align:center; font-size:30px; }
+  .t-dialog .hl { font:bold 13px Tahoma; -webkit-text-fill-color:currentColor; background:none; color:var(--headline-color,#000); padding-bottom:5px; filter:none; }
+  .t-dialog .sub { font:11px Tahoma; color:#333; line-height:14px; overflow:hidden; }
+  .t-dialog .pic { display:none; }
+  .t-dialog .btnrow { text-align:center; padding-top:18px; }
+  .t-dialog .btn { display:inline-block; min-width:96px; margin:0 8px; padding:4px 14px; font:bold 12px Tahoma; text-align:center;
+    color:#000; background:var(--bg,#ece9d8); border:2px solid; border-color:#fff #6f6c60 #6f6c60 #fff; text-transform:none; text-shadow:none; }
+  .t-dialog .btn.primary { color:#fff; background:var(--cta-bg,#2a8fd8); border-color:#fff #14456b #14456b #fff; }
+  .t-dialog.frame2 .btn.primary[data-blink] { border-color:#14456b #fff #fff #14456b; color:#fff; background:var(--cta-bg,#2a8fd8); }
+
+  .t-chat-notif { width:360px; height:120px; background:var(--bg,#fff); border:1px solid var(--cta-border,#bbb); }
+  .t-chat-notif .pic { position:absolute; top:20px; left:14px; width:76px; height:76px; border-radius:50%; overflow:hidden; border:3px solid var(--cta-bg,#39b54a); background:#111; }
+  .t-chat-notif .pic img { width:76px; height:76px; }
+  .t-chat-notif .dot { position:absolute; top:76px; left:78px; width:16px; height:16px; border-radius:50%; background:#39b54a; border:2px solid #fff; }
+  .t-chat-notif .badge { position:absolute; top:8px; right:10px; font:10px Tahoma; color:#999; background:none; border:none; letter-spacing:0; font-weight:normal; }
+  .t-chat-notif .hl { position:absolute; top:22px; left:106px; right:12px; font-size:17px; font-weight:bold;
+    -webkit-text-fill-color:currentColor; background:none; color:var(--headline-color,#111); white-space:nowrap; overflow:hidden; filter:none; text-transform:none; }
+  .t-chat-notif .sub { position:absolute; top:46px; left:106px; right:12px; font:12px Arial; color:#666; }
+  .t-chat-notif .cta { position:absolute; bottom:14px; left:106px; padding:6px 18px; font:bold 12px Arial;
+    background:#39b54a; border-width:2px; border-color:#8ee69c #1d6b2c #1d6b2c #8ee69c; }
+  .t-chat-notif.frame2 .cta[data-blink] { color:#39b54a; border-color:#1d6b2c #8ee69c #8ee69c #1d6b2c; }
+
+  .t-show-banner { width:926px; height:62px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-banner .pic { float:left; width:80px; height:60px; overflow:hidden; border-right:2px solid var(--stroke,#000); background:#111; }
+  .t-show-banner .pic img { width:80px; height:60px; }
+  .t-show-banner .badge { float:left; margin:18px 0 0 14px; padding:3px 10px; font-size:12px; letter-spacing:2px; }
+  .t-show-banner .hl { float:left; margin:8px 0 0 18px; max-width:480px; font-size:36px; line-height:44px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
+  .t-show-banner .sub { float:left; margin:22px 0 0 16px; max-width:105px; font:italic bold 12px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
+  .t-show-banner .cta { position:absolute; right:12px; top:11px; padding:8px 20px; font:bold 16px Arial; border-width:3px; white-space:nowrap; }
+
+  .t-show-rect { width:346px; height:258px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-rect .pic { width:344px; height:120px; overflow:hidden; background:#111; border-bottom:2px solid var(--stroke,#000); }
+  .t-show-rect .pic img { width:344px; height:120px; }
+  .t-show-rect .badge { position:absolute; top:5px; left:5px; padding:2px 8px; font-size:11px; }
+  .t-show-rect .hl { padding:6px 10px 2px; font-size:28px; line-height:28px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:56px; overflow:hidden; }
+  .t-show-rect .sub { position:absolute; bottom:52px; left:0; right:0; padding:0 12px; font:11px Verdana,Geneva,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-show-rect .cta { position:absolute; bottom:10px; left:50%; transform:translateX(-50%); padding:7px 22px; font:bold 15px Arial; border-width:3px; white-space:nowrap; }
+
+  .ad.skin-acid { border:2px dotted var(--cta-border) !important; }
+  .ad.skin-acid .cta { border-style:dotted !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>MPH BAIT LAB</h1>
+  <span class="tag">parody bait-ad builder — assets stay in this browser (IndexedDB), nothing uploads</span>
+</header>
+<main>
+  <div id="side">
+    <h2>Library (PNG / JPG / SVG)</h2>
+    <div id="drop">drop files or click to add</div>
+    <input type="file" id="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" multiple style="display:none">
+    <div id="lib"></div>
+
+    <h2>Format</h2>
+    <select id="template"></select>
+    <h2>Skin</h2>
+    <select id="skin"></select>
+
+    <h2>Copy</h2>
+    <div class="row"><input type="text" id="c-headline" placeholder="headline"><button class="dice" data-roll="headline">🎲</button></div>
+    <div class="row"><input type="text" id="c-sub" placeholder="sub"><button class="dice" data-roll="sub">🎲</button></div>
+    <div class="row"><input type="text" id="c-cta" placeholder="cta"><button class="dice" data-roll="cta">🎲</button></div>
+    <div class="row"><input type="text" id="c-badge" placeholder="badge"><button class="dice" data-roll="badge">🎲</button></div>
+    <button id="rollAll">🎲 roll all copy</button>
+
+    <h2>Build</h2>
+    <button class="acc" id="build">BUILD 12 OPTIONS</button>
+    <button id="export">export preview PNG @2x</button>
+    <label style="display:block;color:var(--ui-dim);margin-top:4px;"><input type="checkbox" id="blink" checked> blink preview</label>
+  </div>
+
+  <div id="stage">
+    <div id="previewWrap"></div>
+    <div id="optGrid"></div>
+  </div>
+</main>
+
+<script>
+/* ============ data ============ */
+const SKINS = {
+  flame:   { '--bg':'#000000','--grad-a':'#ffe14d','--grad-b':'#ff7300','--grad-c':'#d90000','--headline-font':'Impact,"Arial Black",Arial,sans-serif','--headline-color':'#ffb300','--stroke':'#000000','--cta-bg':'#d90000','--cta-border':'#331100','--glow':'drop-shadow(0 0 4px rgba(255,115,0,.9)) drop-shadow(0 2px 0 #000)' },
+  magenta: { '--bg':'#0d000d','--grad-a':'#ffffff','--grad-b':'#ffd9ff','--grad-c':'#ff33cc','--headline-font':'Impact,"Arial Black",Arial,sans-serif','--headline-color':'#ffffff','--stroke':'#ff00aa','--cta-bg':'#ff00aa','--cta-border':'#550044','--glow':'drop-shadow(0 0 6px #ff00cc) drop-shadow(0 0 12px rgba(255,0,170,.7))' },
+  gold:    { '--bg':'#8b0000','--grad-a':'#fff6b0','--grad-b':'#ffd700','--grad-c':'#b8860b','--headline-font':'"Times New Roman",Times,serif','--headline-color':'#ffd700','--stroke':'#4a2c00','--cta-bg':'#b8860b','--cta-border':'#ffd700','--glow':'drop-shadow(0 2px 0 #4a2c00) drop-shadow(0 4px 2px rgba(0,0,0,.8)) drop-shadow(0 0 8px rgba(255,215,0,.6))' },
+  chrome:  { '--bg':'#d4d0c8','--grad-a':'#1660c8','--grad-b':'#0a246a','--grad-c':'#0a246a','--headline-font':'Tahoma,Geneva,sans-serif','--headline-color':'#000000','--stroke':'#808080','--cta-bg':'#316ac5','--cta-border':'#808080','--glow':'none' },
+  acid:    { '--bg':'#2a0a4a','--grad-a':'#ccff00','--grad-b':'#7cfc00','--grad-c':'#00ffee','--headline-font':'"Comic Sans MS","Arial Black",Arial,sans-serif','--headline-color':'#7cfc00','--stroke':'#003300','--cta-bg':'#00cc99','--cta-border':'#ccff00','--glow':'drop-shadow(0 0 5px rgba(124,252,0,.9))' },
+};
+const TPL = {
+  'chum-tile':  { w:300, h:250, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><div class="cta" data-slot="cta"></div>' },
+  'banner':     { w:728, h:90,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="mid"><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div></div><span class="cta bevel" data-slot="cta"></span>' },
+  'skyscraper': { w:160, h:600, html:'<div class="badge" data-slot="badge"></div><div class="pic"><img data-slot="image"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><div class="cta bevel" data-slot="cta" data-blink></div>' },
+  'dialog':     { w:420, h:220, html:'<div class="bar"><span class="badge" data-slot="badge"></span><span class="x">&#10005;</span></div><div class="bodyc"><div class="warn">&#9888;</div><div style="overflow:hidden"><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div></div><img class="pic" data-slot="image"></div><div class="btnrow"><span class="btn primary bevel" data-slot="cta" data-blink></span><span class="btn">Cancel</span></div>' },
+  'chat-notif': { w:360, h:120, html:'<div class="pic"><img data-slot="image"></div><div class="dot"></div><span class="badge" data-slot="badge"></span><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta bevel" data-slot="cta" data-blink></span>' },
+  'show-banner':{ w:926, h:62,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta bevel" data-slot="cta" data-blink></span>' },
+  'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta bevel" data-slot="cta" data-blink></span>' },
+};
+const COPY = {
+  headline: ["{N} {THING} IN YOUR AREA","DOCTORS HATE THIS {THING}","MY {RELATION} IS {STATE}","YOU WON'T BELIEVE #{N}","ONLY 1% CAN {VERB} THIS","{RELATION} DISCOVERS ODD {THING}","THIS {THING} WON'T STAY UP LONG","1 WEIRD {THING} EXPERTS HATE","LOCALS {STATE} OVER THIS {THING}","CAN YOU {VERB} FASTER THAN A {RELATION}?"],
+  sub: ["results not typical","watch before it gets deleted","she is 2.3 miles away","trick discovered by a local {RELATION}","you have (1) new reward waiting","sent you {N} messages","no credit card required*","as seen on the internet","offer expires in 04:59","this is 100% real (it is not)"],
+  cta: ["CLICK HERE","MEET NOW >>","CLAIM PRIZE","WATCH FREE","DOWNLOAD ⬇","SEE PHOTOS","OK","REPLY"],
+  badge: ["LIVE","NEW","18+... jk","AD","SPONSORED","HOT","2 min ago"],
+};
+const BANKS = {
+  N:["3","7","12","17","23","41","99"],
+  THING:["TRICK","SPICE","PIXEL","VASE","CHAIR","FONT","GRADIENT","LOOPHOLE","PLANT"],
+  RELATION:["NEIGHBOR","DENTIST","LANDLORD","INTERN","GRANDMA","ROOMMATE"],
+  STATE:["FURIOUS","SHOOK","GLOWING","RICH NOW","SPEECHLESS","BANNED"],
+  VERB:["SEE","SOLVE","RENDER","PRONOUNCE","RESIST","UNSEE"],
+};
+const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7300"/><stop offset="1" stop-color="#5500aa"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="160" font-family="Arial" font-size="42" font-weight="bold" fill="#fff" text-anchor="middle" opacity=".85">IMG?</text></svg>');
+
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const fill = s => s.replace(/\{([A-Z_]+)\}/g, (m,k) => BANKS[k] ? pick(BANKS[k]) : m);
+const roll = slot => fill(pick(COPY[slot]));
+
+/* ============ library (IndexedDB) ============ */
+let db, assets = [], selectedAsset = null;
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('mph-bait-lab', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('assets', { keyPath:'id' });
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error);
+  });
+}
+async function loadAssets() {
+  db = await idb();
+  assets = await new Promise(res => {
+    const out = [];
+    const tx = db.transaction('assets').objectStore('assets').openCursor();
+    tx.onsuccess = e => { const c = e.target.result; if (c) { out.push(c.value); c.continue(); } else res(out); };
+  });
+  drawLib();
+}
+function saveAsset(a) { db.transaction('assets','readwrite').objectStore('assets').put(a); }
+function dropAsset(id) { db.transaction('assets','readwrite').objectStore('assets').delete(id); }
+function addFiles(files) {
+  for (const f of files) {
+    if (!/\.(png|jpe?g|svg)$/i.test(f.name) && !/image\/(png|jpeg|svg)/.test(f.type)) continue;
+    const rd = new FileReader();
+    rd.onload = () => {
+      const a = { id: Date.now() + '-' + Math.random().toString(36).slice(2,7), name: f.name, dataUrl: rd.result };
+      assets.push(a); saveAsset(a); drawLib();
+      if (!selectedAsset) { selectedAsset = a; drawLib(); renderPreview(); }
+    };
+    rd.readAsDataURL(f);
+  }
+}
+function drawLib() {
+  const el = document.getElementById('lib');
+  el.innerHTML = '';
+  for (const a of assets) {
+    const d = document.createElement('div');
+    d.className = 'asset' + (selectedAsset && selectedAsset.id === a.id ? ' sel' : '');
+    d.style.backgroundImage = `url("${a.dataUrl}")`;
+    d.title = a.name;
+    d.onclick = () => { selectedAsset = a; drawLib(); renderPreview(); };
+    const x = document.createElement('div');
+    x.className = 'del'; x.textContent = '×';
+    x.onclick = ev => { ev.stopPropagation(); dropAsset(a.id); assets = assets.filter(v => v.id !== a.id);
+      if (selectedAsset && selectedAsset.id === a.id) selectedAsset = assets[0] ?? null;
+      drawLib(); renderPreview(); };
+    d.appendChild(x); el.appendChild(d);
+  }
+}
+
+/* ============ ad composition ============ */
+function makeAd(template, skin, copy, imgUrl) {
+  const t = TPL[template];
+  const el = document.createElement('div');
+  el.className = `ad t-${template} skin-${skin}`;
+  el.innerHTML = t.html;
+  for (const [k,v] of Object.entries(SKINS[skin])) el.style.setProperty(k, v);
+  for (const [slot, text] of Object.entries(copy))
+    el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => n.textContent = text);
+  el.querySelectorAll('[data-slot="image"]').forEach(n => n.src = imgUrl || PLACEHOLDER);
+  return el;
+}
+function currentCopy() {
+  return {
+    headline: document.getElementById('c-headline').value,
+    sub: document.getElementById('c-sub').value,
+    cta: document.getElementById('c-cta').value,
+    badge: document.getElementById('c-badge').value,
+  };
+}
+function renderPreview() {
+  const wrap = document.getElementById('previewWrap');
+  wrap.innerHTML = '';
+  const ad = makeAd(sel('template'), sel('skin'), currentCopy(), selectedAsset?.dataUrl);
+  wrap.appendChild(ad);
+  persist();
+}
+const sel = id => document.getElementById(id).value;
+
+/* blink loop */
+setInterval(() => {
+  const on = document.getElementById('blink').checked;
+  document.querySelectorAll('#previewWrap .ad, #optGrid .ad').forEach(a =>
+    a.classList.toggle('frame2', on && !a.classList.contains('frame2')));
+}, 500);
+
+/* ============ options ============ */
+function buildOptions() {
+  const grid = document.getElementById('optGrid');
+  grid.innerHTML = '';
+  const template = sel('template');
+  const pool = assets.length ? assets : [{ dataUrl: PLACEHOLDER, name: 'placeholder' }];
+  const skinNames = Object.keys(SKINS);
+  for (let i = 0; i < 12; i++) {
+    const skin = skinNames[i % skinNames.length];
+    const img = pool[i % pool.length];
+    const copy = { headline: roll('headline'), sub: roll('sub'), cta: roll('cta'), badge: roll('badge') };
+    const ad = makeAd(template, skin, copy, img.dataUrl);
+    const card = document.createElement('div');
+    card.className = 'opt';
+    const box = document.createElement('div');
+    box.className = 'scalebox';
+    const t = TPL[template];
+    const scale = Math.min(1, 340 / t.w);
+    box.style.width = t.w * scale + 'px'; box.style.height = t.h * scale + 'px';
+    ad.style.transformOrigin = '0 0'; ad.style.transform = `scale(${scale})`;
+    box.appendChild(ad); card.appendChild(box);
+    const meta = document.createElement('div');
+    meta.className = 'meta';
+    meta.innerHTML = `<span>${skin}</span>`;
+    const dl = document.createElement('button');
+    dl.textContent = 'PNG';
+    dl.onclick = () => exportAd(makeAd(template, skin, copy, img.dataUrl), `${template}-${skin}-${i+1}`);
+    meta.appendChild(dl); card.appendChild(meta);
+    grid.appendChild(card);
+  }
+}
+
+/* ============ export (foreignObject -> canvas @2x) ============ */
+function pageCss() {
+  let css = '';
+  for (const s of document.styleSheets) {
+    try { for (const r of s.cssRules) css += r.cssText + '\n'; } catch (e) {}
+  }
+  return css;
+}
+function exportAd(adEl, name) {
+  const m = adEl.className.match(/t-([a-z-]+)/);
+  const t = TPL[m[1]];
+  adEl.style.transform = 'none';
+  const holder = document.createElement('div');
+  holder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+  const styleEl = document.createElement('style');
+  styleEl.textContent = pageCss();
+  holder.appendChild(styleEl);
+  holder.appendChild(adEl);
+  const xhtml = new XMLSerializer().serializeToString(holder);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${t.w}" height="${t.h}">` +
+    `<foreignObject width="${t.w}" height="${t.h}">${xhtml}</foreignObject></svg>`;
+  // data: URL, not blob: — foreignObject SVGs loaded via blob taint the canvas
+  const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  const img = new Image();
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = t.w * 2; c.height = t.h * 2;
+    const ctx = c.getContext('2d');
+    ctx.scale(2, 2); ctx.drawImage(img, 0, 0);
+    c.toBlob(b => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(b);
+      a.download = `${name}.png`;
+      a.click();
+    }, 'image/png');
+  };
+  img.onerror = () => alert('export failed in this browser — screenshot the preview instead');
+  img.src = url;
+}
+
+/* ============ wiring ============ */
+function persist() {
+  localStorage.setItem('mph-bait-lab', JSON.stringify({
+    template: sel('template'), skin: sel('skin'), copy: currentCopy(),
+  }));
+}
+function init() {
+  const ts = document.getElementById('template');
+  for (const k of Object.keys(TPL)) ts.add(new Option(`${k}  (${TPL[k].w}×${TPL[k].h})`, k));
+  const ss = document.getElementById('skin');
+  for (const k of Object.keys(SKINS)) ss.add(new Option(k, k));
+
+  const saved = JSON.parse(localStorage.getItem('mph-bait-lab') || 'null');
+  if (saved) {
+    ts.value = saved.template in TPL ? saved.template : 'chum-tile';
+    ss.value = saved.skin in SKINS ? saved.skin : 'flame';
+    for (const k of ['headline','sub','cta','badge'])
+      document.getElementById('c-' + k).value = saved.copy?.[k] ?? roll(k);
+  } else {
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
+  }
+
+  ts.onchange = renderPreview; ss.onchange = renderPreview;
+  for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).oninput = renderPreview;
+  document.querySelectorAll('.dice').forEach(b => b.onclick = () => {
+    document.getElementById('c-' + b.dataset.roll).value = roll(b.dataset.roll); renderPreview();
+  });
+  document.getElementById('rollAll').onclick = () => {
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = roll(k);
+    renderPreview();
+  };
+  document.getElementById('build').onclick = buildOptions;
+  document.getElementById('export').onclick = () =>
+    exportAd(makeAd(sel('template'), sel('skin'), currentCopy(), selectedAsset?.dataUrl), `${sel('template')}-${sel('skin')}`);
+
+  const drop = document.getElementById('drop'), file = document.getElementById('file');
+  drop.onclick = () => file.click();
+  file.onchange = () => { addFiles(file.files); file.value = ''; };
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+  drop.ondragleave = () => drop.classList.remove('over');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); addFiles(e.dataTransfer.files); };
+
+  loadAssets().then(renderPreview);
+}
+init();
+</script>
+</body>
+</html>
