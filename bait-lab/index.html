@@ -1165,6 +1165,15 @@ function pageCss() {
 }
 async function rasterizeAd(adEl, t) {
   adEl.style.transform = 'none';
+  // gradient-clip text paints unreliably in SVG rasterization — flatten headlines to a solid for export
+  adEl.querySelectorAll('.hl').forEach(h => {
+    const cur = h.style.webkitTextFillColor;
+    if (cur && cur !== 'transparent') return; // per-slot color override already solid
+    const mid = (adEl.style.getPropertyValue('--grad-b') || adEl.style.getPropertyValue('--headline-color') || '#ffffff').trim();
+    h.style.background = 'none';
+    h.style.webkitTextFillColor = mid;
+    h.style.color = mid;
+  });
   const holder = document.createElement('div');
   holder.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
   const styleEl = document.createElement('style');
