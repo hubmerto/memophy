@@ -22,6 +22,10 @@ video{background:#000;display:block;border-radius:4px;}
 .tl .seg{position:absolute;top:0;bottom:0;background:rgba(230,37,143,.25);border-left:2px solid #e6258f;}
 .tl .bt{position:absolute;top:8px;bottom:0;width:1px;background:#c9a8ba;}
 .tl .bt.b4{top:2px;background:#a86f92;width:2px;}
+.zl{position:relative;height:16px;background:#eef4fb;border:1px solid #b9cbe0;border-radius:3px;cursor:pointer;margin-top:4px;}
+.zl .zseg{position:absolute;top:0;bottom:0;background:rgba(40,140,255,.5);border-left:2px solid #1a6fd4;border-right:2px solid #1a6fd4;cursor:pointer;}
+.zl .zseg.open{border-right:2px dashed #1a6fd4;background:rgba(40,140,255,.28);}
+.zl .zin{position:absolute;top:-1px;bottom:-1px;width:3px;background:#1a6fd4;}
 #tiles{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
 .tile{width:150px;cursor:pointer;border:2px solid #ddd;border-radius:5px;overflow:hidden;background:#fff;}
 .tile.on{border-color:#e6258f;box-shadow:0 0 0 2px rgba(230,37,143,.3);}
@@ -68,6 +72,8 @@ button:disabled{opacity:.5;cursor:default;}
       <video id="mprev" controls playsinline style="margin-top:8px"></video>
       <div class="tl" id="tl"><div id="bars"></div><div class="seg" id="tlseg"></div><div class="ph" id="tlph"></div></div>
       <div class="hint">click the timeline to scrub &middot; ticks are song BARS (138bpm) &middot; <label style="font:bold 11px Arial"><input type="checkbox" id="snap" checked> snap to bar</label> <span class="hint" id="barinfo"></span></div>
+      <div class="zl" id="zl" title="click to place zoom in, click again for zoom out; click a band to remove it"></div>
+      <div class="hint">ZOOM LANE (this strip = the whole take) &mdash; click: zoom-in, click again: zoom-out &middot; click a blue band to delete it &middot; <a href="#" id="zclear" style="color:#b0006e">clear all</a></div>
 
       <div class="row">
         start at <input id="start" type="number" min="0" step="0.1" style="width:80px"> s
@@ -131,6 +137,34 @@ function drawBars(){
     d.style.left=((t/M)*100)+'%';
     host.appendChild(d);
   }
+}
+var ZP=[];   // zoom pairs [{tin,tout|null}] in take-seconds
+function zParse(str){
+  ZP=[];
+  String(str||'').split(',').forEach(function(tok){
+    var m=/^\s*([\d.]+)\s*(?:-\s*([\d.]+))?\s*$/.exec(tok); if(!m) return;
+    var a=parseFloat(m[1]); if(!isFinite(a)||a<0) return;
+    var b=m[2]!=null?parseFloat(m[2]):null; if(b!=null&&(!isFinite(b)||b<=a)) b=null;
+    ZP.push({tin:a,tout:b});
+  });
+  ZP.sort(function(x,y){return x.tin-y.tin;});
+}
+function zWrite(){
+  $('zoom').value=ZP.map(function(p){ return p.tout!=null?(p.tin+'-'+p.tout):String(p.tin); }).join(', ');
+  zDraw();
+}
+function takeLen(){ var L=parseFloat($('len').value); if(isFinite(L)&&L>0) return L; var D=DUR['clips/'+$('caller').value]||0; return Math.max(0.5,D-calIn()); }
+function zDraw(){
+  var host=$('zl'); if(!host) return; host.innerHTML='';
+  var L=takeLen(); if(!(L>0)) return;
+  ZP.forEach(function(pp,idx){
+    var a=pp.tin, b=(pp.tout!=null?pp.tout:L);
+    var d=document.createElement('div'); d.className='zseg'+(pp.tout==null?' open':'');
+    d.style.left=((a/L)*100)+'%'; d.style.width=(Math.max(0.6,((b-a)/L)*100))+'%';
+    d.title='zoom '+pp.tin+(pp.tout!=null?('-'+pp.tout):' → end')+'s  (click to remove)';
+    d.addEventListener('click',function(ev){ ev.stopPropagation(); ZP.splice(idx,1); zWrite(); });
+    host.appendChild(d);
+  });
 }
 function fmt(t){ t=Math.max(0,t||0); var m=Math.floor(t/60), s=t-m*60; return m+':'+(s<10?'0':'')+s.toFixed(1); }
 function probe(url,cb){ if(DUR[url]!=null) return cb(DUR[url]);
@@ -200,6 +234,18 @@ function init(){
       if($('stage_'+v).querySelector('iframe')){ prevState[v]='idle'; previewTake(v); }
     });
   };
+  $('zl').addEventListener('click',function(e){
+    var clip=$('clip').value, L=takeLen(); if(!(L>0)) return;
+    var r=$('zl').getBoundingClientRect(); var tk=((e.clientX-r.left)/r.width)*L;
+    if($('snap').checked){ var st=parseFloat($('start').value)||0; tk=snapBar(clip, st+tk)-st; }
+    tk=Math.round(Math.max(0,Math.min(L,tk))*10)/10;
+    var openP=ZP.filter(function(p){return p.tout==null;}).pop();
+    if(openP && tk>openP.tin+0.2){ openP.tout=tk; }
+    else if(!ZP.some(function(p){return Math.abs(p.tin-tk)<0.2;})) ZP.push({tin:tk,tout:null});
+    zWrite();
+  });
+  $('zoom').addEventListener('input',function(){ zParse($('zoom').value); zDraw(); });
+  $('zclear').addEventListener('click',function(e){ e.preventDefault(); ZP=[]; zWrite(); });
   $('btnPrev_room').onclick=function(){ previewTake('room'); };
   $('btnPrev_pshow').onclick=function(){ previewTake('pshow'); };
   $('btnRec_room').onclick=function(){ recordTake('room'); };
@@ -252,6 +298,7 @@ function updateBand(){
   $('start').title='max '+fmt(maxStart)+' (the take needs '+fmt(D+0.5)+')';
   $('tlseg').style.left=((st/M)*100)+'%';
   $('tlseg').style.width=((D/M)*100)+'%';
+  zDraw();
 }
 
 
