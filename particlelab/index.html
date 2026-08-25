@@ -62,6 +62,10 @@
   <div class="btns"><button id="bFront" style="flex:1;padding:8px">◎ FRONT VIEW</button><button id="bExport" class="acc" style="flex:2;padding:8px">⬇ EXPORT MP4 (one loop)</button></div>
   <div class="status" id="expStatus"></div>
 
+  <details open><summary>TRANSITION</summary>
+    <div id="g_trans"></div>
+    <div class="btns"><button id="bTransIn">▶ video → particles</button><button id="bTransOut">◀ particles → video</button></div>
+  </details>
   <details open><summary>SOURCE</summary>
     <div class="btns">
       <button id="bFile">open file</button>
@@ -171,6 +175,7 @@ const P={
   // camera
   fov:40, clickZoom:true, zoomAmt:1.8, zoomSpeed:0.05, zoomBack:0.05, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
   // render
+  trans:1.0, transDur:2.5, transHold:1.0, transExport:true,
   bg:'#000000', bloom:0.25, bloomThr:0.55, bloomRad:0.4, ratio:'source', recScale:1, recLoop:true,
 };
 const GLYPH_SETS={
@@ -209,6 +214,11 @@ function text(g,key,label,onchange){const r=row(g,label);const i=document.create
 function fmt(x){return typeof x==='number'?(Number.isInteger(x)?x:(+x).toFixed(2)):x;}
 
 const gD=$('#g_depth'),gP=$('#g_part'),gS=$('#g_style'),gF=$('#g_fx'),gC=$('#g_cam'),gR=$('#g_render');
+const gT=$('#g_trans');
+slider(gT,'trans','transition',0,1,0.005,()=>{transAnim.mode='idle';});
+slider(gT,'transDur','duration s',0.3,10,0.1);
+slider(gT,'transHold','hold before s',0,5,0.1);
+check(gT,'transExport','run on export');
 select(gD,'depthSize','quality',[[252,'252 fast'],[378,'378'],[518,'518 sharp']],(v)=>{worker&&worker.postMessage({type:'size',size:v}); if(src.kind==='image')kickDepth(true);});
 select(gD,'depthDtype','precision',[['fp32','fp32'],['fp16','fp16 (slower on Apple WebGPU)'],['q8','q8']],()=>initWorker());
 slider(gD,'depthSmooth','temporal smooth',0,0.95,0.01);
@@ -338,6 +348,7 @@ const U={
   uTime:{value:0}, uAspect:{value:16/9}, uGrid:{value:new THREE.Vector2(1,1)}, uProj:{value:1}, uSize:{value:1},
   uDepthScale:{value:1}, uDepthCurve:{value:1}, uNear:{value:0}, uFar:{value:1}, uInvert:{value:0},
   uShape:{value:0}, uGlyphCount:{value:1}, uAtlasCols:{value:16}, uAtlasRows:{value:1}, uGamma:{value:1}, uContrast:{value:1}, uDetail:{value:0}, uDetailRad:{value:1.5}, uBW:{value:0}, uLift:{value:0}, uLumaCull:{value:0}, uSlices:{value:1}, uAdditive:{value:0}, uVolDepth:{value:1}, uVolFade:{value:0}, uVolJitter:{value:0}, uBrightness:{value:1}, uJitter:{value:0}, uEdgeFade:{value:0},
+  uGlobal:{value:1},
   uTint:{value:new THREE.Color(P.tint)}, uTintAmt:{value:0}, uRain:{value:0}, uRainSpeed:{value:1}, uRainTrail:{value:8}, uHoloScan:{value:0}, uScanFreq:{value:380}, uFlick:{value:1}, uRgbSplit:{value:0},
   uWave:{value:0}, uWaveFreq:{value:12}, uWaveSpeed:{value:2}, uGlitch:{value:0}, uGlitchRate:{value:6}, uScatter:{value:0}, uScatterSpeed:{value:0.6}, uExplode:{value:0},
   uUvGlitch:{value:0}, uGlitchChance:{value:0.3}, uBlock:{value:0}, uChroma:{value:0}, uDropout:{value:0}, uBurst:{value:0}, uBurstRate:{value:0.25}, uSweep:{value:0}, uSweepSpeed:{value:0.6}, uAudio:{value:new THREE.Vector3()}, uAudioAmt:{value:0}, uEcho:{value:0}, uEchoOff:{value:0.06},
@@ -451,7 +462,7 @@ precision highp float;
 uniform sampler2D uAtlas; uniform float uShape,uGlyphCount,uAtlasCols,uAtlasRows,uGamma,uLumaCull,uBrightness,uJitter,uTime,uTintAmt,uHoloScan,uScanFreq,uFlick,uRgbSplit;
 uniform vec3 uTint;
 varying vec3 vColor; varying float vLuma; varying float vVis; varying vec2 vUv; varying float vRain; varying float vHead; varying float vGlitch; varying float vRand; varying float vEcho; varying float vSweep; varying float vFlash;
-uniform float uEcho,uLift,uSlices;
+uniform float uEcho,uLift,uSlices,uGlobal;
 varying float vVol;
 float hash(vec2 p){return fract(sin(dot(p,vec2(12.9898,78.233)))*43758.5453);}
 void main(){
@@ -488,7 +499,7 @@ void main(){
   c+=vec3(vSweep)*1.2*mix(vec3(1.0),uTint,uTintAmt);
   c+=vFlash*0.9*mix(vec3(1.0),uTint,uTintAmt*0.5);
   if(vEcho>0.5){ c=mix(c,uTint*0.8,0.6)*0.55*uEcho; a*=0.7; }
-  gl_FragColor=vec4(c*uBrightness,a);
+  gl_FragColor=vec4(c*uBrightness*uGlobal,a*uGlobal);
 }`;
 const mat=new THREE.ShaderMaterial({uniforms:U,vertexShader:VERT,fragmentShader:FRAG,transparent:true,depthTest:true,depthWrite:true});
 let points=null, gridEcho=false;
@@ -719,7 +730,7 @@ function applyShake(t){
   if(P.shake<=0)return;
   const ph=(t*P.burstRate)%1; const sm=Math.min(1,ph/0.12); const pulse=(sm*sm*(3-2*sm))*Math.exp(-Math.max(ph-0.12,0)*3.5)*P.burst;
   const ep=Math.floor(t*P.glitchRate); const hh=(x,y)=>{const v=Math.sin(x*12.9898+y*78.233)*43758.5453;return v-Math.floor(v);}; const evt=hh(ep,42)>1-P.glitchChance?1:0; const gk=evt*(hh(ep,1)>0.5?P.glitch:P.glitch*0.3);
-  const amp=P.shake*0.02*(pulse*1.5+gk+evt*P.uvGlitch*0.3);
+  const amp=P.trans*P.shake*0.02*(pulse*1.5+gk+evt*P.uvGlitch*0.3);
   shakeV.set((Math.random()-0.5)*amp,(Math.random()-0.5)*amp,0);
   camera.position.add(shakeV);
 }
@@ -732,6 +743,18 @@ function autoCam(t,dt){
   const v=new THREE.Vector3().setFromSphericalCoords(dd,pol,az); camera.position.copy(v); controls.target.set(0,0,0); camera.lookAt(0,0,0);
 }
 
+/* transition: 0 = clean video, 1 = full effect */
+const transAnim={mode:'idle',from:0,to:1,start:0};
+function playTransition(to,delay){ transAnim.from=P.trans; transAnim.to=to; transAnim.start=clock.getElapsedTime()+(delay||0); transAnim.mode='play'; }
+$('#bTransIn').onclick=()=>playTransition(1,0);
+$('#bTransOut').onclick=()=>playTransition(0,0);
+function tickTransition(t){
+  if(transAnim.mode!=='play')return;
+  const k=(t-transAnim.start)/Math.max(0.05,P.transDur);
+  if(k<0)return; const e=k>=1?1:(k*k*(3-2*k));
+  P.trans=transAnim.from+(transAnim.to-transAnim.from)*e; ctls.trans.set(P.trans);
+  if(k>=1)transAnim.mode='idle';
+}
 /* ───────────── canvas fit ───────────── */
 function fitCanvas(){
   const sw=stage.clientWidth, sh=stage.clientHeight; let a;
@@ -779,7 +802,7 @@ function tickAudio(){
 /* ───────────── recording ───────────── */
 let rec=null, recChunks=[], recT0=0;
 $('#bRec').onclick=()=>{ if(rec)stopRec(); else startRec(); };
-$('#bExport').onclick=()=>{ if(rec){stopRec();return;} if(src.kind==='video'){P.recLoop=true;ctls.recLoop.set(true);} startRec(); $('#expStatus').textContent=src.kind==='video'?'recording one full loop → stops itself, mp4 lands in Downloads':'recording… click again to stop'; };
+$('#bExport').onclick=()=>{ if(rec){stopRec();return;} if(src.kind==='video'){P.recLoop=true;ctls.recLoop.set(true);} if(P.transExport){P.trans=0;ctls.trans.set(0);playTransition(1,P.transHold);} startRec(); $('#expStatus').textContent=src.kind==='video'?'recording one full loop → stops itself, mp4 lands in Downloads':'recording… click again to stop'; };
 function pickMime(withAudio){ const list=withAudio?['video/mp4;codecs=avc1.640034,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm']:['video/mp4;codecs=avc1.640034','video/mp4;codecs=avc1','video/mp4','video/webm;codecs=vp9','video/webm']; for(const m of list){ if(MediaRecorder.isTypeSupported(m))return m; } return ''; }
 function startRec(){
   const withAudio=P.audio&&curNode&&destNode;
@@ -800,19 +823,21 @@ $('#bPng').onclick=()=>{ renderFrame(0); const a=document.createElement('a'); a.
 /* ───────────── main loop ───────────── */
 const clock=new THREE.Clock(); let fps=0,fc=0,ft=performance.now(); let thumbT=0;
 function syncUniforms(t){
-  U.uTime.value=t; U.uDepthScale.value=P.depthScale; U.uDepthCurve.value=P.depthCurve; U.uNear.value=P.depthNear; U.uFar.value=P.depthFar; U.uInvert.value=P.depthInvert?1:0;
-  U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=P.contrast; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
-  U.uTint.value.set(P.tint); U.uTintAmt.value=P.tintAmt; U.uRain.value=P.rain; U.uRainSpeed.value=P.rainSpeed; U.uRainTrail.value=P.rainTrail; U.uHoloScan.value=P.holoScan; U.uScanFreq.value=P.scanFreq; U.uRgbSplit.value=P.rgbSplit;
-  U.uFlick.value=1-(P.flicker>0&&Math.random()<0.12?Math.random()*0.7*P.flicker:0);
-  U.uWave.value=P.wave; U.uWaveFreq.value=P.waveFreq; U.uWaveSpeed.value=P.waveSpeed; U.uGlitch.value=P.glitch; U.uGlitchRate.value=P.glitchRate; U.uScatter.value=P.scatter; U.uScatterSpeed.value=P.scatterSpeed; U.uExplode.value=P.explode;
-  U.uUvGlitch.value=P.uvGlitch; U.uGlitchChance.value=P.glitchChance; U.uBlock.value=P.block; U.uChroma.value=P.chroma; U.uDropout.value=P.dropout; U.uBurst.value=P.burst; U.uBurstRate.value=P.burstRate; U.uSweep.value=P.sweep; U.uSweepSpeed.value=P.sweepSpeed; U.uEcho.value=P.echo; U.uEchoOff.value=P.echoOff;
+  const T=P.trans;
+  U.uGlobal.value=T; if(points)points.visible=T>0.002;
+  U.uTime.value=t; U.uDepthScale.value=P.depthScale*T; U.uDepthCurve.value=P.depthCurve; U.uNear.value=P.depthNear; U.uFar.value=P.depthFar; U.uInvert.value=P.depthInvert?1:0;
+  U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=P.contrast; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw*T; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
+  U.uTint.value.set(P.tint); U.uTintAmt.value=P.tintAmt*T; U.uRain.value=P.rain*T; U.uRainSpeed.value=P.rainSpeed; U.uRainTrail.value=P.rainTrail; U.uHoloScan.value=P.holoScan*T; U.uScanFreq.value=P.scanFreq; U.uRgbSplit.value=P.rgbSplit*T;
+  U.uFlick.value=1-(P.flicker*T>0&&Math.random()<0.12?Math.random()*0.7*P.flicker*T:0);
+  U.uWave.value=P.wave*T; U.uWaveFreq.value=P.waveFreq; U.uWaveSpeed.value=P.waveSpeed; U.uGlitch.value=P.glitch*T; U.uGlitchRate.value=P.glitchRate; U.uScatter.value=P.scatter*T; U.uScatterSpeed.value=P.scatterSpeed; U.uExplode.value=P.explode*T;
+  U.uUvGlitch.value=P.uvGlitch*T; U.uGlitchChance.value=P.glitchChance; U.uBlock.value=P.block*T; U.uChroma.value=P.chroma*T; U.uDropout.value=P.dropout*T; U.uBurst.value=P.burst*T; U.uBurstRate.value=P.burstRate; U.uSweep.value=P.sweep*T; U.uSweepSpeed.value=P.sweepSpeed; U.uEcho.value=P.echo*T; U.uEchoOff.value=P.echoOff;
   U.uProj.value=(canvas.height)/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2));
-  PU.uOpacity.value=P.plate; PU.uFollow.value=P.plateDepth; PU.uZ.value=P.plateZ; PU.uBlur.value=P.plateBlur; PU.uDark.value=P.plateDark; PU.uTintAmt.value=P.plateTint; PU.uMono.value=P.plateMono; PU.uScan.value=P.plateScan; PU.uShade.value=P.plateShade; PU.uCut.value=P.plateCut; PU.uFog.value=P.plateFog; PU.uEdge.value=P.plateEdge; PU.uDepthMix.value=P.plateDepthMix; if(dW)PU.uTexel.value.set(1/dW,1/dH); plate.visible=P.plate>0.001;
+  PU.uOpacity.value=1+(P.plate-1)*T; PU.uFollow.value=P.plateDepth*T; PU.uZ.value=P.plateZ*T; PU.uBlur.value=P.plateBlur*T; PU.uDark.value=P.plateDark*T; PU.uTintAmt.value=P.plateTint*T; PU.uMono.value=P.plateMono*T; PU.uScan.value=P.plateScan*T; PU.uShade.value=P.plateShade*T; PU.uCut.value=P.plateCut; PU.uFog.value=P.plateFog*T; PU.uEdge.value=P.plateEdge*T; PU.uDepthMix.value=P.plateDepthMix*T; if(dW)PU.uTexel.value.set(1/dW,1/dH); plate.visible=(P.plate>0.001)||T<0.999;
   bloomPass.strength=P.bloom; bloomPass.threshold=P.bloomThr; bloomPass.radius=P.bloomRad;
 }
 function renderFrame(dt){
   const t=clock.getElapsedTime();
-  autoCam(t,dt); tickPressZoom(); controls.update(); applyShake(t); tickAudio();
+  tickTransition(t); autoCam(t,dt); tickPressZoom(); controls.update(); applyShake(t); tickAudio();
   syncUniforms(t);
   if(P.audio&&curNode){ bloomPass.strength=P.bloom*(1+U.uAudio.value.x*P.audioAmt*1.2); camera.zoom=1+U.uAudio.value.x*P.audioAmt*0.06; camera.updateProjectionMatrix(); } else if(camera.zoom!==1){ camera.zoom=1; camera.updateProjectionMatrix(); }
   if(P.bloom>0.001)composer.render(); else renderer.render(scene,camera);
@@ -824,7 +849,7 @@ function loop(){
   renderFrame(dt);
   fc++; const now=performance.now(); if(now-ft>500){fps=fc*1000/(now-ft);fc=0;ft=now;}
   if(now-thumbT>250){thumbT=now;drawSrcThumb();}
-  hud.textContent=`render ${fps.toFixed(0)} fps · depth ${depthFps.toFixed(1)} fps (${depthMs.toFixed(0)} ms) ${baked?'· BAKED':''}${rec?` · REC ${((now-recT0)/1000).toFixed(1)}s`:''}\n${U.uGrid.value.x}×${U.uGrid.value.y} = ${(U.uGrid.value.x*U.uGrid.value.y*Math.round(P.volume)/1000).toFixed(0)}k particles (${Math.round(P.volume)} slices${P.echo>0?' ×2 echo':''}) · cam z ${camera.position.z.toFixed(2)}${P.audio&&curNode?` · audio b${U.uAudio.value.x.toFixed(2)} m${U.uAudio.value.y.toFixed(2)} h${U.uAudio.value.z.toFixed(2)}`:''}`;
+  hud.textContent=`render ${fps.toFixed(0)} fps · depth ${depthFps.toFixed(1)} fps (${depthMs.toFixed(0)} ms) ${baked?'· BAKED':''}${rec?` · REC ${((now-recT0)/1000).toFixed(1)}s`:''}\n${U.uGrid.value.x}×${U.uGrid.value.y} = ${(U.uGrid.value.x*U.uGrid.value.y*Math.round(P.volume)/1000).toFixed(0)}k particles (${Math.round(P.volume)} slices${P.echo>0?' ×2 echo':''}) · cam z ${camera.position.z.toFixed(2)}${P.trans<0.999?` · T ${P.trans.toFixed(2)}`:''}${P.audio&&curNode?` · audio b${U.uAudio.value.x.toFixed(2)} m${U.uAudio.value.y.toFixed(2)} h${U.uAudio.value.z.toFixed(2)}`:''}`;
 }
 
 /* ───────────── boot ───────────── */
