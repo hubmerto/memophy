@@ -980,6 +980,7 @@ function buildPalette(frames, w, h) {
 }
 
 function encodeGif(frames, w, h, delayCs) {
+  const delays = Array.isArray(delayCs) ? delayCs : frames.map(() => delayCs);
   const pal = buildPalette(frames, w, h);
   const cache = new Map();
   const nearest = (r, g, b) => {
@@ -1001,7 +1002,7 @@ function encodeGif(frames, w, h, delayCs) {
   str('GIF89a'); u16(w); u16(h); u8(0xF7); u8(0); u8(0);
   for (const c of pal) { u8(c[0]); u8(c[1]); u8(c[2]); }
   str('!'); u8(0xFF); u8(11); str('NETSCAPE2.0'); u8(3); u8(1); u16(0); u8(0); // loop forever
-  for (const data of frames) {
+  for (const [fi, data] of frames.entries()) {
     // Floyd-Steinberg dither onto the adaptive palette
     const idxBuf = new Uint8Array(w * h);
     const errCur = new Float32Array((w + 2) * 3);
@@ -1023,7 +1024,7 @@ function encodeGif(frames, w, h, delayCs) {
       }
       errCur.set(errNxt);
     }
-    str('!'); u8(0xF9); u8(4); u8(0); u16(delayCs); u8(0); u8(0);
+    str('!'); u8(0xF9); u8(4); u8(0); u16(delays[fi] ?? 50); u8(0); u8(0);
     u8(0x2C); u16(0); u16(0); u16(w); u16(h); u8(0);
     u8(8);
     const bytes = [];
@@ -1105,7 +1106,8 @@ async function exportCreative(spec, name) {
       if (k % 2 === 1) ad.classList.add('frame2');
       frames.push(await rasterizeAd(ad, t));
     }
-    const gif = encodeGif(frames, t.w * 2, t.h * 2, 50);
+    const delays = phases.length === 2 && !icons ? [70, 30] : phases.map(() => 50);
+    const gif = encodeGif(frames, t.w * 2, t.h * 2, delays);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([gif], { type: 'image/gif' }));
     a.download = `${name}.gif`;
