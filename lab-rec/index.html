@@ -76,6 +76,10 @@ button:disabled{opacity:.5;cursor:default;}
       <div class="hint">ZOOM LANE (this strip = the whole take) &mdash; click: zoom-in, click again: zoom-out &middot; click a blue band to delete it &middot; <a href="#" id="zclear" style="color:#b0006e">clear all</a></div>
 
       <div class="row">
+        segment proposals (caller-length slices):
+        <div id="tiles"></div>
+      </div>
+      <div class="row">
         start at <input id="start" type="number" min="0" step="0.1" style="width:80px"> s
         &nbsp;&nbsp; length <input id="len" type="number" min="0.5" step="0.1" style="width:80px"> s <span class="hint" id="lenhint"></span>
         &nbsp;&nbsp; <button id="btnFull" style="padding:5px 10px;font-size:12px">&#127916; FULL VIDEO</button>
@@ -208,7 +212,7 @@ function init(){
     var M=DUR['clips/'+$('clip').value]||1;
     $('tlph').style.left=(($('mprev').currentTime/M)*100)+'%';
   });
-  $('len').addEventListener('input',function(){ updateBand(); });
+  $('len').addEventListener('input',function(){ updateBand(); buildTiles(); });
   $('calin').addEventListener('input',function(){ updateLenDefault(); updateBand(); });
   $('start').addEventListener('input',function(){ updateBand(); [].forEach.call(document.querySelectorAll('.tile'),function(x){ x.classList.remove('on'); }); });
   $('btnFull').onclick=function(){
@@ -271,12 +275,12 @@ function onCaller(){
   var c=$('caller').value;
   $('cprev').src=API+'/clips/'+c;
   $('calin').value=0;
-  probe('clips/'+c,function(D){ $('cdur').textContent='runs '+fmt(D); updateLenDefault(); updateBand(); });
+  probe('clips/'+c,function(D){ $('cdur').textContent='runs '+fmt(D); updateLenDefault(); buildTiles(); updateBand(); });
 }
 function onClip(){
   var m=$('clip').value;
   $('mprev').src=API+'/clips/'+m;
-  probe('clips/'+m,function(M){ $('mdur').textContent='('+fmt(M)+' total)'; updateBand(); drawBars(); });
+  probe('clips/'+m,function(M){ $('mdur').textContent='('+fmt(M)+' total)'; buildTiles(); updateBand(); drawBars(); });
 }
 function setStart(t){
   $('start').value=Math.round(t*10)/10;
@@ -302,6 +306,42 @@ function updateBand(){
 }
 
 
+function buildTiles(){
+  var D=DUR['clips/'+$('caller').value], M=DUR['clips/'+$('clip').value];
+  if(D){ var Lraw=parseFloat($('len').value); var eff=isFinite(Lraw)&&Lraw>0?Lraw:Math.max(0.5,D-calIn()); D=eff; }
+  var clip=$('clip').value;
+  if(!D||!M) return;
+  var tiles=$('tiles'); if(!tiles) return; tiles.innerHTML='';
+  var n=Math.max(1,Math.floor(M/D));
+  var maxStart=M-(D+0.6);
+  var starts=[]; for(var i=0;i<n;i++){ var st0=Math.round(i*D*10)/10; if(st0<=maxStart || i===0) starts.push(st0); }
+  starts.forEach(function(st,i){
+    var d=document.createElement('div'); d.className='tile';
+    d.innerHTML='<canvas width="300" height="168"></canvas><div class="cap">#'+(i+1)+' &nbsp;'+fmt(st)+' &rarr; '+fmt(st+D)+'</div><div class="lyr">'+lyricAt(clip,st)+'</div>';
+    d.onclick=function(){
+      [].forEach.call(document.querySelectorAll('.tile'),function(x){ x.classList.remove('on'); });
+      d.classList.add('on');
+      $('start').value=st; updateBand();
+      var v=$('mprev'); v.currentTime=st; v.play();
+      var stopAt=st+D;
+      var h=function(){ if(v.currentTime>=stopAt){ v.pause(); v.removeEventListener('timeupdate',h); } };
+      v.addEventListener('timeupdate',h);
+    };
+    tiles.appendChild(d);
+  });
+  // thumbnails: sequential seek through a hidden video (generation-tagged so rebuilds cancel old chains)
+  var gen=++window._tvGen; if(window._tv){ try{ window._tv.removeAttribute('src'); window._tv.load(); }catch(e){} }
+  var tv=document.createElement('video'); tv.muted=true; tv.preload='auto'; tv.src=API+'/clips/'+clip;
+  window._tv=tv;
+  var k=0;
+  tv.addEventListener('seeked',function(){
+    if(gen!==window._tvGen) return;
+    var cv=tiles.children[k] && tiles.children[k].querySelector('canvas');
+    if(cv){ try{ cv.getContext('2d').drawImage(tv,0,0,300,168); }catch(e){} }
+    k++; if(k<starts.length) tv.currentTime=starts[k]+0.2;
+  });
+  tv.addEventListener('loadeddata',function(){ if(gen===window._tvGen) tv.currentTime=starts[0]+0.2; });
+}
 function takeSpec(){
   var D=DUR['clips/'+$('caller').value]||0;
   var L=parseFloat($('len').value);
