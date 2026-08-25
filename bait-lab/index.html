@@ -188,9 +188,8 @@
     <div class="row"><input type="color" id="bg-color" value="#000000" style="height:30px;"><button id="bg-clear">skin default</button></div>
     <select id="bg-pattern">
       <option value="">no pattern</option>
-      <option value="camo">camo tile</option>
+      <option value="camo">camo (cover)</option>
     </select>
-    <div class="row"><span style="color:var(--ui-dim);font-size:11px;align-self:center;">pattern size</span><input type="number" id="bg-patsize" value="120" min="20" max="600"></div>
 
     <h2>Align (shift-click elements)</h2>
     <div id="alignHint" style="color:var(--ui-dim); font-size:11px; margin-bottom:4px;">shift-click 2+ elements</div>
@@ -424,8 +423,9 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
       if (pa) {
         if (_bg.color) el.style.backgroundColor = _bg.color;
         el.style.backgroundImage = `url("${pa.dataUrl}")`;
-        el.style.backgroundRepeat = 'repeat';
-        el.style.backgroundSize = (_bg.patsize || 120) + 'px';
+        el.style.backgroundRepeat = 'no-repeat';
+        el.style.backgroundPosition = 'center';
+        el.style.backgroundSize = 'cover';
       }
     }
   }
@@ -831,7 +831,6 @@ function init() {
   tp('bg-color').oninput = () => setBg({ color: tp('bg-color').value });
   tp('bg-clear').onclick = () => { snapshotLayout(); const t = sel('template'); if (LAYOUT[t]) delete LAYOUT[t].bg; saveLayout(); renderPreview(); };
   tp('bg-pattern').onchange = () => setBg({ pattern: tp('bg-pattern').value || undefined });
-  tp('bg-patsize').onchange = () => setBg({ patsize: Number(tp('bg-patsize').value) || 120 });
   window.selKeys = window.selKeys || [];
   window.selectSlot = (t, k, additive) => {
     window.SEL = { t, k };
