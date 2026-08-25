@@ -161,7 +161,7 @@ const stage=$('#stage'), canvas=$('#gl'), hud=$('#hud');
 /* ───────────── params ───────────── */
 const P={
   // depth
-  depthSize:378, depthDtype:'fp32', depthSmooth:0.25, depthScale:0.9, depthCurve:1.0, depthNear:0.0, depthFar:1.0, depthInvert:false, depthLive:true, edgePin:0.15, depthBlur:3,
+  depthSize:378, depthDtype:'fp32', depthSmooth:0.25, depthScale:0.45, depthCurve:1.0, depthNear:0.0, depthFar:1.0, depthInvert:false, depthLive:true, edgePin:0.15, depthBlur:3,
   // particles
   density:120, size:1.0, shape:'glyph', glyphs:'ascii', custom:'MEMPHY', gamma:1.0, contrast:1.0, detail:0.6, detailRad:1.5, bw:0.0, lift:0.2, lumaCull:0.0, brightness:1.0, blend:'normal', jitter:0, edgeFade:0.0,
   volume:4, volDepth:1.0, volFade:0.8, volJitter:0.35,
@@ -176,7 +176,7 @@ const P={
   // camera
   fov:40, clickZoom:true, zoomAmt:1.8, zoomSpeed:0.05, zoomBack:0.05, zoomTarget:'surface', orbit:false, orbitAmt:0.35, orbitSpeed:0.35, push:0.0, pushSpeed:0.25,
   // render
-  trans:1.0, transAuto:true, transStart:1.0, transDur:2.5,
+  trans:1.0, transAuto:true, transStart:1.0, transDur:2.5, transGlitch:0.8,
   bg:'#000000', bloom:0.25, bloomThr:0.55, bloomRad:0.4, ratio:'source', recScale:1, recLoop:true,
 };
 const GLYPH_SETS={
@@ -200,7 +200,7 @@ const PRESETS={
   BURST:{shape:'dot',size:0.6,tintAmt:0,glitch:0.2,uvGlitch:0.1,chroma:0.5,dropout:0,sweep:0,echo:0,echoOff:0.04,burst:0.6,burstRate:0.18,shake:0.7,scatter:0.1,scatterSpeed:1,explode:0.2,jitter:0,rain:0,holoScan:0,wave:0,waveFreq:8,waveSpeed:2,bloom:0.8,bloomThr:0.3,density:170,blend:'additive',gamma:0.9,brightness:1.2,bg:'#000000',lift:0.2,glitchChance:0.3,plate:0.3,plateDark:0.55,plateBlur:0.3},
   MODULATION:{shape:'dot',size:0.7,tintAmt:0,wave:0.45,waveFreq:10,waveSpeed:0.9,scatter:0,scatterSpeed:0.5,jitter:0,rain:0,holoScan:0,glitch:0,bloom:0.3,density:160,blend:'additive',gamma:0.9,bg:'#000000',lift:0.2,plate:0.3,plateDark:0.5,plateBlur:0.3},
   BINARY:{shape:'glyph',glyphs:'binary',tint:'#ffffff',tintAmt:0.5,lift:0.3,jitter:4,rain:0.2,rainTrail:4,holoScan:0,glitch:0,wave:0,bloom:0.25,density:120,blend:'normal',gamma:0.8,bg:'#000000',plate:0.3,plateDark:0.5,plateMono:0.7},
-  VOXEL:{shape:'square',size:0.92,tintAmt:0,jitter:0,rain:0,holoScan:0,glitch:0,wave:0,bloom:0.1,density:70,blend:'normal',gamma:1,depthScale:1.2,bg:'#000000',lift:0.2,plate:0.5,plateDark:0.3,plateDepth:1,plateShade:0.9,plateFog:0.6},
+  VOXEL:{shape:'square',size:0.92,tintAmt:0,jitter:0,rain:0,holoScan:0,glitch:0,wave:0,bloom:0.1,density:70,blend:'normal',gamma:1,depthScale:0.7,bg:'#000000',lift:0.2,plate:0.5,plateDark:0.3,plateDepth:1,plateShade:0.9,plateFog:0.6},
   DISSOLVE:{shape:'glyph',glyphs:'ascii',tintAmt:0,scatter:0.9,scatterSpeed:0.8,explode:0.4,jitter:2,rain:0,holoScan:0,glitch:0,wave:0,bloom:0.35,density:130,blend:'additive',gamma:0.9,bg:'#000000',lift:0.2,plate:0.3,plateDark:0.5,plateBlur:0.4},
 };
 
@@ -219,6 +219,7 @@ const gT=$('#g_trans');
 check(gT,'transAuto','auto intro (video clock)');
 slider(gT,'transStart','particles in at s',0,10,0.1);
 slider(gT,'transDur','come in over s',0.3,10,0.1);
+slider(gT,'transGlitch','glitch during transition',0,1,0.01);
 slider(gT,'trans','manual scrub',0,1,0.005,()=>{P.transAuto=false;ctls.transAuto.set(false);});
 select(gD,'depthSize','quality',[[252,'252 fast'],[378,'378'],[518,'518 sharp']],(v)=>{worker&&worker.postMessage({type:'size',size:v}); if(src.kind==='image')kickDepth(true);});
 select(gD,'depthDtype','precision',[['fp32','fp32'],['fp16','fp16 (slower on Apple WebGPU)'],['q8','q8']],()=>initWorker());
@@ -763,6 +764,8 @@ let flyT=-1;
 $('#bFly').onclick=()=>{ flyT=0; P.orbit=false; ctls.orbit.set(false); };
 const shakeV=new THREE.Vector3();
 function applyShake(t){
+  const E=Math.sin(Math.PI*Math.min(1,Math.max(0,P.trans)))*P.transGlitch;
+  if(E>0.01){ const a=E*0.012; shakeV.set((Math.random()-0.5)*a,(Math.random()-0.5)*a,0); camera.position.add(shakeV); }
   if(P.shake<=0)return;
   const ph=(t*P.burstRate)%1; const sm=Math.min(1,ph/0.12); const pulse=(sm*sm*(3-2*sm))*Math.exp(-Math.max(ph-0.12,0)*3.5)*P.burst;
   const ep=Math.floor(t*P.glitchRate); const hh=(x,y)=>{const v=Math.sin(x*12.9898+y*78.233)*43758.5453;return v-Math.floor(v);}; const evt=hh(ep,42)>1-P.glitchChance?1:0; const gk=evt*(hh(ep,1)>0.5?P.glitch:P.glitch*0.3);
@@ -861,8 +864,9 @@ function syncUniforms(t){
   U.uSize.value=P.size; U.uShape.value=P.shape==='glyph'?0:P.shape==='dot'?1:2; U.uGamma.value=P.gamma; U.uContrast.value=1+(P.contrast-1)*T; U.uDetail.value=P.detail; U.uDetailRad.value=P.detailRad; U.uBW.value=P.bw*T; U.uLift.value=P.lift; U.uLumaCull.value=P.lumaCull; U.uVolDepth.value=P.volDepth; U.uVolFade.value=P.volFade; U.uVolJitter.value=P.volJitter; U.uBrightness.value=P.brightness; U.uJitter.value=P.jitter; U.uEdgeFade.value=P.edgeFade;
   U.uTint.value.set(P.tint); U.uTintAmt.value=P.tintAmt*T; U.uRain.value=P.rain*T; U.uRainSpeed.value=P.rainSpeed; U.uRainTrail.value=P.rainTrail; U.uHoloScan.value=P.holoScan*T; U.uScanFreq.value=P.scanFreq; U.uRgbSplit.value=P.rgbSplit*T;
   U.uFlick.value=1-(P.flicker*T>0&&Math.random()<0.12?Math.random()*0.7*P.flicker*T:0);
-  U.uWave.value=P.wave*T; U.uWaveFreq.value=P.waveFreq; U.uWaveSpeed.value=P.waveSpeed; U.uGlitch.value=P.glitch*T; U.uGlitchRate.value=P.glitchRate; U.uScatter.value=P.scatter*T; U.uScatterSpeed.value=P.scatterSpeed; U.uExplode.value=P.explode*T;
-  U.uUvGlitch.value=P.uvGlitch*T; U.uGlitchChance.value=P.glitchChance; U.uBlock.value=P.block*T; U.uChroma.value=P.chroma*T; U.uDropout.value=P.dropout*T; U.uBurst.value=P.burst*T; U.uBurstRate.value=P.burstRate; U.uSweep.value=P.sweep*T; U.uSweepSpeed.value=P.sweepSpeed; U.uEcho.value=P.echo*T; U.uEchoOff.value=P.echoOff;
+  U.uWave.value=P.wave*T; U.uWaveFreq.value=P.waveFreq; U.uWaveSpeed.value=P.waveSpeed; U.uGlitch.value=Math.min(1,P.glitch*T+E*0.7); U.uGlitchRate.value=P.glitchRate; U.uScatter.value=P.scatter*T; U.uScatterSpeed.value=P.scatterSpeed; U.uExplode.value=P.explode*T;
+  const E=Math.sin(Math.PI*Math.min(1,Math.max(0,T)))*P.transGlitch; // spikes mid-transition, 0 at both ends
+  U.uUvGlitch.value=Math.min(1,P.uvGlitch*T+E*0.8); U.uGlitchChance.value=Math.min(1,P.glitchChance+E*0.65); U.uBlock.value=Math.min(1,P.block*T+E*0.45); U.uChroma.value=Math.min(1,P.chroma*T+E*0.6); U.uDropout.value=Math.min(1,P.dropout*T+E*0.35); U.uBurst.value=P.burst*T; U.uBurstRate.value=P.burstRate; U.uSweep.value=P.sweep*T; U.uSweepSpeed.value=P.sweepSpeed; U.uEcho.value=P.echo*T; U.uEchoOff.value=P.echoOff;
   U.uProj.value=(canvas.height)/(2*Math.tan(THREE.MathUtils.degToRad(camera.fov)/2));
   PU.uOpacity.value=1+(P.plate-1)*T; PU.uFollow.value=P.plateDepth*T; PU.uZ.value=P.plateZ*T; PU.uBlur.value=P.plateBlur*T; PU.uDark.value=P.plateDark*T; PU.uTintAmt.value=P.plateTint*T; PU.uMono.value=P.plateMono*T; PU.uScan.value=P.plateScan*T; PU.uShade.value=P.plateShade*T; PU.uCut.value=P.plateCut; PU.uFog.value=P.plateFog*T; PU.uEdge.value=P.plateEdge*T; PU.uDepthMix.value=P.plateDepthMix*T; if(dW)PU.uTexel.value.set(1/dW,1/dH); plate.visible=(P.plate>0.001)||T<0.999;
   PB.uOpacity.value=P.gapFill*T; PB.uDark.value=Math.min(1,P.plateDark+0.25); PB.uBlur.value=Math.min(1,P.plateBlur+0.25); PB.uTintAmt.value=P.plateTint*T; PB.uMono.value=P.plateMono*T; PB.uScan.value=P.plateScan*T*0.5; PB.uFog.value=P.plateFog*0.5*T; backPlate.visible=P.gapFill*T>0.002;
