@@ -488,7 +488,13 @@ document.addEventListener('keydown', e => {
     if (prev) { LAYOUT = JSON.parse(prev); saveLayout(); renderPreview(); }
   }
 });
-for (const t of Object.keys(LAYOUT)) if (!LAYOUT[t].off && !LAYOUT[t].boxes) LAYOUT[t] = { off: LAYOUT[t], boxes: {} };
+for (const t of Object.keys(LAYOUT)) {
+  if (!LAYOUT[t] || typeof LAYOUT[t] !== 'object') { delete LAYOUT[t]; continue; }
+  if (!LAYOUT[t].off && !LAYOUT[t].boxes) LAYOUT[t] = { off: LAYOUT[t], boxes: {} };
+  // placement is session-only: every fresh load starts from the default layout
+  delete LAYOUT[t].off;
+  delete LAYOUT[t].boxes;
+}
 function saveLayout() { localStorage.setItem('mph-bait-layout', JSON.stringify(LAYOUT)); }
 function layoutNodes(el) {
   const map = {};
