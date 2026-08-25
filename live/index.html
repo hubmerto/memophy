@@ -1690,8 +1690,9 @@ function toggleSong(){
 }
 // try to start on the first interaction anywhere (autoplay w/ sound needs a gesture)
 (function(){
-  function kick(){ try{ if(vid.muted) toggleSong(); else { vid.play().catch(function(){}); initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume(); if(!waveRAF) drawWave(); } }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} document.removeEventListener('pointerdown',kick); }
-  document.addEventListener('pointerdown',kick,{once:true});
+  function kick(){ try{ if(vid.muted) toggleSong(); else { vid.play().catch(function(){}); initAudioViz(); if(actx2 && actx2.state==='suspended') actx2.resume(); if(!waveRAF) drawWave(); } }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} ['pointerdown','keydown','touchend'].forEach(function(ev){ document.removeEventListener(ev,kick); }); }
+  ['pointerdown','keydown','touchend'].forEach(function(ev){ document.addEventListener(ev,kick,{once:true}); });
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden && vid.muted && herAudioOn){ vid.muted=false; vid.play().catch(function(){ vid.muted=true; vid.play().catch(function(){}); }); } });
 })();
 
 function fakeChat(){
@@ -1795,6 +1796,7 @@ setTimeout(function(){ if(typeof herRotate==='function' && herIdxs().length) her
 // ---- age gate ----
 function closeGate(){ document.getElementById('gate').style.display='none'; setTimeout(showPop, 1600); try{ vid.muted=true; vid.play().catch(function(){}); }catch(e){} try{ gvid.muted=true; gvid.play().catch(function(){}); }catch(e){} try{ var a=document.getElementById('song'); if(a && a.paused) toggleSong(); }catch(e){} }
 document.getElementById('gate').style.display='none';   // age gate removed — straight into the show
+try{ if(!window._recjobMode) toggleSong(); }catch(e){}
 
 // ---- MEMPHY popup ----
 var pop = document.getElementById('mpop');
