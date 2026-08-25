@@ -151,6 +151,28 @@
   .crtv.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
   .crtv.skin-fax { border:3px double #000 !important; }
+  /* aqua / macos gel buttons: rounded rect, inner top highlight (not beveled Impact) */
+  .crtv.skin-aqua .cta, .crtv.skin-macos .cta {
+    border-radius:10px !important; border:1px solid var(--cta-border) !important;
+    background:var(--cta-bg) !important; color:#fff !important; -webkit-text-fill-color:#fff !important;
+    text-transform:none !important; text-shadow:none !important; font-weight:600 !important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.55), 0 1px 2px rgba(0,0,0,.25) !important; }
+  /* show-mac: generic macOS look-alike window */
+  .t-show-mac { width:360px; height:200px; background:#ececec; border:1px solid #b7b7b7; border-radius:8px; overflow:hidden; font-family:system-ui,-apple-system,"Helvetica Neue",sans-serif; box-shadow:0 8px 30px rgba(0,0,0,.28); }
+  .t-show-mac .macbar { position:relative; height:22px; background:linear-gradient(#f6f6f6,#e4e4e4); border-bottom:1px solid #cfcfcf; display:flex; align-items:center; }
+  .t-show-mac .dot { width:11px; height:11px; border-radius:50%; margin-left:6px; }
+  .t-show-mac .dot.r { background:#ff5f57; } .t-show-mac .dot.y { background:#febc2e; } .t-show-mac .dot.g { background:#28c840; }
+  .t-show-mac .mactitle { position:absolute; left:0; right:0; text-align:center; font-size:12px; font-weight:600; color:#4a4a4a; background:none; border:none; letter-spacing:0; padding:0; }
+  .t-show-mac .macbody { display:flex; gap:12px; padding:16px 16px 8px; }
+  .t-show-mac .macicon { width:48px; height:48px; flex:none; overflow:visible; background:none; border:none; }
+  .t-show-mac .macicon img { width:48px; height:48px; object-fit:contain; }
+  .t-show-mac .mactext { flex:1; }
+  .t-show-mac .hl { font:600 15px system-ui,-apple-system,sans-serif !important; color:#1d1d1f !important; -webkit-text-fill-color:#1d1d1f !important; background:none !important; -webkit-text-stroke:0 !important; text-transform:none !important; filter:none !important; padding:0; margin:0 0 4px; text-align:left; max-height:none; }
+  .t-show-mac .sub { position:static; font:400 12px system-ui,-apple-system,sans-serif !important; color:#5c5c5c !important; text-align:left; white-space:normal; padding:0; opacity:1; }
+  .t-show-mac .macbtns { position:absolute; right:12px; bottom:11px; display:flex; gap:8px; }
+  .t-show-mac .macbtn { font:600 12px system-ui,-apple-system,sans-serif; padding:5px 14px; border-radius:7px; white-space:nowrap; }
+  .t-show-mac .macbtn.ghost { background:#e3e3e3; border:1px solid #c4c4c4; color:#333; }
+  .t-show-mac .cta.macbtn { background:#0a84ff !important; color:#fff !important; -webkit-text-fill-color:#fff !important; border:1px solid #0060df !important; text-transform:none !important; text-shadow:none !important; box-shadow:inset 0 1px 0 rgba(255,255,255,.45) !important; position:static; }
 </style>
 </head>
 <body>
@@ -170,6 +192,8 @@
     <input type="file" id="file" accept=".png,.jpg,.jpeg,.svg,image/png,image/jpeg,image/svg+xml" multiple style="display:none">
     <div id="lib"></div>
 
+    <h2>Scenario</h2>
+    <select id="scenario"></select>
     <h2>Format (options grid + reset)</h2>
     <select id="template"></select>
     <h2>Skin</h2>
@@ -262,7 +286,7 @@
     </div>
 
     <h2>Build</h2>
-    <button class="acc" id="randomAll">&#127922; RANDOMIZE ALL</button>
+    <button class="acc" id="randomAll">&#127922; SURPRISE ME</button>
     <button class="acc" id="build">BUILD 12 OPTIONS</button>
     <button id="export">export GIF @2x (blinking)</button>
     <label style="display:block;color:var(--ui-dim);margin-top:4px;"><input type="checkbox" id="blink" checked> animate preview (blink + motion)</label>
@@ -289,69 +313,202 @@ const SKINS = {
   midnight:{ '--bg':'#000814','--grad-a':'#ffffff','--grad-b':'#9ecbff','--grad-c':'#1e6fe0','--headline-font':'Impact,"Arial Black",Arial,sans-serif','--headline-color':'#cfe6ff','--stroke':'#001a3d','--cta-bg':'#d90000','--cta-border':'#10233d','--glow':'drop-shadow(0 0 6px rgba(70,150,255,.9)) drop-shadow(0 3px 0 #000)' },
   reply:   { '--bg':'#ffffff','--grad-a':'#8fe06a','--grad-b':'#4cb532','--grad-c':'#2f8a1e','--headline-font':'"Arial Black",Arial,sans-serif','--headline-color':'#3f9e2a','--stroke':'#1d5712','--cta-bg':'#e6258f','--cta-border':'#b9b9b9','--glow':'none' },
   craigslist:{ '--bg':'#ffffff','--grad-a':'#0000ee','--grad-b':'#0000ee','--grad-c':'#0000ee','--headline-font':'"Times New Roman",Times,serif','--headline-color':'#0000ee','--stroke':'transparent','--cta-bg':'#0000ee','--cta-border':'#cccccc','--glow':'none' },
-  plain:   { '--bg':'#ffffff','--grad-a':'#000000','--grad-b':'#000000','--grad-c':'#000000','--headline-font':'Arial,Helvetica,sans-serif','--headline-color':'#000000','--stroke':'transparent','--cta-bg':'#000000','--cta-border':'#000000','--glow':'none' },
-  inverted:{ '--bg':'#000000','--grad-a':'#ffffff','--grad-b':'#ffffff','--grad-c':'#ffffff','--headline-font':'Arial,Helvetica,sans-serif','--headline-color':'#ffffff','--stroke':'transparent','--cta-bg':'#ffffff','--cta-border':'#ffffff','--glow':'none' },
   fax:     { '--bg':'#ffffff','--grad-a':'#000000','--grad-b':'#000000','--grad-c':'#000000','--headline-font':'"Arial Black",Arial,sans-serif','--headline-color':'#000000','--stroke':'transparent','--cta-bg':'#cc0000','--cta-border':'#000000','--glow':'none' },
+  aqua:    { '--bg':'#dfe7ef','--grad-a':'#a9ccf3','--grad-b':'#4b8fe0','--grad-c':'#1f6fd0','--headline-font':'"Lucida Grande","Lucida Sans Unicode",system-ui,sans-serif','--headline-color':'#0b3a6f','--stroke':'transparent','--cta-bg':'#1177ff','--cta-border':'#0a5ad0','--glow':'none','--gel':'1' },
+  macos:   { '--bg':'#ececec','--grad-a':'#f6f6f6','--grad-b':'#c8c8c8','--grad-c':'#a6a6a6','--headline-font':'system-ui,-apple-system,"Helvetica Neue",sans-serif','--headline-color':'#1d1d1f','--stroke':'transparent','--cta-bg':'#0a84ff','--cta-border':'#0060df','--glow':'none','--gel':'1' },
 };
 const TPL = {
   'show-banner':{ w:926, h:62,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
   'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
   'show-rect-side': { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-mac': { w:360, h:200, mac:true, html:'<div class="macbar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span><span class="mactitle" data-slot="badge"></span></div><div class="macbody"><div class="pic macicon"><img data-slot="image"></div><div class="mactext"><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div></div></div><div class="macbtns"><span class="macbtn ghost">Ignore</span><span class="cta macbtn" data-slot="cta" data-blink></span></div>' },
 };
+const SCENARIOS = {
+  sellPill:     { label:'Sell a pill',        weight:3, skins:['alert','midnight','fax'],      fx:['chrome','gold','shadow'],     motion:['static','rise'] },
+  meetTrade:    { label:'Meet trade',         weight:5, skins:['magenta','midnight','reply'],  fx:['shadow','sparkle','glitter'], motion:['swap','twitch','lineup'] },
+  t4tCuties:    { label:'T4T cuties',          weight:4, skins:['magenta','reply'],             fx:['gummy','sparkle','shadow'],   motion:['rise','lineup'] },
+  camLive:      { label:'Cam is live',         weight:4, skins:['magenta','midnight','aqua'],   fx:['glitter','shadow','overlay'], motion:['twitch','swap'] },
+  fakeNotif:    { label:'Fake notification',   weight:3, skins:['reply','aqua'],                fx:['shadow'],                     motion:['rise','static'] },
+  scareWarning: { label:'Scare warning',       weight:3, skins:['alert','fax','macos'],         fx:['shadow'],                     motion:['twitch','static'] },
+  macDialog:    { label:'macOS dialog',        weight:2, skins:['macos','aqua'],                fx:['none'],                       motion:['static'] },
+  prize:        { label:'You won a prize',     weight:3, skins:['magenta','alert','aqua'],      fx:['sparkle','gold','glitter'],   motion:['swap','twitch'] },
+};
+
 const COPY = {
-  headline: ["{N} DL {TYPE}S IN YOUR AREA","TRADE IS WAITING","MEET {TYPE}S NEAR YOU TONIGHT","STR8 BUT CURIOUS?","HE'S DL. HE'S {DIST} MILES AWAY.","MASC4MASC ONLY","NO ONE HAS TO KNOW","YOUR {RELATION} IS ON HERE","T4T CUTIES ONLINE RN","DADDIES HATE THIS {THING}","ONLY 1% CAN HANDLE THIS {TYPE}","{TYPE}S {STATE} OVER THIS APP"],
-  sub: ["he is {DIST} miles away","discretion guaranteed*","no pic no reply","can host tonight","ur profile got ({N}) taps","wife thinks he's at the gym","100% discreet (it is not)","no sign up. no shame. some shame.","looking rn","sent you {N} pics","ur type is online","he won't tell if you won't"],
-  cta: ["MEET TRADE >>","TAP IN","CRUISE NOW","SEE PICS","DM HIM","IM READY","YES IM DL","UNLOCK CHAT","WATCH FREE"],
-  badge: ["DL","M4M","T4T","DISCREET","18+","ONLINE RN","NEW BOYS","NSA","LIVE"],
+  sellPill: {
+    headline: ['DOCTORS HATE THIS PILL','1 WEIRD PILL BIG PHARMA BANNED','{N}% MORE STAMINA IN 1 DOSE',"THIS PILL WON'T STAY LEGAL",'TAKE 1 BEFORE THE GYM','HARDER. LONGER. SHIPPED DISCREET.'],
+    sub: ['results not typical','ships in plain packaging','not approved by anyone','sells out every week','doctors furious'],
+    cta: ['BUY NOW','SHOP DISCREET','ORDER 1 FREE','ADD TO CART','CLAIM OFFER'],
+    badge: ['SALE','AD','-70%','SPONSORED'] },
+  meetTrade: {
+    headline: ['{N} DL {TYPE}S IN YOUR AREA',"HE'S DL. HE'S {DIST} MILES AWAY.",'MASC4MASC ONLY','YOUR {RELATION} IS ON HERE','TRADE IS WAITING','NO ONE HAS TO KNOW'],
+    sub: ['he is {DIST} miles away','no pic no reply','can host tonight',"wife thinks he's at the gym","he won't tell if you won't",'discretion guaranteed*'],
+    cta: ['MEET TRADE >>','DM HIM','CRUISE NOW','IM READY','YES IM DL'],
+    badge: ['DL','M4M','NSA','ONLINE RN','DISCREET'] },
+  t4tCuties: {
+    headline: ['T4T CUTIES ONLINE RN','SWEETEST {TYPE}S IN TOWN','MEET GIRLS LIKE YOU','UR TYPE IS WAITING','SOFT LAUNCH TONIGHT'],
+    sub: ['looking rn','ur type is online','first message is free','she is {DIST} miles away','no shame here'],
+    cta: ['TAP IN','SEE MORE','SAY HI','MATCH NOW'],
+    badge: ['T4T','NEW','ONLINE RN','LIVE'] },
+  camLive: {
+    headline: ["SHE'S LIVE RIGHT NOW",'{N} WATCHING NOW','TIP TO UNLOCK','GOING PRIVATE IN {N} MIN','{TYPE}S ON CAM NOW'],
+    sub: ['{N} viewers','she can see this','tokens 50% off','no signup to watch','started {N} min ago'],
+    cta: ['WATCH FREE','JOIN LIVE','TIP NOW','GO PRIVATE'],
+    badge: ['LIVE','● REC','ONLINE RN','HD'] },
+  fakeNotif: {
+    headline: ['{N} NEW MESSAGES','SOMEONE TAPPED YOU','YOU HAVE ({N}) PICS','HE SENT YOU {N} MSGS','MISSED: {N} TAPS'],
+    sub: ['sent you {N} pics','ur profile got ({N}) taps','tap to open','{DIST} miles away','just now'],
+    cta: ['OPEN','VIEW NOW','REPLY','SEE PICS'],
+    badge: ['● {N}','NEW','●','NOW'] },
+  scareWarning: {
+    headline: ['⚠ VIRUS DETECTED','YOUR DEVICE IS AT RISK','AGE VERIFY REQUIRED','{N} THREATS FOUND','CONNECTION NOT SECURE'],
+    sub: ['action required','scan expires in {N} min','click to verify 18+','your data is exposed','immediate action needed'],
+    cta: ['SCAN NOW','VERIFY AGE','FIX NOW','CONTINUE'],
+    badge: ['⚠','ALERT','18+','SYSTEM'] },
+  macDialog: {
+    headline: ['Your Mac is infected','macOS wants to verify your age','{N} viruses found on this Mac','Suspicious activity detected','Security alert'],
+    sub: ['Immediate action is required to protect your data.','A hidden process is accessing your camera.','Verify to continue browsing.','Recommended by macOS Security.'],
+    cta: ['Clean Now','Verify','Continue','Scan Mac'],
+    badge: ['Security & Privacy','System Preferences','Safari','Notification'] },
+  prize: {
+    headline: ['YOU WON A {PRIZE}','SPIN TO WIN',"YOU'RE TODAY'S WINNER",'CLAIM YOUR {PRIZE}',"YOU'RE THE {N}TH VISITOR"],
+    sub: ['1 spin left','claim in {N} min','no purchase needed','you have been selected','offer ends tonight'],
+    cta: ['SPIN NOW','CLAIM PRIZE','GET IT','OPEN GIFT'],
+    badge: ['WINNER','FREE','●','TODAY ONLY'] },
 };
-const BANKS = {
-  N:["3","7","12","17","23","41","99"],
-  TYPE:["TWINK","BEAR","OTTER","DADDY","JOCK","PAPI","MASC","TRADE"],
-  DIST:["0.4","0.7","1.2","2.3"],
-  RELATION:["NEIGHBOR","LANDLORD","BARBER","GYM BRO","ROOMMATE","DENTIST"],
-  THING:["TRICK","APP","LOOPHOLE","FILTER","ANGLE"],
-  STATE:["FURIOUS","SHOOK","SPEECHLESS","FERAL","BANNED"],
-  VERB:["SEE","HANDLE","RESIST","UNSEE"],
+
+const TOKENS = {
+  N:['3','7','12','17','23','41','99'],
+  TYPE:['TWINK','BEAR','OTTER','DADDY','JOCK','PAPI','MASC','TRADE'],
+  DIST:['0.4','0.7','1.2','2.3'],
+  RELATION:['NEIGHBOR','LANDLORD','BARBER','GYM BRO','ROOMMATE','DENTIST'],
+  THING:['TRICK','APP','LOOPHOLE','FILTER','ANGLE'],
+  STATE:['FURIOUS','SHOOK','SPEECHLESS','FERAL','BANNED'],
+  VERB:['SEE','HANDLE','RESIST','UNSEE'],
+  PRIZE:['iPhone','gift card','PS5','$500','mystery box'],
 };
+const BANKS = TOKENS;
+
 const PLACEHOLDER = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff7300"/><stop offset="1" stop-color="#5500aa"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="160" font-family="Arial" font-size="42" font-weight="bold" fill="#fff" text-anchor="middle" opacity=".85">IMG?</text></svg>');
 
 const pick = a => a[Math.floor(Math.random()*a.length)];
-const fill = s => s.replace(/\{([A-Z_]+)\}/g, (m,k) => BANKS[k] ? pick(BANKS[k]) : m);
-const THEMES = [
-  { icons: ['bluepill','capsules','blister','boost','vial'],
-    headline: ['DOCTORS HATE THIS PILL','1 WEIRD PILL EXPERTS HATE','{N}% MORE STAMINA INSTANTLY','THIS PILL WON\'T STAY LEGAL','TAKE 1 BEFORE THE GYM'],
-    sub: ['results not typical','not approved by anyone','he won\'t tell if you won\'t','discretion guaranteed*'],
-    cta: ['CLAIM PRIZE','TRY FREE','GET THE PILL','TAP IN'],
-    badge: ['AD','SPONSORED','NEW','18+'] },
-  { icons: ['gummies','gummybear','lollipop','cherries','peach'],
-    headline: ['SUGAR DADDIES NEAR YOU','SWEETEST {TYPE}S IN TOWN','TASTE THIS BEFORE IT\'S GONE','FREE SAMPLES TONIGHT'],
-    sub: ['first taste is free','he is {DIST} miles away','looking rn','ur type is online'],
-    cta: ['TASTE NOW','TAP IN','SEE MORE','DM HIM'],
-    badge: ['HOT','NEW','LIVE','ONLINE RN'] },
-  { icons: ['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','padlock','rose','towel'],
-    headline: ['NO ONE HAS TO KNOW','MASC4MASC ONLY','STR8 BUT CURIOUS?','HE KEEPS THE KEY','YOUR {RELATION} ALREADY KNOWS'],
-    sub: ['discretion guaranteed*','no pic no reply','can host tonight','he won\'t tell if you won\'t'],
-    cta: ['YES IM DL','UNLOCK CHAT','MEET TRADE >>','CRUISE NOW'],
-    badge: ['DISCREET','NSA','18+','DL'] },
-  { icons: ['girl1','girl2','girl3','girl4','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','slave','gummygirl'],
-    headline: ['{N} DL {TYPE}S IN YOUR AREA','TRADE IS WAITING','HE\'S DL. HE\'S {DIST} MILES AWAY.','T4T CUTIES ONLINE RN','MEET {TYPE}S NEAR YOU TONIGHT'],
-    sub: ['sent you {N} pics','he is {DIST} miles away','looking rn','ur profile got ({N}) taps'],
-    cta: ['MEET TRADE >>','DM HIM','SEE PICS','IM READY'],
-    badge: ['ONLINE RN','M4M','DL','LIVE'] },
-  { icons: ['logo','shield','pfiercer','hazard','pendant'],
-    headline: ['YOUR {RELATION} IS ON HERE','THIS APP WON\'T STAY UP','DADDIES HATE THIS APP','WARNING: TOO EFFECTIVE'],
-    sub: ['as seen on the internet','100% discreet (it is not)','no sign up. no shame. some shame.'],
-    cta: ['TAP IN','WATCH FREE','CRUISE NOW','UNLOCK CHAT'],
-    badge: ['18+','AD','SPONSORED','NEW'] },
-];
-function themeFor(assetId) {
-  const n = String(assetId || '').replace('builtin-', '');
-  return THEMES.find(t => t.icons.includes(n)) || null;
+const fill = s => s.replace(/\{([A-Z_]+)\}/g, (m,k) => TOKENS[k] ? pick(TOKENS[k]) : m);
+const baseId = id => String(id||'').replace('builtin-','');
+
+/* ---- icon -> scenario tags (families are UI labels only; randomizer filters on scenarios[]) ---- */
+const ICON_FAMILY = {
+  PHARMA:   { icons:['bluepill','capsules','blister','boost','vial'], scen:['sellPill'] },
+  CANDY:    { icons:['gummies','gummybear','lollipop','cherries','peach'], scen:['t4tCuties','prize'] },
+  GEAR:     { icons:['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','padlock','rose','towel'], scen:['meetTrade'] },
+  PEOPLE:   { icons:['girl1','girl2','girl3','girl4','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','slave','gummygirl'], scen:['meetTrade','t4tCuties','camLive','fakeNotif'] },
+  BRAND:    { icons:['logo','shield','pfiercer','hazard','pendant'], scen:['scareWarning','prize','fakeNotif'] },
+  CAM:      { icons:['ringlight','tripod','token','heartspam','webcam'], scen:['camLive'] },
+  UI:       { icons:['bubble','notifdot','battery','cursor'], scen:['fakeNotif','scareWarning'] },
+  SHOP:     { icons:['parcel','pumpbottle','priceburst'], scen:['sellPill'] },
+  WIN:      { icons:['cart','giftbox','spinwheel'], scen:['prize'] },
+  SYSTEM:   { icons:['padlockopen','shieldcheck','scangear'], scen:['scareWarning','macDialog'] },
+};
+const ICON_SCEN = {};
+for (const fam of Object.values(ICON_FAMILY)) for (const ic of fam.icons) ICON_SCEN[ic] = fam.scen;
+
+/* ---- motion classes (property of the icon) ---- */
+const MOTION_CLASS = {
+  solo:      ['static','rise'],
+  set:       ['swap','lineup'],
+  alarm:     ['twitch','swap'],
+  spinnable: ['swap','twitch'],
+};
+const ICON_MOTION = {};
+for (const n of ['memphy1','memphy2','memphy3','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','girl1','girl2','girl3','girl4']) ICON_MOTION[n]='set';
+for (const n of ['notifdot','battery','hazard','shieldcheck','padlockopen','bubble']) ICON_MOTION[n]='alarm';
+for (const n of ['spinwheel','token']) ICON_MOTION[n]='spinnable';
+const motionClassOf = id => ICON_MOTION[baseId(id)] || 'solo';
+
+/* ---- swap groups (bind multi-frame subjects) ---- */
+const SWAP_GROUPS = {
+  memphyCam: { frames:['memphy1','memphy2','memphy3'], motionClass:'set', defaultMotion:'swap', align:'glitch', scenarios:['camLive','meetTrade'] },
+};
+const STATIC_FALLBACK = 0.12;
+
+/* map spec motion names -> app motion names */
+const MOTION_MAP = { rise:'slideup', swap:'appear', lineup:'lineup', twitch:'twitch', static:'static' };
+/* map scenario fx -> {fx keys, overlay pattern} */
+function fxSpec(fxName) {
+  if (fxName === 'shadow')  return { keys:['glow'] };
+  if (fxName === 'sparkle') return { keys:['sparkle'] };
+  if (fxName === 'glitter') return { keys:['glitter'] };
+  if (fxName === 'overlay') return { keys:['overlay'] };
+  if (['chrome','gold','gummy','diamond','holo','crystal','camo'].includes(fxName)) return { keys:['overlay'], pattern:fxName };
+  return { keys:[] };
+}
+
+/* ---- THE RESOLVER: one scenario -> a fully intent-correlated ad ---- */
+function eligibleIcons(scen) {
+  return assets.filter(a => (ICON_SCEN[baseId(a.id)] || []).includes(scen));
+}
+function resolve(scen) {
+  const S = SCENARIOS[scen]; if (!S) return null;
+  const skin = pick(S.skins.filter(k => SKINS[k])) || 'magenta';
+
+  // icon or swap-group
+  let iconIds = null, groupName = null;
+  const groups = Object.entries(SWAP_GROUPS).filter(([n,g]) =>
+    g.scenarios.includes(scen) && g.frames.some(f => assets.find(a => baseId(a.id)===f)));
+  const solos = eligibleIcons(scen);
+  const useGroup = groups.length && (Math.random() < 0.5 || !solos.length);
+  if (useGroup) {
+    const [gn, g] = pick(groups);
+    groupName = gn;
+    iconIds = g.frames.map(f => assets.find(a => baseId(a.id)===f)?.id).filter(Boolean);
+    if (Math.random() < STATIC_FALLBACK) iconIds = [iconIds[0]]; // occasional freeze on frame 0
+  } else if (solos.length) {
+    iconIds = [pick(solos).id];
+  } else {
+    const brand = assets.find(a => (ICON_FAMILY.BRAND.icons).includes(baseId(a.id)));
+    iconIds = brand ? [brand.id] : (assets[0] ? [assets[0].id] : []);
+  }
+
+  // motion = scenario.motion ∩ icon.motionClass
+  const cls = groupName ? SWAP_GROUPS[groupName].motionClass : motionClassOf(iconIds[0]);
+  const allowed = MOTION_CLASS[cls] || ['static'];
+  let smotion = pick(S.motion.filter(m => allowed.includes(m)));
+  if (groupName && iconIds.length > 1) smotion = S.motion.includes('lineup') && Math.random()<0.4 ? 'lineup' : 'swap';
+  if (groupName && iconIds.length === 1) smotion = 'static';
+  const motion = MOTION_MAP[smotion || 'static'] || 'static';
+
+  // copy
+  const C = COPY[scen];
+  const copy = { headline: fill(pick(C.headline)), sub: fill(pick(C.sub)), cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
+
+  // fx (from allowed set only)
+  const fxName = pick(S.fx);
+  const spec = fxSpec(fxName);
+  const fx = spec.keys.join(' ') || 'none';
+
+  // format
+  let template;
+  if (scen === 'macDialog') template = 'show-mac';
+  else if (scen === 'scareWarning' && skin === 'macos') template = 'show-mac';
+  else template = pick(['show-banner','show-rect','show-rect-side']);
+
+  return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, template };
+}
+function weightedScenario() {
+  const bag = [];
+  for (const [k,v] of Object.entries(SCENARIOS)) for (let i=0;i<(v.weight||1);i++) bag.push(k);
+  return pick(bag);
+}
+
+/* ---- compat shims for existing callers ---- */
+let CURRENT_SCEN = 'meetTrade';
+function scenOfIcon(id) {
+  const tags = ICON_SCEN[baseId(id)];
+  return (tags && tags.length) ? (tags.includes(CURRENT_SCEN) ? CURRENT_SCEN : tags[0]) : CURRENT_SCEN;
 }
 function themedRoll(slot, assetId) {
-  const th = themeFor(assetId);
-  const pool = (th && th[slot] && th[slot].length) ? th[slot] : COPY[slot];
+  const scen = assetId ? scenOfIcon(assetId) : CURRENT_SCEN;
+  const pool = (COPY[scen] && COPY[scen][slot]) || COPY.meetTrade[slot];
   return fill(pick(pool));
 }
 const roll = slot => themedRoll(slot, selectedAsset?.id);
@@ -657,7 +814,8 @@ function writeProp(patch) {
 function currentFx() {
   return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
 }
-function makeAd(template, skin, copy, imgUrl, fx, motion) {
+function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
+  opts = opts || {};
   fx = fx ?? currentFx();
   motion = motion ?? (document.getElementById('motion')?.value || 'static');
   if (!SKINS[skin]) skin = Object.keys(SKINS)[0];
@@ -752,8 +910,8 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
   if (fx.includes('overlay')) {
     const pic = el.querySelector('.pic');
     const ov = LAYOUT[template]?.overlay ?? {};
-    const col = ov.color ?? window.OVERLAY_COLOR ?? '#ff2ec4';
-    const pat = ov.pattern ?? window.OVERLAY_PATTERN ?? '';
+    const col = opts.overlayColor ?? ov.color ?? window.OVERLAY_COLOR ?? '#ff2ec4';
+    const pat = opts.overlayPattern ?? ov.pattern ?? window.OVERLAY_PATTERN ?? '';
     if (pic) {
       const d = document.createElement('div');
       d.className = 'tint';
@@ -801,6 +959,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion) {
     el.appendChild(n);
     (((LAYOUT[template] ??= {}).off ??= {})['x:' + ex.id] ??= { dx: ex.dx || 0, dy: ex.dy || 0, s: ex.s || 1 });
   }
+  if (opts.icons && opts.icons.length > 1) el._icons = opts.icons;
   applyLayout(el, template);
   return el;
 }
@@ -847,7 +1006,9 @@ function renderPreview() {
 function renderPreviewInner() {
   const wrap = document.getElementById('previewWrap');
   wrap.innerHTML = '';
-  for (const template of Object.keys(TPL)) {
+  const showMac = ['macDialog','scareWarning'].includes(document.getElementById('scenario')?.value);
+  const formats = Object.keys(TPL).filter(t => t !== 'show-mac' || showMac);
+  for (const template of formats) {
     const row = document.createElement('div');
     row.className = 'crow' + (window.ACTIVE === template ? ' active' : '');
     row.style.marginBottom = '14px';
@@ -994,19 +1155,26 @@ setInterval(() => {
 function buildOptions() {
   const grid = document.getElementById('optGrid');
   grid.innerHTML = '';
-  const template = window.ACTIVE || sel('template');
-  const pool = assets.length ? assets : [{ dataUrl: PLACEHOLDER, name: 'placeholder' }];
-  const skinNames = Object.keys(SKINS);
-  const rnd12 = a => a[Math.floor(Math.random() * a.length)];
+  const pinned = window.ACTIVE || sel('template');
+  const pinnedScen = sel('scenario');   // '' = surprise
   for (let i = 0; i < 12; i++) {
-    const skin = rnd12(skinNames);
-    const img = rnd12(pool);
-    const copy = { headline: themedRoll('headline', img.id), sub: themedRoll('sub', img.id),
-                   cta: themedRoll('cta', img.id), badge: themedRoll('badge', img.id) };
-    const fx12 = ['glow','sparkle','glitter'].filter(() => Math.random() < 0.35).join(' ') || 'none';
-    const mo12 = rnd12(['static','static','appear','twitch','slideup']);
-    const ad = makeAd(template, skin, copy, img.dataUrl, fx12, mo12);
-    ad._fx12 = fx12; ad._mo12 = mo12;
+    // choose a scenario that can live in the pinned format
+    let scen = pinnedScen || weightedScenario();
+    const macFmt = pinned === 'show-mac';
+    if (macFmt && !['macDialog','scareWarning'].includes(scen)) scen = Math.random()<0.5?'macDialog':'scareWarning';
+    if (!macFmt && scen === 'macDialog') scen = pinnedScen ? 'scareWarning' : weightedScenario();
+    const r = resolve(scen) || {};
+    const template = macFmt ? 'show-mac' : pinned;
+    const skin = r.skin || 'magenta';
+    const copy = r.copy || { headline: themedRoll('headline'), sub: themedRoll('sub'), cta: themedRoll('cta'), badge: themedRoll('badge') };
+    const iconIds = (r.iconIds && r.iconIds.length) ? r.iconIds : (selectedAsset ? [selectedAsset.id] : []);
+    const imgAsset = assets.find(a => a.id === iconIds[0]);
+    const img = imgAsset || { dataUrl: PLACEHOLDER, name: 'placeholder' };
+    const fx12 = r.fx || 'none';
+    const mo12 = r.motion || 'static';
+    const opts = { overlayPattern: r.overlayPattern, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
+    const ad = makeAd(template, skin, copy, img.dataUrl, fx12, mo12, opts);
+    ad._fx12 = fx12; ad._mo12 = mo12; ad._scen = scen; ad._iconIds = iconIds; ad._pat = r.overlayPattern;
     const card = document.createElement('div');
     card.className = 'opt';
     const box = document.createElement('div');
@@ -1020,22 +1188,23 @@ function buildOptions() {
     box.appendChild(ad); card.appendChild(box);
     const meta = document.createElement('div');
     meta.className = 'meta';
-    meta.innerHTML = `<span>${skin}</span>`;
+    meta.innerHTML = `<span>${SCENARIOS[scen]?.label || scen} · ${skin}</span>`;
     const ed = document.createElement('button');
     ed.textContent = 'EDIT';
     ed.onclick = () => {
       snapshotLayout();
-      if (img.id) { selectedAsset = img; selectedIds = [img.id]; }
+      if (iconIds.length) { selectedIds = [...iconIds]; selectedAsset = selectedAssets()[0] || selectedAsset; }
       window.ACTIVE = template;
       const P = ((LAYOUT[template] ??= {}).props ??= {});
       P.skin = skin; P.copy = { ...copy }; P.fx = ad._fx12 === 'none' ? '' : ad._fx12; P.motion = ad._mo12;
+      if (r.overlayPattern) { (LAYOUT[template].overlay ??= {}).pattern = r.overlayPattern; }
       freezeOthers(template);
       saveLayout(); drawLib(); syncControls(); renderPreview();
       document.getElementById('previewWrap').scrollIntoView({ behavior: 'smooth' });
     };
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
-    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, fx: ad._fx12, motion: ad._mo12 }, `${template}-${skin}-${i+1}`);
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, icons: opts.icons, overlayPattern: r.overlayPattern, fx: ad._fx12, motion: ad._mo12 }, `${scen}-${skin}-${i+1}`);
     meta.appendChild(ed); meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
@@ -1206,7 +1375,7 @@ async function exportCreative(spec, name) {
   try {
     const frames = [];
     for (const k of phases) {
-      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k] : spec.imgUrl, spec.fx, spec.motion);
+      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k % icons.length] : spec.imgUrl, spec.fx, spec.motion, { overlayPattern: spec.overlayPattern });
       ad.classList.add('ph' + (k % 4));
       if (k % 2 === 1) ad.classList.add('frame2');
       frames.push(await rasterizeAd(ad, t));
@@ -1256,6 +1425,11 @@ async function loadBuiltins() {
 }
 
 function init() {
+  const sc = document.getElementById('scenario');
+  sc.add(new Option('🎲 Surprise me (mixed)', ''));
+  for (const [k,v] of Object.entries(SCENARIOS)) sc.add(new Option(v.label, k));
+  sc.value = '';
+  sc.onchange = () => { CURRENT_SCEN = sc.value || 'meetTrade'; };
   const ts = document.getElementById('template');
   for (const k of Object.keys(TPL)) ts.add(new Option(`${k}  (${TPL[k].w}×${TPL[k].h})`, k));
   const ss = document.getElementById('skin');
@@ -1593,18 +1767,28 @@ function init() {
     delete LAYOUT[window.SEL.t]?.text?.[window.SEL.k];
     saveLayout(); renderPreview(); selectSlot(window.SEL.t, window.SEL.k);
   };
+  // SURPRISE ME: one scenario roll drives skin, icon, motion, copy, fx (intent-correlated)
   document.getElementById('randomAll').onclick = () => {
-    const rnd = a => a[Math.floor(Math.random() * a.length)];
-    document.getElementById('template').value = rnd(Object.keys(TPL));
-    document.getElementById('skin').value = rnd(Object.keys(SKINS));
-    if (assets.length) { selectedAsset = rnd(assets); selectedIds = [selectedAsset.id]; }
-    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = themedRoll(k, selectedAsset?.id);
-    document.getElementById('fx-glow').checked = Math.random() < 0.5;
-    document.getElementById('fx-sparkle').checked = Math.random() < 0.5;
-    document.getElementById('fx-glitter').checked = Math.random() < 0.35;
-    document.getElementById('motion').value = rnd(['static','static','appear','lineup','twitch','slideup']);
-    drawLib();
-    renderPreview();
+    const scen = (document.getElementById('scenario').value) || weightedScenario();
+    const r = resolve(scen);
+    if (!r) return;
+    snapshotLayout();
+    CURRENT_SCEN = scen;
+    document.getElementById('template').value = r.template;
+    document.getElementById('skin').value = r.skin;
+    if (r.iconIds && r.iconIds.length) { selectedIds = [...r.iconIds]; selectedAsset = selectedAssets()[0] || selectedAsset; }
+    for (const k of ['headline','sub','cta','badge']) document.getElementById('c-' + k).value = r.copy[k];
+    FX_KEYS.forEach(k => { const el = document.getElementById('fx-' + k); if (el) el.checked = r.fx.includes(k); });
+    if (r.overlayPattern) { window.OVERLAY_PATTERN = r.overlayPattern; const op = document.getElementById('overlay-pattern'); if (op) op.value = r.overlayPattern; }
+    document.getElementById('motion').value = r.motion;
+    // apply to every ad (ALL mode) so the whole set reads as one scenario
+    window.ACTIVE = null;
+    for (const t of Object.keys(TPL)) {
+      const P = ((LAYOUT[t] ??= {}).props ??= {});
+      P.skin = r.skin; P.copy = { ...r.copy }; P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion;
+      if (r.overlayPattern) (LAYOUT[t].overlay ??= {}).pattern = r.overlayPattern;
+    }
+    saveLayout(); drawLib(); syncControls(); renderPreview();
   };
   document.getElementById('build').onclick = buildOptions;
   document.getElementById('resetLayout').onclick = () => {
