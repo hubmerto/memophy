@@ -151,6 +151,38 @@
   .crtv.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
   .crtv.skin-fax { border:3px double #000 !important; }
+  /* show-mobile 320x100: image left, headline+cta stacked right */
+  .t-show-mobile { width:320px; height:100px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-mobile .pic { float:left; width:96px; height:98px; overflow:hidden; }
+  .t-show-mobile .pic img { width:96px; height:98px; }
+  .t-show-mobile .badge { position:absolute; top:4px; left:4px; padding:2px 7px; font-size:11px; z-index:2; }
+  .t-show-mobile .hl { position:absolute; left:104px; top:8px; right:8px; font-size:26px; line-height:26px; -webkit-text-stroke:1.1px var(--stroke,#000); max-height:52px; overflow:hidden; }
+  .t-show-mobile .sub { position:absolute; left:104px; bottom:30px; right:8px; font:12px Verdana,sans-serif; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-show-mobile .cta { position:absolute; left:104px; bottom:8px; font:bold 16px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
+  /* show-mpu 336x280: image top, headline, sub, cta */
+  .t-show-mpu { width:336px; height:280px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-mpu .pic { width:334px; height:130px; overflow:hidden; }
+  .t-show-mpu .pic img { width:334px; height:130px; }
+  .t-show-mpu .badge { position:absolute; top:5px; left:5px; padding:3px 9px; font-size:13px; z-index:2; }
+  .t-show-mpu .hl { padding:8px 10px 2px; font-size:34px; line-height:34px; text-align:center; -webkit-text-stroke:1.5px var(--stroke,#000); max-height:74px; overflow:hidden; }
+  .t-show-mpu .sub { position:absolute; bottom:52px; left:0; right:0; padding:0 12px; font:13px Verdana,sans-serif; text-align:center; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-show-mpu .cta { position:absolute; bottom:12px; left:0; right:0; text-align:center; font:bold 22px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
+  /* show-sky 160x600: tall vertical */
+  .t-show-sky { width:160px; height:600px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-sky .pic { position:absolute; top:40px; left:8px; right:8px; height:250px; overflow:hidden; }
+  .t-show-sky .pic img { width:100%; height:250px; object-fit:contain; }
+  .t-show-sky .badge { position:absolute; top:8px; left:8px; padding:2px 8px; font-size:12px; z-index:2; }
+  .t-show-sky .hl { position:absolute; top:300px; left:6px; right:6px; font-size:24px; line-height:24px; text-align:center; -webkit-text-stroke:1.2px var(--stroke,#000); max-height:160px; overflow:hidden; }
+  .t-show-sky .sub { position:absolute; top:470px; left:6px; right:6px; font:12px Verdana,sans-serif; text-align:center; white-space:normal; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; max-height:44px; }
+  .t-show-sky .cta { position:absolute; bottom:16px; left:8px; right:8px; text-align:center; font:bold 20px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
+  /* show-halfpage 300x600: big vertical */
+  .t-show-halfpage { width:300px; height:600px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
+  .t-show-halfpage .pic { position:absolute; top:44px; left:10px; right:10px; height:300px; overflow:hidden; }
+  .t-show-halfpage .pic img { width:100%; height:300px; object-fit:contain; }
+  .t-show-halfpage .badge { position:absolute; top:10px; left:10px; padding:3px 10px; font-size:14px; z-index:2; }
+  .t-show-halfpage .hl { position:absolute; top:356px; left:10px; right:10px; font-size:40px; line-height:40px; text-align:center; -webkit-text-stroke:1.6px var(--stroke,#000); max-height:150px; overflow:hidden; }
+  .t-show-halfpage .sub { position:absolute; top:516px; left:10px; right:10px; font:15px Verdana,sans-serif; text-align:center; white-space:normal; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; max-height:40px; }
+  .t-show-halfpage .cta { position:absolute; bottom:18px; left:12px; right:12px; text-align:center; font:bold 26px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
 </style>
 </head>
 <body>
@@ -285,6 +317,10 @@ const TPL = {
   'show-banner':{ w:926, h:62,  html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
   'show-rect':  { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
   'show-rect-side': { w:346, h:258, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-mobile':   { w:320, h:100, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-mpu':      { w:336, h:280, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-sky':      { w:160, h:600, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
+  'show-halfpage': { w:300, h:600, html:'<div class="pic"><img data-slot="image"></div><div class="badge" data-slot="badge"></div><div class="hl" data-slot="headline"></div><div class="sub" data-slot="sub"></div><span class="cta" data-slot="cta" data-blink></span>' },
 };
 const SCENARIOS = {
   sellPill:  { label:'Sell a pill',       weight:3, skins:['alert','midnight','fax'],       fx:['chrome','gold','shadow'],     motion:['static','rise'] },
@@ -391,6 +427,7 @@ const SWAP_GROUPS = {
 };
 const STATIC_FALLBACK = 0.12;
 
+const FORMAT_NUDGE = { fakeNotif:['show-mobile','show-rect-side'], prize:['show-mpu','show-halfpage'], sexShop:['show-mpu','show-halfpage'] };
 /* map spec motion names -> app motion names */
 const MOTION_MAP = { rise:'slideup', swap:'appear', lineup:'lineup', twitch:'twitch', static:'static' };
 /* map scenario fx -> {fx keys, overlay pattern} */
@@ -449,7 +486,8 @@ function resolve(scen) {
   const fx = spec.keys.join(' ') || 'none';
 
   // format
-  let template = pick(['show-banner','show-rect','show-rect-side']);
+  const nudge = FORMAT_NUDGE[scen];
+  const template = (nudge && Math.random() < 0.6) ? pick(nudge) : pick(Object.keys(TPL));
 
   return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, template };
 }
@@ -1300,11 +1338,14 @@ function pageCss() {
   return css;
 }
 function fitText(adEl){
-  adEl.querySelectorAll('.hl').forEach(hl => {
-    let fs = parseFloat(getComputedStyle(hl).fontSize) || 20;
+  adEl.querySelectorAll('.hl, .sub, .cta').forEach(el => {
+    if (!el.textContent.trim()) return;
+    const minPx = el.classList.contains('sub') ? 9 : 11;
+    let fs = parseFloat(getComputedStyle(el).fontSize) || 20;
     let guard = 0;
-    while (guard++ < 60 && fs > 9 && (hl.scrollWidth > hl.clientWidth + 1 || hl.scrollHeight > hl.clientHeight + 1)) {
-      fs -= 1; hl.style.fontSize = fs + 'px'; hl.style.lineHeight = (fs + 2) + 'px';
+    while (guard++ < 60 && fs > minPx && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)) {
+      fs -= 1; el.style.fontSize = fs + 'px';
+      if (el.classList.contains('hl')) el.style.lineHeight = (fs + 1) + 'px';
     }
   });
 }
