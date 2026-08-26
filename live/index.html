@@ -2746,6 +2746,16 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
   var jobCaller=qs.get('caller'), jobClip=qs.get('clip'), jobStart=parseFloat(qs.get('start'))||0;
   var jobZoomSeq=parseZoomSeq(qs.get('zoomat'));
   var jobCalZoom=parseZoomSeq(qs.get('calzoom'));
+  window._prevMuted = (jobPrev && window.parent!==window);   // embedded previews open silent; renders mux the track regardless
+  window.addEventListener('message',function(ev){
+    if(ev.data && typeof ev.data.memphyMute==='boolean'){
+      window._prevMuted=ev.data.memphyMute;
+      try{
+        vid.muted=ev.data.memphyMute;
+        if(!ev.data.memphyMute){ vid.play().catch(function(){}); if(typeof actx2!=='undefined'&&actx2&&actx2.state==='suspended') actx2.resume(); }
+      }catch(e){}
+    }
+  });
   document.title='REC '+jobId;
 
   function whenLoaded(cb){ if(typeof clips!=='undefined'&&clips.length) cb(); else setTimeout(function(){whenLoaded(cb);},150); }
@@ -2762,7 +2772,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
       var herIdx=idxOf(jobClip), calIdx=idxOf(jobCaller);
       if(herIdx<0||calIdx<0){ document.title='REC ERR clip'; return; }
       // 1) preload her segment, paused at the exact start
-      vid.pause(); vid.loop=false; vid.muted=false; vid.volume=1;
+      vid.pause(); vid.loop=false; vid.muted=!!window._prevMuted; vid.volume=1;
       vid.src=clips[herIdx].url;
       vid.addEventListener('loadedmetadata',function once(){
         vid.removeEventListener('loadedmetadata',once);
@@ -2862,10 +2872,10 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
     setTimeout(function(){
       try{ var g0=document.getElementById('gate'); if(g0) g0.style.display='none'; }catch(e){}
       try{
-        vid.muted=false; vid.volume=1;
+        vid.muted=!!window._prevMuted; vid.volume=1;
         var vp=vid.play();
         if(vp&&vp.catch) vp.catch(function(){ vid.muted=true; vid.play().catch(function(){});
-          var un=function(){ vid.muted=false; document.removeEventListener('pointerdown',un); };
+          var un=function(){ vid.muted=!!window._prevMuted; document.removeEventListener('pointerdown',un); };
           document.addEventListener('pointerdown',un); });
       }catch(e){}
       try{ initAudioViz(); }catch(e){}

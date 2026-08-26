@@ -116,6 +116,7 @@ button:disabled{opacity:.5;cursor:default;}
       <button class="prev" id="btnPrev_room">&#9202; ARM</button>
       <button class="rec" id="btnRec_room">&#9679; RENDER CHAT ROOM</button>
       <button id="btnTab_room" title="opens the armed take alone in a tab — click in it to roll, screen-record it">&#8599; OPEN IN TAB</button>
+      <button id="btnMute_room" title="previews open silent; renders always carry the track">&#128263;</button>
     </div>
     <h3 style="margin-top:14px">Private show <span class="hint">(her screen + chat + ads)</span></h3>
     <div class="stage" id="stage_pshow"><div class="idle">arm to load the take</div></div>
@@ -123,6 +124,7 @@ button:disabled{opacity:.5;cursor:default;}
       <button class="prev" id="btnPrev_pshow">&#9202; ARM</button>
       <button class="rec" id="btnRec_pshow">&#9679; RENDER PRIVATE SHOW</button>
       <button id="btnTab_pshow" title="opens the armed take alone in a tab — click in it to roll, screen-record it">&#8599; OPEN IN TAB</button>
+      <button id="btnMute_pshow" title="previews open silent; renders always carry the track">&#128263;</button>
     </div>
   </div>
 
@@ -379,6 +381,14 @@ function takeSpec(){
       return m==='in'?String(mid):'0-'+mid; })() };
 }
 
+var stageMuted={room:true,pshow:true};
+function setStageMute(view,m){
+  stageMuted[view]=m;
+  var b=$('btnMute_'+view); if(b) b.innerHTML=m?'&#128263;':'&#128266;';
+  var fr=$('stage_'+view).querySelector('iframe');
+  if(fr&&fr.contentWindow) fr.contentWindow.postMessage({memphyMute:m},'*');
+}
+['room','pshow'].forEach(function(v){ var b=$('btnMute_'+v); if(b) b.onclick=function(){ setStageMute(v,!stageMuted[v]); }; });
 function fitFrames(){
   document.querySelectorAll('.stage iframe, .qframe').forEach(function(f){
     var w=f.parentElement.clientWidth; if(w>0) f.style.transform='scale('+(w/1280)+')';
@@ -407,6 +417,7 @@ function previewTake(view){
   f.allow='autoplay';
   stage.appendChild(f);
   fitFrames();
+  setStageMute(view,true);   // every fresh arm opens silent
   $('status').textContent='arming '+view+'\u2026 both clips loading to their in-points';
 }
 function viewOf(src){
@@ -574,7 +585,7 @@ function qFrameURL(row){
     calin:row.calIn||'', len:row.len, adseed:row.take, view:$('qView').value});
   return API+'/index.html?'+q.toString();
 }
-var qArmed={};
+var qArmed={}; var qMuted={};
 function qArm(i){
   var row=QUEUE[i], holder=document.getElementById('qstage'+i);
   if(!holder||!row.caller) return;
@@ -585,6 +596,9 @@ function qArm(i){
   holder.style.cssText='background:#000;aspect-ratio:16/9;overflow:hidden;position:relative';
   holder.appendChild(f);
   fitFrames();
+  qMuted[i]=true;
+  var mb=document.querySelector('#qstage'+i) && document.getElementById('qstage'+i).parentElement.querySelector('[data-act="mute"]');
+  if(mb) mb.textContent='🔇';
   qArmed[i]=f;
   if(row.status==='pending'){ row.status='previewed'; qSave(); qChip(i); }
 }
@@ -639,6 +653,7 @@ function qRow(i){
     '<div style="margin:6px 0 6px;display:flex;gap:6px">'+
     '<button data-act="arm" style="padding:3px 9px;font-size:11px">↻ RELOAD</button>'+
     '<button data-act="play" style="padding:3px 9px;font-size:11px">▶ PLAY</button>'+
+    '<button data-act="mute" style="padding:3px 9px;font-size:11px" title="previews open silent; renders always carry the track">🔇</button>'+
     '<button data-act="approve" style="padding:3px 9px;font-size:11px;border-color:#b57a00;color:#b57a00">✓ APPROVE</button>'+
     '<button data-act="render" style="padding:3px 9px;font-size:11px;border-color:#0a7d43;color:#0a7d43">● RENDER</button></div>'+
     '<div id="qstage'+i+'" style="background:#000;aspect-ratio:16/9"><div style="color:#666;font:11px Arial;padding:20px;text-align:center">arm to load</div></div>';
@@ -656,6 +671,11 @@ function qRow(i){
   d.querySelector('[data-act="arm"]').addEventListener('click',function(){ qArm(i); });
 
   d.querySelector('[data-act="play"]').addEventListener('click',function(){ var f=qArmed[i]; if(f&&f.contentWindow) f.contentWindow.postMessage({memphyTake:'go'},'*'); else qArm(i); });
+  d.querySelector('[data-act="mute"]').addEventListener('click',function(){
+    qMuted[i]=(qMuted[i]===false);   // toggles; undefined (default muted) -> false = unmuted
+    var f=qArmed[i]; if(f&&f.contentWindow) f.contentWindow.postMessage({memphyMute:qMuted[i]},'*');
+    this.textContent=qMuted[i]?'🔇':'🔊';
+  });
   d.querySelector('[data-act="approve"]').addEventListener('click',function(){ row.status=(row.status==='approved')?'previewed':'approved'; qSave(); qChip(i); });
   d.querySelector('[data-act="render"]').addEventListener('click',function(){ if(qRenderBusy){ $('qStatus').textContent='render already running'; return; } qRenderBusy=true; qRenderOne(i,function(){ qRenderBusy=false; }); });
   return d;
