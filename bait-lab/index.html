@@ -415,6 +415,7 @@ const ICON_FAMILY = {
   PHARMA:   { icons:['bluepill','capsules','blister'], scen:['sellPill'] },
   AROMA:    { icons:['boost','vial'], scen:['poppers','sellPill'] },
   GEAR:     { icons:['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','rose','towel'], scen:['meetTrade','sexShop'] },
+  TRADE:    { icons:['slave'], scen:['meetTrade'] },   // "trade" uses the slave silhouette, not memphy's photos
   MERCH:    { icons:['tankGreyBack','tankGreyShield','camiBlack','logo','shield'], scen:['merch'] },
 };
 // garment listing photos (white ghost-mannequin bg) — treated as hero product shots, not props (§10.4)
@@ -440,7 +441,7 @@ const motionClassOf = id => ICON_MOTION[baseId(id)] || 'solo';
 
 /* ---- swap groups (bind multi-frame subjects) ---- */
 const SWAP_GROUPS = {
-  memphyCam: { frames:['memphy1','memphy2','memphy3'], motionClass:'set', defaultMotion:'swap', align:'glitch', scenarios:['camLive','meetTrade'] },
+  memphyCam: { frames:['memphy1','memphy2','memphy3'], motionClass:'set', defaultMotion:'swap', align:'glitch', scenarios:['camLive'] },  // memphy's own photos = cam only, never "trade"
   memphyDrop: { frames:['tankGreyBack','tankGreyShield','camiBlack'], motionClass:'set', defaultMotion:'swap', align:'normalize', scenarios:['merch'] },
 };
 const STATIC_FALLBACK = 0.12;
@@ -471,6 +472,16 @@ function eligibleIcons(scen) {
   // tagged icons dominate their scenario; wildcards fill the gaps (and cover untagged scenarios)
   if (tagged.length) return (Math.random() < 0.78 || !wild.length) ? tagged : wild;
   return wild.length ? wild : assets;
+}
+// size-appropriate copy for ONE format — headline length capped per format, sub dropped on tight/wide strips.
+// each preview format calls this independently so a banner reads short and a halfpage reads long (not one string stretched).
+function makeCopy(scen, template) {
+  const C = COPY[scen]; if (!C) return { headline:'', sub:'', cta:'', badge:'' };
+  const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
+  const copy = { headline: fill(pickHeadline(C.headline, template)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
+  if (template === 'show-banner') copy.sub = '';  // banner strip has no room for a sub
+  if (template === 'show-mobile' && (copy.headline.length > 10 || Math.random() < 0.6)) copy.sub = '';  // cramped: headline + CTA first
+  return copy;
 }
 function resolve(scen) {
   const S = SCENARIOS[scen]; if (!S) return null;
@@ -514,12 +525,7 @@ function resolve(scen) {
     if (poolB.length) icon2Id = pick(poolB).id;
   }
 
-  const C = COPY[scen];
-  const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
-  const copy = { headline: fill(pickHeadline(C.headline, template)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
-  if (template === 'show-banner') copy.sub = '';  // banner strip has no room for a sub
-  // show-mobile (320x100) is cramped: headline + CTA bait matter most, so drop the sub most of the time
-  if (template === 'show-mobile' && (copy.headline.length > 10 || Math.random() < 0.6)) copy.sub = '';
+  const copy = makeCopy(scen, template);
   const badgeStyle = rollBadgeStyle(scen);
 
   // fx (from allowed set only)
@@ -1960,7 +1966,8 @@ function init() {
     window.ACTIVE = null;
     for (const t of Object.keys(TPL)) {
       const P = ((LAYOUT[t] ??= {}).props ??= {});
-      P.skin = r.skin; P.copy = { ...r.copy }; P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion; P.badgeStyle = r.badgeStyle;
+      // one scenario look, but each format gets its OWN size-appropriate text (banner short, halfpage long)
+      P.skin = r.skin; P.copy = (t === r.template) ? { ...r.copy } : makeCopy(scen, t); P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion; P.badgeStyle = r.badgeStyle;
       P.icon2 = r.icon2Id ? assets.find(a=>a.id===r.icon2Id)?.dataUrl : null;
       P.bgPattern = r.bgPattern;
       if (r.overlayPattern) (LAYOUT[t].overlay ??= {}).pattern = r.overlayPattern;
