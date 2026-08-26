@@ -162,6 +162,7 @@
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
   .crtv.skin-fax { border:3px double #000 !important; }
   .t-show-banner .badge { display:none !important; }
+  .t-show-banner .sub { display:none !important; }  /* banner strip has no room for a sub */
   /* show-mobile 320x100: image left, headline+cta stacked right */
   .t-show-mobile { width:320px; height:100px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
   .t-show-mobile .pic { float:left; width:96px; height:98px; overflow:hidden; }
@@ -499,7 +500,7 @@ function resolve(scen) {
   const C = COPY[scen];
   const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
   const copy = { headline: fill(pickHeadline(C.headline, template)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
-  if (template === 'show-banner' && copy.headline.length > 16) copy.sub = '';  // no sub when headline fills the strip
+  if (template === 'show-banner') copy.sub = '';  // banner strip has no room for a sub
   // show-mobile (320x100) is cramped: headline + CTA bait matter most, so drop the sub most of the time
   if (template === 'show-mobile' && (copy.headline.length > 10 || Math.random() < 0.6)) copy.sub = '';
   const badgeStyle = rollBadgeStyle(scen);
