@@ -124,7 +124,7 @@
   .t-show-banner .pic { float:left; width:80px; height:60px; overflow:hidden; }
   .t-show-banner .pic img { width:80px; height:60px; }
   .t-show-banner .badge { float:left; margin:16px 0 0 14px; padding:4px 10px; font-size:14px; letter-spacing:2px; }
-  .t-show-banner .hl { float:left; margin:5px 0 0 18px; max-width:600px; font-size:42px; line-height:50px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
+  .t-show-banner .hl { position:absolute; left:96px; right:150px; top:50%; transform:translateY(-50%); max-height:58px; font-size:42px; line-height:44px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
   .t-show-banner .sub { float:left; margin:20px 0 0 14px; max-width:120px; font:italic bold 14px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
   .t-show-banner .cta { position:absolute; right:16px; top:16px; font:bold 22px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
 
@@ -479,9 +479,13 @@ function resolve(scen) {
   const motion = MOTION_MAP[smotion || 'static'] || 'static';
 
   // copy
+  // format chosen first so copy can suit its capacity
+  const nudge = FORMAT_NUDGE[scen];
+  const template = (nudge && Math.random() < 0.6) ? pick(nudge) : pick(Object.keys(TPL));
+
   const C = COPY[scen];
   const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
-  const copy = { headline: fill(pick(C.headline)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
+  const copy = { headline: fill(pickHeadline(C.headline, template)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
   const badgeStyle = rollBadgeStyle(scen);
 
   // fx (from allowed set only)
@@ -490,10 +494,18 @@ function resolve(scen) {
   const fx = spec.keys.join(' ') || 'none';
 
   // format
-  const nudge = FORMAT_NUDGE[scen];
-  const template = (nudge && Math.random() < 0.6) ? pick(nudge) : pick(Object.keys(TPL));
-
   return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, badgeStyle, template };
+}
+const HEADLINE_CAP = { 'show-banner':30, 'show-mobile':22, 'show-sky':22, 'show-rect':34, 'show-rect-side':30, 'show-mpu':42, 'show-halfpage':60 };
+function pickHeadline(pool, template) {
+  const cap = HEADLINE_CAP[template] ?? 34;
+  const len = h => h.replace(/\{[^}]+\}/g, 'XXXX').length;   // approx filled length
+  let ok = pool.filter(h => len(h) <= cap);
+  if (!ok.length) ok = [...pool].sort((a,b)=>len(a)-len(b)).slice(0,2);   // fall back to shortest
+  if (['show-mpu','show-halfpage'].includes(template) && ok.length > 1) {
+    ok = ok.sort((a,b)=>len(b)-len(a)).slice(0, Math.max(1, Math.ceil(ok.length/2)));  // big formats favor longer
+  }
+  return pick(ok);
 }
 function weightedScenario() {
   const bag = [];
