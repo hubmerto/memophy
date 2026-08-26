@@ -481,7 +481,8 @@ function resolve(scen) {
   const groups = Object.entries(SWAP_GROUPS).filter(([n,g]) =>
     g.scenarios.includes(scen) && g.frames.some(f => assets.find(a => baseId(a.id)===f)));
   const solos = eligibleIcons(scen);
-  const useGroup = groups.length && (Math.random() < 0.5 || !solos.length);
+  const groupBias = scen === 'merch' ? 0.82 : 0.5;   // merch leans on the drop group so the shirts swap between each other
+  const useGroup = groups.length && (Math.random() < groupBias || !solos.length);
   if (useGroup) {
     const [gn, g] = pick(groups);
     groupName = gn;
