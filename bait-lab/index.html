@@ -149,8 +149,7 @@
   #previewWrap .crtv [data-slot]:empty { min-width:24px; min-height:16px; outline:1px dotted rgba(255,136,0,.35); }
   /* shadow/glow escapes the icon slot; only the ad edge clips (slideup keeps its slot clipping) */
   .crtv .pic { overflow:visible; }
-  /* elements move freely but stay clipped to the ad frame (.crtv is overflow:hidden) */
-  .crtv .hl { max-height:none; }
+  /* headline keeps its per-format track (max-height) so it can grow to fill it; fit prevents overflow */
   .crtv .hl, .crtv .sub, .crtv .cta { white-space:normal; height:auto; }
   .crtv.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
@@ -1401,13 +1400,23 @@ function pageCss() {
 function fitText(adEl){
   adEl.querySelectorAll('.hl, .sub, .cta').forEach(el => {
     if (!el.textContent.trim()) return;
+    const isHl = el.classList.contains('hl');
     const minPx = el.classList.contains('sub') ? 9 : 11;
-    let fs = parseFloat(getComputedStyle(el).fontSize) || 20;
-    let guard = 0;
-    while (guard++ < 60 && fs > minPx && (el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1)) {
-      fs -= 1; el.style.fontSize = fs + 'px';
-      if (el.classList.contains('hl')) el.style.lineHeight = (fs + 1) + 'px';
+    const cs = getComputedStyle(el);
+    const mh = parseFloat(cs.maxHeight);
+    const trackH = (mh && isFinite(mh)) ? mh : (el.clientHeight || 40);
+    const wOK = () => el.scrollWidth <= el.clientWidth + 2;   // block fills width; nowrap = real text width
+    const hOK = () => el.scrollHeight <= trackH + 3;
+    const fits = () => wOK() && hOK();
+    let fs = parseFloat(cs.fontSize) || 20;
+    // headline grows to fill its track (up to 1.8x design), then trims to fit
+    if (isHl) {
+      const cap = Math.round(fs * 1.8);
+      let g = 0;
+      while (g++ < 120 && fs < cap && fits()) { fs += 2; el.style.fontSize = fs + 'px'; el.style.lineHeight = (fs + 2) + 'px'; }
     }
+    let guard = 0;
+    while (guard++ < 140 && fs > minPx && !fits()) { fs -= 1; el.style.fontSize = fs + 'px'; if (isHl) el.style.lineHeight = (fs + 2) + 'px'; }
   });
 }
 async function rasterizeAd(adEl, t) {
