@@ -135,7 +135,8 @@ button:disabled{opacity:.5;cursor:default;}
         <button id="qArmAll" style="padding:5px 12px">&#9202; ARM ALL PREVIEWS</button>
         <select id="qView" style="font:bold 12px Arial" title="sets ALL takes at once; each row can still differ"><option value="pshow" selected>all: private show</option><option value="room">all: chat room</option></select>
         <button id="qRenderAll" style="border-color:#0a7d43;color:#0a7d43;padding:5px 12px">&#9679; RENDER APPROVED</button>
-        <button id="qReset" style="font-size:11px" title="throw away queue edits, back to the take sheet">reset</button>
+        <button id="qShuffle" style="border-color:#7a3fb0;color:#7a3fb0;padding:5px 12px" title="random memphy clip (where the song position allows) + shuffled callers, no two neighbours alike">&#127922; SHUFFLE</button>
+    <button id="qReset" style="font-size:11px" title="throw away queue edits, back to the take sheet">reset</button>
         <span class="hint" id="qStatus"></span>
       </div>
       <div id="queue" style="display:flex;flex-direction:column;gap:14px"></div>
@@ -576,9 +577,41 @@ function qOverlaps(){
   return flags;
 }
 function qCallers(){ return CALLERS.length?CALLERS:[...($('caller')?$('caller').options:[])].map(function(o){return o.value;}); }
+var MDUR={'memphy_01.mp4':212.38,'memphy_02.mp4':103.39,'memphy_03.mp4':275.24,'memphy_04.mp4':119.80};
+function qClipOptions(row){
+  return CLIPS.filter(function(c){
+    var st=Math.round((row.songStart-(SONG_OFF[c]||0))*100)/100;
+    return st>=0.2 && st+row.len<=(MDUR[c]||1e9)-0.3;   // the song position must exist inside that clip
+  });
+}
+function qShuffledDeck(n){
+  var cs=qCallers(); if(!cs.length) return [];
+  var deck=[];
+  while(deck.length<n){
+    var d=cs.slice();
+    for(var i=d.length-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=d[i]; d[i]=d[j]; d[j]=t; }
+    if(deck.length && d[0]===deck[deck.length-1]) d.push(d.shift());   // no neighbour repeats across reshuffles
+    deck=deck.concat(d);
+  }
+  return deck;
+}
+function qShuffle(){
+  QUEUE.forEach(function(row,i){
+    var opts=qClipOptions(row);
+    // variety: avoid the previous row's clip when there's a choice
+    if(opts.length>1 && i>0) { var prev=QUEUE[i-1].clip; var alt=opts.filter(function(c){return c!==prev;}); if(alt.length) opts=alt; }
+    row.clip=opts[Math.floor(Math.random()*opts.length)]||row.clip;
+  });
+  var deck=qShuffledDeck(QUEUE.length);
+  if(deck.length) QUEUE.forEach(function(row,i){ row.caller=deck[i]; });
+  qSave(); renderQueue();
+  Object.keys(qArmed).forEach(function(i){ qArm(+i); });
+  $('qStatus').textContent='shuffled — clips spread across the sources, callers dealt randomly';
+}
 function qDefaultCallers(){
   var cs=qCallers(); if(!cs.length) return;
-  QUEUE.forEach(function(r,i){ if(!r.caller) r.caller=cs[i%cs.length]; });
+  var deck=null;
+  QUEUE.forEach(function(r,i){ if(!r.caller){ if(!deck) deck=qShuffledDeck(QUEUE.length); r.caller=deck[i]; } });
 }
 function qFrameURL(row){
   var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:row.caller,clip:row.clip,start:qStartFor(row),
@@ -639,7 +672,12 @@ function qRow(i){
   var clipOpts=CLIPS.map(function(c){ return '<option value="'+c+'"'+(c===row.clip?' selected':'')+'>'+c+'</option>'; }).join('');
   d.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
     '<b style="font:bold 14px Arial;color:#b0006e">#'+(row.take<10?'0':'')+row.take+'</b>'+
-    '<span>bar '+row.bar+' &middot; '+qFmtS(row.songStart)+' → '+qFmtS(row.songStart+row.len)+' &middot; '+row.bars+' bars</span>'+
+    '<span>bar '+row.bar+' &middot; '+qFmtS(row.songStart)+' → '+qFmtS(row.songStart+row.len)+'</span>'+
+    '<select data-k="bars" style="font:bold 12px Arial">'+
+    '<option value="1"'+(row.bars===1?' selected':'')+'>1 bar</option>'+
+    '<option value="2"'+(row.bars===2?' selected':'')+'>2 bars</option>'+
+    '<option value="4"'+(row.bars===4?' selected':'')+'>4 bars</option>'+
+    '</select>'+
     (flags[i]?'<span title="footage overlap with another take" style="color:#b00000;font-weight:bold">⚠</span>':'')+
     '<span id="qchip'+i+'" style="margin-left:auto;border:1px solid #999;padding:1px 7px;font:bold 10px Arial"></span></div>'+
     '<div style="margin:3px 0">clip <select data-k="clip" style="font:12px Arial">'+clipOpts+'</select> '+
@@ -665,6 +703,11 @@ function qRow(i){
     inp.addEventListener('change',function(){
       var k=inp.getAttribute('data-k'), v=inp.value;
       if(k==='calIn') row[k]=parseFloat(v)||0;
+      else if(k==='bars'){
+        row.bars=parseInt(v); row.len=Math.round(row.bars*BAR*1000)/1000;
+        if(row.zoomat){ var mid=Math.round(row.len/2*100)/100; row.zoomat=row.zoomat.indexOf('0-')===0?('0-'+mid):String(mid); }
+        renderQueue();   // header + zoom mid redraw
+      }
       else if(k==='zsel'){ var mid=Math.round(row.len/2*100)/100; row.zoomat=v==='in'?String(mid):v==='out'?('0-'+mid):null; qSave(); qArm(i); }
       else row[k]=v;
       if(k==='clip'){ document.getElementById('qstart'+i).textContent=qStartFor(row).toFixed(2)+'s'; }
@@ -698,6 +741,7 @@ function renderQueue(){
   QUEUE.forEach(function(r,i){ box.appendChild(qRow(i)); qChip(i); });
   qSave();
 }
+$('qShuffle').addEventListener('click',qShuffle);
 $('qArmAll').addEventListener('click',function(){
   QUEUE.forEach(function(r,i){ setTimeout(function(){ qArm(i); }, i*450); });
   $('qStatus').textContent='arming all 17… each holds its first frame; ▶ plays';
@@ -722,7 +766,12 @@ $('qView').addEventListener('change',function(){
   renderQueue();
   Object.keys(qArmed).forEach(function(i){ qArm(+i); });
 });
-setTimeout(renderQueue, 1400);
+setTimeout(function(){
+  renderQueue();
+  try{
+    if(!localStorage.getItem('mph_q_shuffled')){ qShuffle(); localStorage.setItem('mph_q_shuffled','1'); }
+  }catch(e){}
+}, 1400);
 
 </script>
 </body>
