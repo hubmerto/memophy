@@ -156,7 +156,7 @@ window._tvGen=0; window._tv=null;
 var $=function(id){return document.getElementById(id);};
 
 var BPM=138, BAR=4*60/BPM;   // GO ALL NIGHT — measured 138bpm, 4/4
-var SONG_OFF={'memphy_01.mp4':10.528,'memphy_02.mp4':118.059,'memphy_03.mp4':-15.941,'memphy_04.mp4':-0.920};   // songTime = clipTime + off
+var SONG_OFF={'memphy_01.mp4':10.528,'memphy_02.mp4':118.059,'memphy_03.mp4':-15.941,'memphy_04.mp4':-1.560};   // songTime = clipTime + off
 function barOf(clip,t){ return ((t+(SONG_OFF[clip]||0))/BAR); }
 function snapBar(clip,t){ var off=SONG_OFF[clip]||0; return Math.max(0, Math.round((t+off)/BAR)*BAR - off); }
 function drawBars(){
