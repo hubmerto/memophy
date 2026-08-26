@@ -61,7 +61,11 @@
     filter:var(--glow,none);
   }
   .crtv.frame2 [data-blink] { visibility:hidden; }
-  .crtv .badge { color:#fff; background:#c00; border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
+    .crtv .badge { color:#fff; background:var(--cta-bg,#c00); border:1px solid #fff; font-family:Tahoma,Geneva,sans-serif; font-weight:bold; letter-spacing:1px; }
+  .crtv .badge.b-pill { border-radius:11px; }
+  .crtv .badge.b-tag { border-radius:0; border-left:4px solid #fff; }
+  .crtv .badge.b-ribbon { border-radius:0; transform:rotate(-14deg); box-shadow:1px 2px 3px rgba(0,0,0,.4); }
+  .crtv .badge.b-none { display:none !important; }
   .crtv img { display:block; object-fit:contain; }
   .crtv .pic { z-index:1; }
   .crtv .pic img[data-slot="image"] { position:relative; z-index:2; }
@@ -428,6 +432,14 @@ const SWAP_GROUPS = {
 const STATIC_FALLBACK = 0.12;
 
 const FORMAT_NUDGE = { fakeNotif:['show-mobile','show-rect-side'], prize:['show-mpu','show-halfpage'], sexShop:['show-mpu','show-halfpage'] };
+const BADGE_WEIGHTS = {
+  sellPill:{tag:3,pill:2,ribbon:2,none:1}, poppers:{tag:3,pill:2,ribbon:1,none:2},
+  sexShop:{ribbon:3,tag:2,pill:2,none:1},  meetTrade:{pill:3,none:3,tag:1,ribbon:0},
+  t4tCuties:{pill:3,none:3,tag:1,ribbon:0},camLive:{pill:4,tag:1,none:2,ribbon:0},
+  fakeNotif:{pill:4,none:2,tag:0,ribbon:0},prize:{ribbon:4,tag:2,pill:1,none:0},
+};
+const SUB_CHANCE = { sellPill:0.6, poppers:0.6, sexShop:0.55, meetTrade:0.7, t4tCuties:0.6, camLive:0.65, fakeNotif:0.5, prize:0.45 };
+function rollBadgeStyle(scen){ const w=BADGE_WEIGHTS[scen]||{pill:1}; const bag=[]; for(const[k,v]of Object.entries(w))for(let i=0;i<v;i++)bag.push(k); return bag.length?pick(bag):'pill'; }
 /* map spec motion names -> app motion names */
 const MOTION_MAP = { rise:'slideup', swap:'appear', lineup:'lineup', twitch:'twitch', static:'static' };
 /* map scenario fx -> {fx keys, overlay pattern} */
@@ -478,7 +490,9 @@ function resolve(scen) {
 
   // copy
   const C = COPY[scen];
-  const copy = { headline: fill(pick(C.headline)), sub: fill(pick(C.sub)), cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
+  const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
+  const copy = { headline: fill(pick(C.headline)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
+  const badgeStyle = rollBadgeStyle(scen);
 
   // fx (from allowed set only)
   const fxName = pick(S.fx);
@@ -489,7 +503,7 @@ function resolve(scen) {
   const nudge = FORMAT_NUDGE[scen];
   const template = (nudge && Math.random() < 0.6) ? pick(nudge) : pick(Object.keys(TPL));
 
-  return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, template };
+  return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, badgeStyle, template };
 }
 function weightedScenario() {
   const bag = [];
@@ -819,6 +833,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
   const t = TPL[template];
   const el = document.createElement('div');
   el.className = `crtv t-${template} skin-${skin}`;
+  const badgeStyle = opts.badgeStyle ?? LAYOUT[template]?.props?.badgeStyle;
   const glowOn = fx.includes('glow');
   const glowK = (LAYOUT[template]?.glowStrength ?? window.GLOW_STRENGTH ?? 55) / 100;
   el.style.setProperty('--glowk', String(glowK));
@@ -846,6 +861,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
       n.textContent = text;
       if (String(text).includes('\n')) n.style.whiteSpace = 'pre-line';
     });
+  if (badgeStyle) { const bd = el.querySelector('.badge'); if (bd) bd.classList.add('b-' + badgeStyle); }
   if (motion !== 'static') el.classList.add('m-' + motion);
   if (LAYOUT[template]?.mirror) { const pc = el.querySelector('.pic'); if (pc) pc.style.transform = 'scaleX(-1)'; }
   el.querySelectorAll('[data-slot="image"]').forEach(n => {
@@ -1177,7 +1193,7 @@ function buildOptions() {
     const img = imgAsset || { dataUrl: PLACEHOLDER, name: 'placeholder' };
     const fx12 = r.fx || 'none';
     const mo12 = r.motion || 'static';
-    const opts = { overlayPattern: r.overlayPattern, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
+    const opts = { overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
     const ad = makeAd(template, skin, copy, img.dataUrl, fx12, mo12, opts);
     ad._fx12 = fx12; ad._mo12 = mo12; ad._scen = scen; ad._iconIds = iconIds; ad._pat = r.overlayPattern;
     const card = document.createElement('div');
@@ -1201,7 +1217,7 @@ function buildOptions() {
       if (iconIds.length) { selectedIds = [...iconIds]; selectedAsset = selectedAssets()[0] || selectedAsset; }
       window.ACTIVE = template;
       const P = ((LAYOUT[template] ??= {}).props ??= {});
-      P.skin = skin; P.copy = { ...copy }; P.fx = ad._fx12 === 'none' ? '' : ad._fx12; P.motion = ad._mo12;
+      P.skin = skin; P.copy = { ...copy }; P.fx = ad._fx12 === 'none' ? '' : ad._fx12; P.motion = ad._mo12; P.badgeStyle = r.badgeStyle;
       if (r.overlayPattern) { (LAYOUT[template].overlay ??= {}).pattern = r.overlayPattern; }
       freezeOthers(template);
       saveLayout(); drawLib(); syncControls(); renderPreview();
@@ -1209,7 +1225,7 @@ function buildOptions() {
     };
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
-    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, icons: opts.icons, overlayPattern: r.overlayPattern, fx: ad._fx12, motion: ad._mo12 }, `${scen}-${skin}-${i+1}`);
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, icons: opts.icons, overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, fx: ad._fx12, motion: ad._mo12 }, `${scen}-${skin}-${i+1}`);
     meta.appendChild(ed); meta.appendChild(dl); card.appendChild(meta);
     grid.appendChild(card);
   }
@@ -1397,7 +1413,7 @@ async function exportCreative(spec, name) {
   try {
     const frames = [];
     for (const k of phases) {
-      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k % icons.length] : spec.imgUrl, spec.fx, spec.motion, { overlayPattern: spec.overlayPattern });
+      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k % icons.length] : spec.imgUrl, spec.fx, spec.motion, { overlayPattern: spec.overlayPattern, badgeStyle: spec.badgeStyle });
       ad.classList.add('ph' + (k % 4));
       if (k % 2 === 1) ad.classList.add('frame2');
       frames.push(await rasterizeAd(ad, t));
@@ -1789,7 +1805,7 @@ function init() {
     window.ACTIVE = null;
     for (const t of Object.keys(TPL)) {
       const P = ((LAYOUT[t] ??= {}).props ??= {});
-      P.skin = r.skin; P.copy = { ...r.copy }; P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion;
+      P.skin = r.skin; P.copy = { ...r.copy }; P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion; P.badgeStyle = r.badgeStyle;
       if (r.overlayPattern) (LAYOUT[t].overlay ??= {}).pattern = r.overlayPattern;
     }
     saveLayout(); drawLib(); syncControls(); renderPreview();
