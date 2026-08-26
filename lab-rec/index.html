@@ -594,7 +594,7 @@ var MDUR={'memphy_01.mp4':212.38,'memphy_02.mp4':103.39,'memphy_03.mp4':275.24,'
 function qClipOptions(row){
   return CLIPS.filter(function(c){
     var st=Math.round((row.songStart-(SONG_OFF[c]||0))*100)/100;
-    return st>=0.2 && st+row.len<=(MDUR[c]||1e9)-0.3;   // the song position must exist inside that clip
+    return st>=0.2 && st+row.len+0.5<=(MDUR[c]||1e9)+0.05;   // the take plus the render's 0.5s tail must fit inside that clip
   });
 }
 function qShuffledDeck(n){
@@ -758,12 +758,12 @@ function qRow(i){
       else if(k==='bars'){
         row.bars=parseInt(v); row.len=Math.round(row.bars*BAR*1000)/1000;
         if(row.zoomat){ var mid=Math.round(row.len/2*100)/100; row.zoomat=row.zoomat.indexOf('0-')===0?('0-'+mid):String(mid); }
-        renderQueue();   // header + zoom mid redraw
+        qSave(); qRefreshRow(i); return;   // header, zoom mid and which sources still fit
       }
       else if(k==='zsel'){ var mid=Math.round(row.len/2*100)/100; row.zoomat=v==='in'?String(mid):v==='out'?('0-'+mid):null; qSave(); qArm(i); }
       else row[k]=v;
-      if(k==='clip'){ document.getElementById('qstart'+i).textContent=qStartFor(row).toFixed(2)+'s'; }
       qSave(); renderQueueFlags();
+      if(k==='clip'){ qRefreshRow(i); return; }   // start, warning and option states all follow the new source
       if(qArmed[i]) qArm(i);   // live preview follows the edit
     });
   });
@@ -786,6 +786,14 @@ function renderQueueFlags(){
     if(!chip) return;
     var head=chip.parentNode.querySelector('[title]');
   });
+}
+function qRefreshRow(i){
+  var box=$('queue'), old=box.children[i];
+  if(!old) return;
+  var wasArmed=!!qArmed[i];
+  box.replaceChild(qRow(i), old);
+  qChip(i);
+  if(wasArmed) qArm(i);
 }
 function renderQueue(){
   qDefaultCallers();
