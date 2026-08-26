@@ -41,8 +41,8 @@
     background:#c00; color:#fff; font:bold 10px Arial; border:1px solid #fff; border-radius:0; display:none; }
   .asset:hover .del { display:block; }
   /* preview + options */
-  #previewWrap { display:flex; flex-wrap:wrap; gap:16px; align-items:flex-start; width:100%; border:1px solid var(--ui-line); background:#0d0d0d; padding:18px; box-sizing:border-box; }
-  #previewWrap .crow { align-self:flex-start; }
+  #previewWrap { column-width:360px; column-gap:16px; width:100%; border:1px solid var(--ui-line); background:#0d0d0d; padding:18px; box-sizing:border-box; }
+  #previewWrap .crow { break-inside:avoid; -webkit-column-break-inside:avoid; display:inline-block; width:100%; margin:0 0 16px; }
   #optGrid { display:flex; flex-wrap:wrap; gap:16px; margin-top:16px; align-items:flex-start; }
   .opt { background:var(--ui-panel); border:1px solid var(--ui-line); padding:8px; }
   .opt .meta { display:flex; justify-content:space-between; align-items:center; gap:8px; padding-top:6px; }
@@ -1149,14 +1149,14 @@ function renderPreviewInner() {
     if (urls.length > 1) ad._icons = urls;
     row.appendChild(ad);
     enableEditing(ad, template);
-    // scale ads that are wider than the preview pane so the whole ad is visible
-    const paneW = (wrap.clientWidth || 900) - 24;
-    if (TPL[template].w > paneW) {
-      const sc = paneW / TPL[template].w;
+    // masonry: scale ads wider than the column cell down to fit (only the banner is wider than a cell)
+    const cellW = 344;   // 360px column minus .crow border/padding
+    if (TPL[template].w > cellW) {
+      const sc = cellW / TPL[template].w;
       ad.style.transformOrigin = '0 0';
       ad.style.transform = `scale(${sc})`;
       const holder = document.createElement('div');
-      holder.style.cssText = `height:${TPL[template].h * sc}px;width:${paneW}px;overflow:hidden;`;
+      holder.style.cssText = `height:${TPL[template].h * sc}px;width:${cellW}px;overflow:hidden;`;
       row.insertBefore(holder, ad);
       holder.appendChild(ad);
     }
