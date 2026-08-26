@@ -2163,8 +2163,22 @@ function togglePrivate(){
   try{ var q=location.search.replace(/[?&]private/,''); history.replaceState(null,'', location.pathname+(on?(q?q+'&private':'?private'):(q||''))+location.hash); }catch(e){}
 }
 if(location.search.indexOf('private')>-1){ document.body.classList.add('pshow'); }   // direct link: /live/?private
-(function(){ var i=0; setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adsquare .adslide'); if(!sl.length) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // square ad rotates every 5s
-(function(){ var i=0; setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adbanner .bnslide'); if(sl.length<2) return; i=(i+1)%sl.length; for(var k=0;k<sl.length;k++) sl[k].className=sl[k].className.replace(' on',''); sl[i].className+=' on'; }, 5000); })();   // banner rotates every 5s
+(function(){
+  var seed=parseInt(new URLSearchParams(location.search).get('adseed'))||0;
+  function show(list,idx){ for(var k=0;k<list.length;k++) list[k].className=list[k].className.replace(' on',''); list[idx].className+=' on'; }
+  var i=0;
+  var sl0=document.querySelectorAll('#adsquare .adslide');
+  if(sl0.length){ i=seed%sl0.length; show(sl0,i); }   // each take starts on a different ad
+  setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adsquare .adslide'); if(!sl.length) return; i=(i+1)%sl.length; show(sl,i); }, 5000);
+})();   // square ad rotates every 5s
+(function(){
+  var seed=parseInt(new URLSearchParams(location.search).get('adseed'))||0;
+  function show(list,idx){ for(var k=0;k<list.length;k++) list[k].className=list[k].className.replace(' on',''); list[idx].className+=' on'; }
+  var i=0;
+  var sl0=document.querySelectorAll('#adbanner .bnslide');
+  if(sl0.length){ i=(seed*3+1)%sl0.length; show(sl0,i); }   // different stride so banner/square pairs differ per take
+  setInterval(function(){ if(window._diving || insideMode) return; var sl=document.querySelectorAll('#adbanner .bnslide'); if(sl.length<2) return; i=(i+1)%sl.length; show(sl,i); }, 5000);
+})();   // banner rotates every 5s
 var zc={cx:0,cy:0,vx:0,vy:0};
 function applyZoom(p){
   var w=document.getElementById('wrap'); if(!w) return;

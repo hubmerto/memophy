@@ -571,7 +571,7 @@ function qDefaultCallers(){
 function qFrameURL(row){
   var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:row.caller,clip:row.clip,start:qStartFor(row),
     zoomat:row.zoomat==null?'':row.zoomat, calzoom:row.calzoom==null?'':row.calzoom,
-    calin:row.calIn||'', len:row.len, view:$('qView').value});
+    calin:row.calIn||'', len:row.len, adseed:row.take, view:$('qView').value});
   return API+'/index.html?'+q.toString();
 }
 var qArmed={};
@@ -597,7 +597,7 @@ function qChip(i){
 function qSpec(row){
   return { caller:row.caller, clip:row.clip, start:qStartFor(row),
     songStart:Math.round(row.songStart*100)/100, len:row.len, calIn:row.calIn||null,
-    zoomAt:row.zoomat||null, calZoom:row.calzoom||null,
+    zoomAt:row.zoomat||null, calZoom:row.calzoom||null, adSeed:row.take,
     draft:$('draft').checked||undefined, view:$('qView').value };
 }
 var qRenderBusy=false;
