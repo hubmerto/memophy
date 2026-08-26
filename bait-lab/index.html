@@ -127,6 +127,10 @@
   .t-show-banner .hl { position:absolute; left:96px; right:150px; top:50%; transform:translateY(-50%); max-height:58px; font-size:42px; line-height:44px; white-space:nowrap; overflow:hidden; -webkit-text-stroke:1.4px var(--stroke,#000); }
   .t-show-banner .sub { float:left; margin:20px 0 0 14px; max-width:120px; font:italic bold 14px "Times New Roman",Times,serif; color:var(--headline-color,#ddd); opacity:.85; white-space:nowrap; overflow:hidden; }
   .t-show-banner .cta { position:absolute; right:16px; top:16px; font:bold 22px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
+  .t-show-banner .pic2 { position:absolute; right:0; top:0; width:80px; height:60px; overflow:hidden; }
+  .t-show-banner .pic2 img { width:80px; height:60px; object-fit:contain; }
+  .t-show-banner.two-ico .cta { display:none; }
+  .t-show-banner.two-ico .hl { left:96px; right:96px; }
 
   .t-show-rect { width:346px; height:258px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
   .t-show-rect .pic { width:344px; height:110px; overflow:hidden; }
@@ -483,6 +487,12 @@ function resolve(scen) {
   // format chosen first so copy can suit its capacity
   const nudge = FORMAT_NUDGE[scen];
   const template = (nudge && Math.random() < 0.6) ? pick(nudge) : pick(Object.keys(TPL));
+  // banner may carry a 2nd cohesive icon (bookends: far-left + far-right)
+  let icon2Id = null;
+  if (template === 'show-banner' && !groupName && Math.random() < 0.4) {
+    const poolB = eligibleIcons(scen).filter(a => a.id !== iconIds[0]);
+    if (poolB.length) icon2Id = pick(poolB).id;
+  }
 
   const C = COPY[scen];
   const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
@@ -496,7 +506,7 @@ function resolve(scen) {
   const fx = spec.keys.join(' ') || 'none';
 
   // format
-  return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, badgeStyle, template };
+  return { scenario:scen, skin, iconIds, icon2Id, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, badgeStyle, template };
 }
 const HEADLINE_CAP = { 'show-banner':30, 'show-mobile':22, 'show-sky':22, 'show-rect':34, 'show-rect-side':30, 'show-mpu':42, 'show-halfpage':60 };
 const HEADLINE_MAXFS = { 'show-banner':46, 'show-mobile':30, 'show-sky':30, 'show-rect':46, 'show-rect-side':42, 'show-mpu':50, 'show-halfpage':66 };
@@ -978,6 +988,13 @@ function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
     el.appendChild(n);
     (((LAYOUT[template] ??= {}).off ??= {})['x:' + ex.id] ??= { dx: ex.dx || 0, dy: ex.dy || 0, s: ex.s || 1 });
   }
+  const icon2 = opts.icon2 ?? LAYOUT[template]?.props?.icon2;
+  if (template === 'show-banner' && icon2) {
+    el.classList.add('two-ico');
+    const p2 = document.createElement('div'); p2.className = 'pic2';
+    const im2 = document.createElement('img'); im2.src = icon2; p2.appendChild(im2);
+    el.appendChild(p2);
+  }
   if (opts.icons && opts.icons.length > 1) el._icons = opts.icons;
   applyLayout(el, template);
   return el;
@@ -1229,7 +1246,7 @@ function buildOptions() {
     const img = imgAsset || { dataUrl: PLACEHOLDER, name: 'placeholder' };
     const fx12 = r.fx || 'none';
     const mo12 = r.motion || 'static';
-    const opts = { overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
+    const opts = { overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, icon2: r.icon2Id ? assets.find(a=>a.id===r.icon2Id)?.dataUrl : null, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
     const ad = makeAd(template, skin, copy, img.dataUrl, fx12, mo12, opts);
     ad._fx12 = fx12; ad._mo12 = mo12; ad._scen = scen; ad._iconIds = iconIds; ad._pat = r.overlayPattern;
     const card = document.createElement('div');
@@ -1248,7 +1265,7 @@ function buildOptions() {
       if (iconIds.length) { selectedIds = [...iconIds]; selectedAsset = selectedAssets()[0] || selectedAsset; }
       window.ACTIVE = template;
       const P = ((LAYOUT[template] ??= {}).props ??= {});
-      P.skin = skin; P.copy = { ...copy }; P.fx = ad._fx12 === 'none' ? '' : ad._fx12; P.motion = ad._mo12; P.badgeStyle = r.badgeStyle;
+      P.skin = skin; P.copy = { ...copy }; P.fx = ad._fx12 === 'none' ? '' : ad._fx12; P.motion = ad._mo12; P.badgeStyle = r.badgeStyle; P.icon2 = opts.icon2;
       if (r.overlayPattern) { (LAYOUT[template].overlay ??= {}).pattern = r.overlayPattern; }
       freezeOthers(template);
       saveLayout(); drawLib(); syncControls(); renderPreview();
@@ -1256,7 +1273,7 @@ function buildOptions() {
     };
     const dl = document.createElement('button');
     dl.textContent = 'GIF';
-    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, icons: opts.icons, overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, fx: ad._fx12, motion: ad._mo12 }, `${scen}-${skin}-${i+1}`);
+    dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, icons: opts.icons, overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, icon2: opts.icon2, fx: ad._fx12, motion: ad._mo12 }, `${scen}-${skin}-${i+1}`);
     meta.appendChild(ed); meta.appendChild(dl); card.appendChild(meta);
     tiles.push({ card, box, ad, w: t.w, h: t.h, id: 'c' + i });
   }
@@ -1481,7 +1498,7 @@ async function exportCreative(spec, name) {
   try {
     const frames = [];
     for (const k of phases) {
-      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k % icons.length] : spec.imgUrl, spec.fx, spec.motion, { overlayPattern: spec.overlayPattern, badgeStyle: spec.badgeStyle });
+      const ad = makeAd(spec.template, spec.skin, spec.copy, icons ? icons[k % icons.length] : spec.imgUrl, spec.fx, spec.motion, { overlayPattern: spec.overlayPattern, badgeStyle: spec.badgeStyle, icon2: spec.icon2 });
       ad.classList.add('ph' + (k % 4));
       if (k % 2 === 1) ad.classList.add('frame2');
       frames.push(await rasterizeAd(ad, t));
@@ -1874,6 +1891,7 @@ function init() {
     for (const t of Object.keys(TPL)) {
       const P = ((LAYOUT[t] ??= {}).props ??= {});
       P.skin = r.skin; P.copy = { ...r.copy }; P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion; P.badgeStyle = r.badgeStyle;
+      P.icon2 = r.icon2Id ? assets.find(a=>a.id===r.icon2Id)?.dataUrl : null;
       if (r.overlayPattern) (LAYOUT[t].overlay ??= {}).pattern = r.overlayPattern;
     }
     saveLayout(); drawLib(); syncControls(); renderPreview();
