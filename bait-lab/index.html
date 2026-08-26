@@ -156,6 +156,7 @@
   /* headline keeps its per-format track (max-height) so it can grow to fill it; fit prevents overflow */
   .crtv .hl, .crtv .sub, .crtv .cta { white-space:normal; height:auto; }
   .crtv .hl { text-align:center !important; }
+  .crtv.t-show-banner .hl { white-space:nowrap !important; }  /* banner headline always one line, even when other formats wrap */
   .crtv .hl .acc { color:var(--accent-word,#e00013); text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:2px; -webkit-text-fill-color:var(--accent-word,#e00013); }
   .crtv.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
@@ -166,9 +167,9 @@
   .t-show-mobile .pic { float:left; width:96px; height:98px; overflow:hidden; }
   .t-show-mobile .pic img { width:96px; height:98px; }
   .t-show-mobile .badge { position:absolute; top:4px; left:4px; padding:2px 7px; font-size:11px; z-index:2; }
-  .t-show-mobile .hl { position:absolute; left:104px; top:8px; right:8px; font-size:26px; line-height:26px; -webkit-text-stroke:1.1px var(--stroke,#000); max-height:52px; overflow:hidden; }
-  .t-show-mobile .sub { position:absolute; left:104px; bottom:30px; right:8px; font:12px Verdana,sans-serif; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
-  .t-show-mobile .cta { position:absolute; left:104px; bottom:8px; font:bold 16px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
+  .t-show-mobile .hl { position:absolute; left:104px; top:6px; right:8px; font-size:24px; line-height:24px; -webkit-text-stroke:1.1px var(--stroke,#000); max-height:46px; overflow:hidden; }
+  .t-show-mobile .sub { position:absolute; left:104px; bottom:26px; right:8px; font:11px Verdana,sans-serif; white-space:nowrap; overflow:hidden; color:var(--headline-color,#ddd); opacity:.85; }
+  .t-show-mobile .cta { position:absolute; left:104px; bottom:6px; font:bold 16px Arial; text-transform:uppercase; color:var(--cta-bg,#f00); white-space:nowrap; }
   /* show-mpu 336x280: image top, headline, sub, cta */
   .t-show-mpu { width:336px; height:280px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
   .t-show-mpu .pic { width:334px; height:130px; overflow:hidden; }
@@ -498,7 +499,9 @@ function resolve(scen) {
   const C = COPY[scen];
   const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
   const copy = { headline: fill(pickHeadline(C.headline, template)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
-  if (['show-banner','show-mobile'].includes(template) && copy.headline.length > 16) copy.sub = '';  // no sub when headline fills a short/wide format
+  if (template === 'show-banner' && copy.headline.length > 16) copy.sub = '';  // no sub when headline fills the strip
+  // show-mobile (320x100) is cramped: headline + CTA bait matter most, so drop the sub most of the time
+  if (template === 'show-mobile' && (copy.headline.length > 10 || Math.random() < 0.6)) copy.sub = '';
   const badgeStyle = rollBadgeStyle(scen);
 
   // fx (from allowed set only)
@@ -894,8 +897,11 @@ function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
       }
     }
   }
+  // show-mobile (320x100) is cramped — when the headline is long, drop the sub so headline + CTA bait stay clean
+  const dropMobileSub = template === 'show-mobile' && String(copy.headline || '').length > 14;
   for (const [slot, text] of Object.entries(copy))
     el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => {
+      if (slot === 'sub' && dropMobileSub) { n.textContent = ''; return; }
       if (slot === 'headline' && ACCENT_SKINS.has(skin) && accentHeadline(String(text), n)) return;
       n.textContent = text;
       if (String(text).includes('\n')) n.style.whiteSpace = 'pre-line';
@@ -1269,7 +1275,13 @@ function buildOptions() {
     const img = imgAsset || { dataUrl: PLACEHOLDER, name: 'placeholder' };
     const fx12 = r.fx || 'none';
     const mo12 = r.motion || 'static';
-    const opts = { overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, icon2: r.icon2Id ? assets.find(a=>a.id===r.icon2Id)?.dataUrl : null, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
+    // two-icon bookend decision keys off the ACTUAL rendered format (pinned), not resolve's internal template roll
+    let icon2 = null;
+    if (template === 'show-banner' && !r.groupName && iconIds[0] && Math.random() < 0.45) {
+      const poolB = eligibleIcons(scen).filter(a => a.id !== iconIds[0]);
+      if (poolB.length) icon2 = assets.find(a => a.id === pick(poolB).id)?.dataUrl || null;
+    }
+    const opts = { overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, icon2, icons: iconIds.map(id => assets.find(a=>a.id===id)?.dataUrl).filter(Boolean) };
     const ad = makeAd(template, skin, copy, img.dataUrl, fx12, mo12, opts);
     ad._fx12 = fx12; ad._mo12 = mo12; ad._scen = scen; ad._iconIds = iconIds; ad._pat = r.overlayPattern;
     const card = document.createElement('div');
