@@ -410,7 +410,8 @@ const MOTION_CLASS = {
   spinnable: ['swap','twitch'],
 };
 const ICON_MOTION = {};
-for (const n of ['memphy1','memphy2','memphy3','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','girl1','girl2','girl3','girl4']) ICON_MOTION[n]='set';
+for (const n of ['sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','girl1','girl2','girl3','girl4']) ICON_MOTION[n]='set';
+for (const n of ['memphy1','memphy2','memphy3']) ICON_MOTION[n]='solo';   // memphy photos never line up
 for (const n of ['notifdot']) ICON_MOTION[n]='alarm';
 for (const n of ['token']) ICON_MOTION[n]='spinnable';
 const motionClassOf = id => ICON_MOTION[baseId(id)] || 'solo';
@@ -486,6 +487,7 @@ function resolve(scen) {
   const C = COPY[scen];
   const subOn = Math.random() < (SUB_CHANCE[scen] ?? 0.5);
   const copy = { headline: fill(pickHeadline(C.headline, template)), sub: subOn ? fill(pick(C.sub)) : '', cta: fill(pick(C.cta)), badge: fill(pick(C.badge)) };
+  if (['show-banner','show-mobile'].includes(template) && copy.headline.length > 16) copy.sub = '';  // no sub when headline fills a short/wide format
   const badgeStyle = rollBadgeStyle(scen);
 
   // fx (from allowed set only)
@@ -497,6 +499,7 @@ function resolve(scen) {
   return { scenario:scen, skin, iconIds, groupName, motion, smotion:(smotion||'static'), copy, fx, overlayPattern:spec.pattern, badgeStyle, template };
 }
 const HEADLINE_CAP = { 'show-banner':30, 'show-mobile':22, 'show-sky':22, 'show-rect':34, 'show-rect-side':30, 'show-mpu':42, 'show-halfpage':60 };
+const HEADLINE_MAXFS = { 'show-banner':46, 'show-mobile':30, 'show-sky':30, 'show-rect':46, 'show-rect-side':42, 'show-mpu':50, 'show-halfpage':66 };
 function pickHeadline(pool, template) {
   const cap = HEADLINE_CAP[template] ?? 34;
   const len = h => h.replace(/\{[^}]+\}/g, 'XXXX').length;   // approx filled length
@@ -1407,6 +1410,8 @@ function pageCss() {
   return css;
 }
 function fitText(adEl){
+  const fmt = (adEl.className.match(/t-(show-[a-z]+)/) || [])[1];
+  const maxFs = HEADLINE_MAXFS[fmt] || 999;
   adEl.querySelectorAll('.hl, .sub, .cta').forEach(el => {
     if (!el.textContent.trim()) return;
     const isHl = el.classList.contains('hl');
@@ -1420,7 +1425,7 @@ function fitText(adEl){
     let fs = parseFloat(cs.fontSize) || 20;
     // headline grows to fill its track (up to 1.8x design), then trims to fit
     if (isHl) {
-      const cap = Math.round(fs * 1.8);
+      const cap = Math.min(Math.round(fs * 1.8), maxFs);
       let g = 0;
       while (g++ < 120 && fs < cap && fits()) { fs += 2; el.style.fontSize = fs + 'px'; el.style.lineHeight = (fs + 2) + 'px'; }
     }
