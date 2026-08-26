@@ -1238,13 +1238,13 @@ function playClip(i, cam){
     var who = currentCaller || clips[i].name;
     var gl=document.getElementById('glive'); gl.style.display='block'; gl.innerHTML='<span class="recdot">&#9679;</span> '+esc(who);
     document.getElementById('gueststatus').innerHTML = '&mdash; <span style="color:#7cfc00;">ON THE LINE</span> &middot; '+esc(who);
-    pushChat('sys', null, esc(who)+' is now on the line with memphy');
+    if(!window._recjobMode) pushChat('sys', null, esc(who)+' is now on the line with memphy');
     document.getElementById('callwith').innerHTML = '&mdash; MEMPHY &hearts; '+esc(who);
     startCallChat(who);
   } else {
     document.getElementById('livebadge').style.display='block';
     document.getElementById('roomstatus').innerHTML = '&mdash; <span style="color:#7cfc00;">LIVE</span> &middot; now playing: '+esc(clips[i].name);
-    pushChat('sys', null, 'memphy_live started a new clip: '+clips[i].name);
+    if(!window._recjobMode) pushChat('sys', null, 'memphy_live started a new clip: '+clips[i].name);
   }
   markCells();
 }
@@ -1708,8 +1708,9 @@ function toggleSong(){
 
 // each take is a different minute of the stream — open with its own chat history
 function seedChatHistory(){
+  if(!window._recjobMode) return;                       // the live site keeps its real opening
   var seed=parseInt(new URLSearchParams(location.search).get('adseed'));
-  if(!isFinite(seed) || seed<=0) return;
+  if(!isFinite(seed) || seed<=0) seed=1+Math.floor(Math.random()*9999);   // every take opens mid-conversation
   var st=seed*2654435761 % 2147483647;
   function rnd(){ st=(st*16807)%2147483647; return st/2147483647; }
   try{
