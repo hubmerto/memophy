@@ -93,17 +93,11 @@ button:disabled{opacity:.5;cursor:default;}
         &nbsp; <label style="font:bold 12px Arial"><input type="checkbox" id="calloop"> loop caller</label>
       </div>
       <div class="row" style="margin-top:6px">
-        <b style="font:bold 12px Arial">zoom &middot; her screen</b> <span class="hint">in at / out at (blank = stays) &middot; scale &times; (blank = full dive) &middot; center x,y % &middot; ease s (default 0.3)</span>
-        <div id="zmovesH"></div>
-        <a href="#" id="zaddH" style="font:bold 12px Arial;color:#b0006e">+ add move</a>
-        &nbsp;<button id="zMidIn" style="padding:2px 8px;font-size:11px" title="dive at the exact middle of the take — lands on the beat">IN @ MID</button>
-        <button id="zMidOut" style="padding:2px 8px;font-size:11px" title="start inside her screen, pull out at the exact middle">INSIDE &rarr; OUT @ MID</button>
-        <span class="hint" id="zwarnH" style="color:#b00000"></span>
-      </div>
-      <div class="row" style="margin-top:2px">
-        <b style="font:bold 12px Arial">zoom &middot; caller feed</b> <span class="hint">pushes into the caller video &middot; same fields, scale default 1.5&times;</span>
-        <div id="zmovesC"></div>
-        <a href="#" id="zaddC" style="font:bold 12px Arial;color:#b0006e">+ add move</a>
+        <b style="font:bold 12px Arial">zoom</b> <select id="zsel" style="font:bold 13px Arial">
+          <option value="" selected>no zoom</option>
+          <option value="in">zoom IN</option>
+          <option value="out">starts ZOOMED IN</option>
+        </select> <span class="hint">the move always happens at the exact middle of the take &mdash; on the beat</span>
       </div>
     </div>
 
@@ -379,8 +373,10 @@ function takeSpec(){
     calIn:calIn()||null,
     calLoop:$('calloop').checked||undefined,
     len:L,
-    zoomAt:zStr('H'),
-    calZoom:zStr('C') };
+    zoomAt:(function(){
+      var m=$('zsel').value; if(!m) return null;
+      var L=takeLen(); var mid=isFinite(L)&&L>0?Math.round(L/2*100)/100:1.74;
+      return m==='in'?String(mid):'0-'+mid; })() };
 }
 
 function fitFrames(){
@@ -389,6 +385,7 @@ function fitFrames(){
   });
 }
 window.addEventListener('resize',fitFrames);
+if($('zsel')) $('zsel').addEventListener('change',function(){ updateBand(); if($('btnApply')&&$('btnApply').onclick) $('btnApply').onclick(); });
 var prevState={room:'idle',pshow:'idle'};
 function previewTake(view){
   var btn=$('btnPrev_'+view), stage=$('stage_'+view);
@@ -520,22 +517,12 @@ function zAfterEdit(feed){
 function zBands(){
   var seg=$('tlseg'); if(!seg) return;
   seg.querySelectorAll('.zb').forEach(function(b){ b.remove(); });
-  var L=takeLen(); if(!L||!isFinite(L)) return;
-  MOVES.H.forEach(function(m){
-    if(!isFinite(m.tin)) return;
-    var a=Math.max(0,Math.min(1,m.tin/L)), b=Math.max(a,Math.min(1,(m.tout!=null?m.tout:L)/L));
-    var d=document.createElement('div');
-    d.className='zb';
-    d.style.cssText='position:absolute;top:0;bottom:0;left:'+(a*100)+'%;width:'+((b-a)*100)+'%;background:rgba(176,0,110,.5);pointer-events:none;';
-    seg.appendChild(d);
-  });
+  var m=$('zsel')?$('zsel').value:''; if(!m) return;
+  var d=document.createElement('div');
+  d.className='zb';
+  d.style.cssText='position:absolute;top:0;bottom:0;'+(m==='in'?'left:50%;width:50%;':'left:0;width:50%;')+'background:rgba(176,0,110,.5);pointer-events:none;';
+  seg.appendChild(d);
 }
-$('zaddH').addEventListener('click',function(e){ e.preventDefault(); MOVES.H.push({tin:0,tout:null,scale:null,cx:null,cy:null,ease:null}); zRender('H'); zAfterEdit('H'); });
-function zMid(){ var L=takeLen(); return isFinite(L)&&L>0?Math.round(L/2*100)/100:1.74; }
-$('zMidIn').addEventListener('click',function(){ MOVES.H=[{tin:zMid(),tout:null,scale:null,cx:null,cy:null,ease:null}]; zRender('H'); zAfterEdit('H'); });
-$('zMidOut').addEventListener('click',function(){ MOVES.H=[{tin:0,tout:zMid(),scale:null,cx:null,cy:null,ease:null}]; zRender('H'); zAfterEdit('H'); });
-$('zaddC').addEventListener('click',function(e){ e.preventDefault(); MOVES.C.push({tin:0,tout:null,scale:null,cx:null,cy:null,ease:null}); zRender('C'); });
-
 /* ================= TAKE QUEUE — GO ALL NIGHT ================= */
 var Q_SEED=[
  {take:1, bar:36, songStart:61.229, len:3.478, bars:2, clip:'memphy_03.mp4', start:77.17,  caller:null, calIn:0, zoomat:null, calzoom:null, status:'pending'},
@@ -644,10 +631,11 @@ function qRow(i){
     'start <span id="qstart'+i+'" class="mono" style="font-weight:bold">'+qStartFor(row).toFixed(2)+'s</span> <span class="hint">(auto from song)</span></div>'+
     '<div style="margin:3px 0">caller <select data-k="caller" style="font:12px Arial;max-width:200px">'+callerOpts+'</select> '+
     'in <input data-k="calIn" type="number" min="0" step="0.1" style="width:54px" value="'+(row.calIn||0)+'">s</div>'+
-    '<div style="margin:3px 0">zoom <input data-k="zoomat" type="text" style="width:150px" placeholder="e.g. 1-3@1.6:70,40" value="'+(row.zoomat||'')+'"> '+
-    '<button data-act="zmidin" style="padding:1px 6px;font-size:10px" title="dive at the middle of the take">in@mid</button> '+
-    '<button data-act="zmidout" style="padding:1px 6px;font-size:10px" title="start inside, out at the middle">inside&rarr;out@mid</button> '+
-    'caller zoom <input data-k="calzoom" type="text" style="width:120px" placeholder="e.g. 0-2@1.5" value="'+(row.calzoom||'')+'"></div>'+
+    '<div style="margin:3px 0">zoom <select data-k="zsel" style="font:12px Arial">'+
+    '<option value=""'+(!row.zoomat?' selected':'')+'>no zoom</option>'+
+    '<option value="in"'+((row.zoomat&&row.zoomat.indexOf('0-')!==0)?' selected':'')+'>zoom IN</option>'+
+    '<option value="out"'+((row.zoomat&&row.zoomat.indexOf('0-')===0)?' selected':'')+'>starts ZOOMED IN</option>'+
+    '</select> <span class="hint">moves at the middle, on the beat</span></div>'+
     '<div style="margin:6px 0 6px;display:flex;gap:6px">'+
     '<button data-act="arm" style="padding:3px 9px;font-size:11px">↻ RELOAD</button>'+
     '<button data-act="play" style="padding:3px 9px;font-size:11px">▶ PLAY</button>'+
@@ -658,15 +646,15 @@ function qRow(i){
     inp.addEventListener('change',function(){
       var k=inp.getAttribute('data-k'), v=inp.value;
       if(k==='calIn') row[k]=parseFloat(v)||0;
-      else if(k==='zoomat'||k==='calzoom') row[k]=v.trim()||null;
+      else if(k==='zsel'){ var mid=Math.round(row.len/2*100)/100; row.zoomat=v==='in'?String(mid):v==='out'?('0-'+mid):null; qSave(); qArm(i); }
       else row[k]=v;
       if(k==='clip'){ document.getElementById('qstart'+i).textContent=qStartFor(row).toFixed(2)+'s'; }
       qSave(); renderQueueFlags();
+      if(qArmed[i]) qArm(i);   // live preview follows the edit
     });
   });
   d.querySelector('[data-act="arm"]').addEventListener('click',function(){ qArm(i); });
-  d.querySelector('[data-act="zmidin"]').addEventListener('click',function(){ var m=Math.round(row.len/2*100)/100; row.zoomat=String(m); d.querySelector('[data-k="zoomat"]').value=row.zoomat; qSave(); });
-  d.querySelector('[data-act="zmidout"]').addEventListener('click',function(){ var m=Math.round(row.len/2*100)/100; row.zoomat='0-'+m; d.querySelector('[data-k="zoomat"]').value=row.zoomat; qSave(); });
+
   d.querySelector('[data-act="play"]').addEventListener('click',function(){ var f=qArmed[i]; if(f&&f.contentWindow) f.contentWindow.postMessage({memphyTake:'go'},'*'); else qArm(i); });
   d.querySelector('[data-act="approve"]').addEventListener('click',function(){ row.status=(row.status==='approved')?'previewed':'approved'; qSave(); qChip(i); });
   d.querySelector('[data-act="render"]').addEventListener('click',function(){ if(qRenderBusy){ $('qStatus').textContent='render already running'; return; } qRenderBusy=true; qRenderOne(i,function(){ qRenderBusy=false; }); });
