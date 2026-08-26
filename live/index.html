@@ -2953,13 +2953,15 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
         try{ gvid.pause(); }catch(e){}
         try{ if(!insideMode && (zoomAnim || window._autoDive)){ if(zoomAnim){ cancelAnimationFrame(zoomAnim); zoomAnim=null; } window._autoDive=false; window._diving=false; window._overHer=false; pressOn=false; document.body.classList.remove('diving'); document.body.style.cursor=''; zoomP=0; applyZoom(0); } }catch(e){}
         try{ if(insideMode) exitInside(); }catch(e){}
+        var gap=window._loopPeriod?160:900, gap2=window._loopPeriod?120:400;   // length-locked takes loop tight
         setTimeout(function(){
           try{ if(insideMode) exitInside(); }catch(e){}
+          try{ zoomP=0; applyZoom(0); }catch(e){}
           try{ vid.pause(); vid.currentTime=jobStart; }catch(e){}
           try{ var ci2=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
                gvid.pause(); gvid.currentTime=ci2||0.001; }catch(e){}
-          setTimeout(function(){ showtime(calIdx, null); }, 400);
-        }, 900); }
+          setTimeout(function(){ showtime(calIdx, null); }, gap2);
+        }, gap); }
       var _cloop=qs.get('calloop')==='1';
       gvid.loop=false;
       if(_cloop){
@@ -2967,12 +2969,17 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
         gvid._loopH=function(){ var d=gvid.duration; if(isFinite(d)&&d>0.3&&gvid.currentTime>=d-0.08){ try{ gvid.currentTime=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})(); gvid.play().catch(function(){}); }catch(e){} } };
         gvid.addEventListener('timeupdate', gvid._loopH);
       } else if(gvid._loopH){ gvid.removeEventListener('timeupdate', gvid._loopH); gvid._loopH=null; }
-      if(gvid._prevEndH) gvid.removeEventListener('ended', gvid._prevEndH);
-      gvid._prevEndH=function h(){ gvid.removeEventListener('ended', h); gvid._prevEndH=null; fin(); };
-      gvid.addEventListener('ended', gvid._prevEndH);
       var _plen=(function(){var l=parseFloat(qs.get('len'));return isFinite(l)&&l>0?l:null;})();
       var _ciT=(function(){var c=parseFloat(qs.get('calin'));return isFinite(c)&&c>0?c:0;})();
-      probe('clips/'+jobCaller, function(D){ var run=_plen||(D>0?Math.max(0.5,D-_ciT):60); setTimeout(fin, run*1000+600); });
+      if(gvid._prevEndH) gvid.removeEventListener('ended', gvid._prevEndH);
+      gvid._prevEndH=function h(){
+        if(_plen){ try{ gvid.pause(); }catch(e){} return; }   // take length owns the loop; a short caller just freezes
+        gvid.removeEventListener('ended', h); gvid._prevEndH=null; fin();
+      };
+      gvid.addEventListener('ended', gvid._prevEndH);
+      window._loopPeriod=_plen;
+      if(_plen) setTimeout(fin, (_plen+0.5)*1000);            // exactly the take: length + the render's 0.5s tail
+      else probe('clips/'+jobCaller, function(D){ var run=(D>0?Math.max(0.5,D-_ciT):60); setTimeout(fin, run*1000+600); });
       if(jobZoomSeq[0] && jobZoomSeq[0].tin<=0.05 && !insideMode){ instantInside(jobZoomSeq[0]); }
       jobZoomSeq.forEach(function(ev,evi){
         if(!(evi===0 && ev.tin<=0.05)) setTimeout(function(){
