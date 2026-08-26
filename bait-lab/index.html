@@ -401,8 +401,8 @@ const baseId = id => String(id||'').replace('builtin-','');
 
 /* ---- icon -> scenario tags (families are UI labels only; randomizer filters on scenarios[]) ---- */
 const ICON_FAMILY = {
-  PHARMA:   { icons:['bluepill','capsules','blister','boost','vial'], scen:['sellPill'] },
-  AROMA:    { icons:['poppers','poppersbig'], scen:['poppers'] },
+  PHARMA:   { icons:['bluepill','capsules','blister'], scen:['sellPill'] },
+  AROMA:    { icons:['boost','vial'], scen:['poppers','sellPill'] },
   GEAR:     { icons:['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','rose','towel'], scen:['meetTrade','sexShop'] },
 };
 const ICON_SCEN = {};
