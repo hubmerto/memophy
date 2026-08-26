@@ -156,6 +156,7 @@
   /* headline keeps its per-format track (max-height) so it can grow to fill it; fit prevents overflow */
   .crtv .hl, .crtv .sub, .crtv .cta { white-space:normal; height:auto; }
   .crtv .hl { text-align:center !important; }
+  .crtv .hl .acc { color:var(--accent-word,#e00013); text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:2px; -webkit-text-fill-color:var(--accent-word,#e00013); }
   .crtv.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
   .crtv.skin-fax { border:3px double #000 !important; }
@@ -840,6 +841,24 @@ function writeProp(patch) {
 function currentFx() {
   return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
 }
+// one word of the headline gets accented (colored + underlined) on the basic skins only
+const ACCENT_SKINS = new Set(['fax','craigslist','reply','midnight','plain','inverted']);
+const HOT_WORDS = new Set(['PLAY','RAW','DL','TRADE','PIG','BREED','LOAD','LOADS','NOW','FREE','HOT','CAM','LIVE','HARD','DEEP','WET','FUEL','PUMP','AROMA','HUNG','TOP','MSG','HOOK','DISCREET','NEAR','TONIGHT','STRONG','FULL','OPEN','READY','SOLO','BOOST','FRESH']);
+function esc(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function accentHeadline(text, node){
+  if (text.includes('\n')) return false;
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length < 2) return false;
+  let idx = words.findIndex(w => HOT_WORDS.has(w.replace(/[^A-Za-z]/g,'').toUpperCase()));
+  if (idx < 0) { // fall back to the longest word (skip 2-letter fillers)
+    let best = -1, bl = 2;
+    words.forEach((w,i) => { const L = w.replace(/[^A-Za-z]/g,'').length; if (L > bl) { bl = L; best = i; } });
+    idx = best;
+  }
+  if (idx < 0) return false;
+  node.innerHTML = words.map((w,i) => i === idx ? `<span class="acc">${esc(w)}</span>` : esc(w)).join(' ');
+  return true;
+}
 function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
   opts = opts || {};
   fx = fx ?? currentFx();
@@ -874,6 +893,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
   }
   for (const [slot, text] of Object.entries(copy))
     el.querySelectorAll(`[data-slot="${slot}"]`).forEach(n => {
+      if (slot === 'headline' && ACCENT_SKINS.has(skin) && accentHeadline(String(text), n)) return;
       n.textContent = text;
       if (String(text).includes('\n')) n.style.whiteSpace = 'pre-line';
     });
