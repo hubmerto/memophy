@@ -88,6 +88,7 @@
     <button id="bTest">Test card</button>
     <button id="bSave">Save frame</button>
     <button id="bRec">Record</button>
+    <button id="bRen">Render clip</button>
   </div>
   <input type="file" id="file" accept="image/*,video/*,.avi,.mov,.mkv,.mpg,.mpeg,.wmv,.m4v,.ts" hidden>
   <div class="grp"><label>Presets</label><div class="presets" id="presets"></div></div>
@@ -100,6 +101,7 @@
 const GROUPS = [
   ["Export", [
     ["exportRatio","ratio",     0, 5,   1,   0, "select", ["Source","16:9","9:16","1:1","4:3","4:5"]],
+    ["exportFit",  "fit",       0, 1,   1,   0, "select", ["Fill","Fit"]],
   ]],
   ["Hover zoom", [
     ["loupeZoom","zoom",        1, 8,    .1,  2],
@@ -111,6 +113,7 @@ const GROUPS = [
   ]],
   ["Particle FX", [
     ["wave",     "modulation",  0, 1,   .01, 0],
+    ["waveReact","mod react",   0, 1,   .01, 0],
     ["scatter",  "dissolve",    0, 1,   .01, 0],
     ["holo",     "hologram",    0, 1,   .01, 0],
   ]],
@@ -730,13 +733,14 @@ function frame(){
   if(animateTC){ drawTestCard(t); uploadFrame(); }
   else if(srcIsVideo){ uploadFrame(); }
 
-  // canvas box tracks the source aspect (recording locks it to the export ratio)
-  if(!recorder) lockCanvasToSource(false);
+  // canvas box tracks the selected ratio live ("Source" = the media's own aspect)
+  if(!recorder) lockCanvasToSource(true);
 
-  // contain fit (aspects match outside recording, so this is 1:1)
+  // fit the source into that box: Fill = cover/crop, Fit = contain/letterbox
   const ca = canvas.width/canvas.height, ta = srcW/srcH;
   let sx=1, sy=1;
-  if(ta>ca) sy = ta/ca; else sx = ca/ta;
+  if(P.exportFit>0.5){ if(ta>ca) sy = ta/ca; else sx = ca/ta; }   // contain
+  else               { if(ta>ca) sx = ca/ta; else sy = ta/ca; }   // cover
   gl.viewport(0,0,canvas.width,canvas.height);
   gl.uniform1i(U.uTex,0);
   gl.uniform2f(U.uRes,canvas.width,canvas.height);
@@ -767,10 +771,13 @@ function frame(){
   gl.uniform1f(U.uTiltY,0);
   gl.uniform1f(U.uComp,P.comp);
   gl.uniform1f(U.uCsub,P.csub);
-  gl.uniform1f(U.uWave,P.wave);
+  updateAudioBands();
+  // modulation = manual slider + audio-driven pump (mids for body, bass for the beat)
+  const modPump = P.waveReact * P.audioAmt *
+                  Math.min(1, audioBands[1]*0.75 + audioBands[0]*0.45);
+  gl.uniform1f(U.uWave,Math.min(1.5, P.wave + modPump));
   gl.uniform1f(U.uScatter,P.scatter);
   gl.uniform1f(U.uHolo,P.holo);
-  updateAudioBands();
   gl.uniform3f(U.uAudio,audioBands[0],audioBands[1],audioBands[2]);
   gl.uniform1f(U.uAudioAmt,P.audioAmt);
   gl.uniform1f(U.uGrain,P.grain);
@@ -839,7 +846,8 @@ Object.keys(PRESETS).forEach(name=>{
   b.textContent = name;
   b.onclick = ()=>{
     const keep = {loupeZoom:P.loupeZoom, zoomSpeed:P.zoomSpeed, zoomFish:P.zoomFish,
-                  audioAmt:P.audioAmt, exportRatio:P.exportRatio};
+                  audioAmt:P.audioAmt, waveReact:P.waveReact,
+                  exportRatio:P.exportRatio, exportFit:P.exportFit};
     Object.assign(P, DEFAULTS, PRESETS[name], keep);
     Object.keys(inputs).forEach(k=>inputs[k].set(P[k]));
     clearPresetHi(); b.classList.add("on");
@@ -863,7 +871,7 @@ function recMime(){
 }
 let lastLock = "";
 function lockCanvasToSource(useExportRatio){
-  // canvas box always matches the source aspect (or the export ratio while recording)
+  // canvas box = the selected export ratio, or the source aspect when that select is "Source"
   const PAD = 32;
   const availW = stage.clientWidth-2*PAD, availH = stage.clientHeight-2*PAD;
   if(availW<50||availH<50) return;           // layout not ready / hidden — keep as is
@@ -879,42 +887,86 @@ function lockCanvasToSource(useExportRatio){
   resize();                                  // sync the GL buffer to the new box now
 }
 
+const bRen = document.getElementById("bRen");
+function recIdle(){
+  bRec.textContent = "Record"; bRec.classList.remove("rec");
+  bRen.textContent = "Render clip"; bRen.classList.remove("rec");
+}
+function startRecorder(){
+  const mime = recMime();
+  recorder = new MediaRecorder(canvas.captureStream(60),
+    {mimeType:mime||undefined, videoBitsPerSecond:20e6});
+  recChunks = [];
+  recorder.ondataavailable = e=>{ if(e.data.size) recChunks.push(e.data); };
+  recorder.onstop = ()=>{
+    const type = recorder.mimeType||mime, ext = type.includes("mp4")?"mp4":"webm";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(recChunks,{type}));
+    a.download = "crt_capture."+ext; a.click();
+    recorder = null; clearInterval(recTimer);
+    recIdle();
+    lastLock = "";                    // let the frame loop re-lock to the source aspect
+    if(recCleanup){ recCleanup(); recCleanup = null; }
+  };
+  recorder.start(250);
+  recT0 = performance.now();
+}
+
+/* free-running capture: starts now, stops when you say so */
 bRec.onclick = ()=>{
   if(recorder){ recorder.stop(); return; }
   if(video && !video.srcObject){ video.currentTime = 0; video.play(); }   // file videos restart
   lockCanvasToSource(true);
-  {
-    const mime = recMime();
-    recorder = new MediaRecorder(canvas.captureStream(60),
-      {mimeType:mime||undefined, videoBitsPerSecond:20e6});
-    recChunks = [];
-    recorder.ondataavailable = e=>{ if(e.data.size) recChunks.push(e.data); };
-    recorder.onstop = ()=>{
-      const type = recorder.mimeType||mime, ext = type.includes("mp4")?"mp4":"webm";
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(new Blob(recChunks,{type}));
-      a.download = "crt_capture."+ext; a.click();
-      recorder = null; clearInterval(recTimer);
-      bRec.textContent = "Record"; bRec.classList.remove("rec");
-      lastLock = "";                    // let the frame loop re-lock to the source aspect
-      if(recCleanup){ recCleanup(); recCleanup = null; }
+  startRecorder();
+  // file videos: stop automatically when one full loop completes
+  if(video && !video.srcObject && isFinite(video.duration)){
+    const v = video; let lastT = 0;
+    const onTU = ()=>{
+      if(recorder && v.currentTime < lastT - 0.5) recorder.stop();
+      else lastT = Math.max(lastT, v.currentTime);
     };
-    // file videos: stop automatically when one full loop completes
-    if(video && !video.srcObject && isFinite(video.duration)){
-      const v = video; let lastT = 0;
-      const onTU = ()=>{
-        if(recorder && v.currentTime < lastT - 0.5) recorder.stop();
-        else lastT = Math.max(lastT, v.currentTime);
-      };
-      v.addEventListener("timeupdate", onTU);
-      recCleanup = ()=>v.removeEventListener("timeupdate", onTU);
-    }
-    recorder.start(250);
-    recT0 = performance.now();
-    bRec.classList.add("rec");
+    v.addEventListener("timeupdate", onTU);
+    recCleanup = ()=>v.removeEventListener("timeupdate", onTU);
+  }
+  bRec.classList.add("rec");
+  recTimer = setInterval(()=>{
+    bRec.textContent = "\u25a0 "+((performance.now()-recT0)/1000).toFixed(0)+"s";
+  }, 250);
+};
+
+/* full-clip render: seeks the loaded video back to 0:00, waits for the seek to
+   land, then captures exactly one pass through to the end */
+bRen.onclick = ()=>{
+  if(recorder){ recorder.stop(); return; }
+  const v = video;
+  if(!v || v.srcObject || !isFinite(v.duration) || !v.duration){
+    alert("Render clip needs a loaded video file — use Load media, then Render clip.");
+    return;
+  }
+  lockCanvasToSource(true);
+  const wasLoop = v.loop;
+  v.loop = false;                     // one pass, no wrap
+  v.pause();
+  const onEnded = ()=>{ if(recorder) setTimeout(()=>{ if(recorder) recorder.stop(); }, 150); };
+  v.addEventListener("ended", onEnded);
+  recCleanup = ()=>{ v.removeEventListener("ended", onEnded); v.loop = wasLoop; v.play(); };
+
+  let started = false;
+  const go = ()=>{
+    if(started) return;
+    started = true;
+    startRecorder();
+    bRen.classList.add("rec");
     recTimer = setInterval(()=>{
-      bRec.textContent = "■ "+((performance.now()-recT0)/1000).toFixed(0)+"s";
-    }, 250);
+      bRen.textContent = "\u25a0 "+Math.min(99,Math.round(v.currentTime/v.duration*100))+"%";
+    }, 200);
+    v.play();
+  };
+  if(v.currentTime < 0.001 && v.readyState >= 2){ go(); }
+  else {
+    v.addEventListener("seeked", function onSeek(){ v.removeEventListener("seeked", onSeek); go(); });
+    v.currentTime = 0;
+    setTimeout(go, 800);              // safety net if the seek event never lands
   }
 };
 
@@ -930,7 +982,7 @@ const stage = document.getElementById("stage");
 ["dragleave","drop"].forEach(ev=>stage.addEventListener(ev,e=>{e.preventDefault();stage.classList.remove("dragging");}));
 stage.addEventListener("drop",e=>{ if(e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
 
-window._crt = {loadFile, useVideo, bands:audioBands,    // scripting/debug hook
+window._crt = {loadFile, useVideo, bands:audioBands, vid:()=>video,   // scripting/debug hook
   dbg:()=>{let s=-1; if(analyser){analyser.getByteFrequencyData(freqData); s=0; for(const v of freqData) s+=v;}
     return {actx:actx?actx.state:null, analyser:!!analyser, freqSum:s,
             videoPaused:video?video.paused:null, videoMuted:video?video.muted:null,
