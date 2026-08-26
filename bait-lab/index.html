@@ -1964,10 +1964,13 @@ function init() {
     document.getElementById('motion').value = r.motion;
     // apply to every ad (ALL mode) so the whole set reads as one scenario
     window.ACTIVE = null;
+    const S = SCENARIOS[scen];
+    const skinPool = (S?.skins || []).filter(k => SKINS[k]);
     for (const t of Object.keys(TPL)) {
       const P = ((LAYOUT[t] ??= {}).props ??= {});
-      // one scenario look, but each format gets its OWN size-appropriate text (banner short, halfpage long)
-      P.skin = r.skin; P.copy = (t === r.template) ? { ...r.copy } : makeCopy(scen, t); P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion; P.badgeStyle = r.badgeStyle;
+      // one scenario, but each format gets its OWN skin + size-appropriate text (banner short, halfpage long)
+      P.skin = (t === r.template) ? r.skin : (pick(skinPool) || r.skin);
+      P.copy = (t === r.template) ? { ...r.copy } : makeCopy(scen, t); P.fx = r.fx === 'none' ? '' : r.fx; P.motion = r.motion; P.badgeStyle = r.badgeStyle;
       P.icon2 = r.icon2Id ? assets.find(a=>a.id===r.icon2Id)?.dataUrl : null;
       P.bgPattern = r.bgPattern;
       if (r.overlayPattern) (LAYOUT[t].overlay ??= {}).pattern = r.overlayPattern;

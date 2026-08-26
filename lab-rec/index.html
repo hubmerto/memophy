@@ -9,8 +9,9 @@ header{background:#fff;border-bottom:2px solid #e6258f;padding:10px 18px;font:bo
 header small{color:#888;font-weight:normal;margin-left:12px;}
 main{display:flex;gap:16px;padding:16px 18px;align-items:flex-start;}
 .col{background:#fff;border:1px solid #e3c4d6;border-radius:6px;padding:12px;}
-#left{flex:0 0 640px;}
+#left{flex:0 0 480px;}
 #right{flex:1;min-width:0;}
+@media (max-width:1100px){ main{flex-direction:column;} #left{flex:none;width:100%;} }
 h3{margin:0 0 8px;font:bold 13px Arial;color:#b0006e;text-transform:uppercase;letter-spacing:1px;}
 select,input[type=number]{font:bold 13px Arial;padding:4px;}
 video{background:#000;display:block;border-radius:4px;}
@@ -37,7 +38,7 @@ button.rec{background:#e6258f;color:#fff;border-color:#b0006e;}
 button.prev{background:#2fa515;color:#fff;border-color:#1d7a0c;}
 button:disabled{opacity:.5;cursor:default;}
 .stage{width:100%;aspect-ratio:16/9;background:#000;border-radius:4px;overflow:hidden;position:relative;}
-.stage iframe{width:100%;height:100%;border:0;display:block;}
+.stage iframe{width:1280px;height:720px;border:0;display:block;transform-origin:0 0;}
 .stage .idle{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#777;font:bold 15px Arial;}
 #status{margin-top:8px;font:bold 13px Arial;color:#333;min-height:18px;}
 #recs .item{display:flex;gap:10px;align-items:center;margin:8px 0;padding:8px;border:1px solid #eee;border-radius:5px;background:#fafafa;}
@@ -132,20 +133,22 @@ button:disabled{opacity:.5;cursor:default;}
       <button class="rec" id="btnRec_pshow">&#9679; RENDER PRIVATE SHOW</button>
       <button id="btnTab_pshow" title="opens the armed take alone in a tab — click in it to roll, screen-record it">&#8599; OPEN IN TAB</button>
     </div>
-    <h3 style="margin-top:16px">Recordings</h3>
-    <div id="recs"></div>
+    <div id="qwrap" style="margin-top:18px">
+      <h3>4 &middot; TAKE QUEUE <span class="hint">GO ALL NIGHT &mdash; 17 UI takes, bar-locked; edit each, then render</span></h3>
+      <div class="row" style="margin:6px 0 10px">
+        <button id="qArmAll" style="padding:5px 12px">&#9202; ARM ALL PREVIEWS</button>
+        <select id="qView" style="font:bold 12px Arial"><option value="pshow" selected>private show</option><option value="room">chat room</option></select>
+        <button id="qRenderAll" style="border-color:#0a7d43;color:#0a7d43;padding:5px 12px">&#9679; RENDER APPROVED</button>
+        <button id="qReset" style="font-size:11px" title="throw away queue edits, back to the take sheet">reset</button>
+        <span class="hint" id="qStatus"></span>
+      </div>
+      <div id="queue" style="display:flex;flex-direction:column;gap:14px"></div>
+    </div>
   </div>
 </main>
-<div id="qwrap" style="padding:14px 18px 40px">
-  <h3 style="margin:10px 0 4px">4 &middot; TAKE QUEUE <span class="hint">GO ALL NIGHT &mdash; 17 UI takes, bar-locked; edit each, then render</span></h3>
-  <div class="row" style="margin-bottom:10px">
-    <button id="qArmAll" style="padding:5px 12px">&#9202; ARM ALL PREVIEWS</button>
-    <select id="qView" style="font:bold 12px Arial"><option value="pshow" selected>private show</option><option value="room">chat room</option></select>
-    <button id="qRenderAll" style="border-color:#0a7d43;color:#0a7d43;padding:5px 12px">&#9679; RENDER APPROVED</button>
-    <button id="qReset" style="font-size:11px" title="throw away queue edits, back to the take sheet">reset</button>
-    <span class="hint" id="qStatus"></span>
-  </div>
-  <div id="queue" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(460px,1fr));gap:14px"></div>
+<div id="recwrap" style="padding:0 18px 60px">
+  <h3>Recordings</h3>
+  <div id="recs"></div>
 </div>
 <script>
 var API=(location.hostname==='localhost'||location.hostname==='127.0.0.1')?'':'http://localhost:8968';
@@ -380,6 +383,12 @@ function takeSpec(){
     calZoom:zStr('C') };
 }
 
+function fitFrames(){
+  document.querySelectorAll('.stage iframe, .qframe').forEach(function(f){
+    var w=f.parentElement.clientWidth; if(w>0) f.style.transform='scale('+(w/1280)+')';
+  });
+}
+window.addEventListener('resize',fitFrames);
 var prevState={room:'idle',pshow:'idle'};
 function previewTake(view){
   var btn=$('btnPrev_'+view), stage=$('stage_'+view);
@@ -400,6 +409,7 @@ function previewTake(view){
   f.src=API+'/index.html?'+q.toString();
   f.allow='autoplay';
   stage.appendChild(f);
+  fitFrames();
   $('status').textContent='arming '+view+'\u2026 both clips loading to their in-points';
 }
 function viewOf(src){
@@ -583,9 +593,11 @@ function qArm(i){
   if(!holder||!row.caller) return;
   holder.innerHTML='';
   var f=document.createElement('iframe');
-  f.src=qFrameURL(row); f.allow='autoplay';
-  f.style.cssText='width:100%;aspect-ratio:16/9;border:0;background:#000;display:block';
+  f.src=qFrameURL(row); f.allow='autoplay'; f.className='qframe';
+  f.style.cssText='width:1280px;height:720px;border:0;background:#000;display:block;transform-origin:0 0';
+  holder.style.cssText='background:#000;aspect-ratio:16/9;overflow:hidden;position:relative';
   holder.appendChild(f);
+  fitFrames();
   qArmed[i]=f;
   if(row.status==='pending'){ row.status='previewed'; qSave(); qChip(i); }
 }
