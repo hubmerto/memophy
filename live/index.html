@@ -738,8 +738,8 @@ if(/[?&]renderjob/.test(location.search)){
 }
 </script>
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-            "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+{"imports":{"three":"./vendor/three.module.js",
+            "three/addons/loaders/SVGLoader.js":"./vendor/SVGLoader.js"}}
 </script>
 <script>window.MEPHY_BG_MANUAL = true;</script>
 <script type="text/plain" id="mephysvg"><svg width="1071" height="522" viewBox="0 0 1071 522" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1016,9 +1016,8 @@ function initMephyBackground({
     if (layer && layer.getClientRects().length === 0) return;   // skip render when the mount is hidden (fixed-position safe)
     if (_mobFps && (t - _lastDraw) < (1000 / _mobFps)) return;
     _lastDraw = t;
-    const dt = Math.min((t - lastT) / 1000, 0.1);
-    lastT = t;
-    spinT += dt;
+    if (window._recjobMode && window.__takeT != null) { spinT = window.__takeT; lastT = t; }
+    else { const dt = Math.min((t - lastT) / 1000, 0.1); lastT = t; spinT += dt; }
     // seamless 180 loop: sweep -90ÃÂ°..+90ÃÂ° through frontal, wrap edge-on
     const HALF = Math.PI / 2;
     const a = spinT * speed;
@@ -1030,6 +1029,7 @@ function initMephyBackground({
   // ---------------------------------------------------------------- start
   (function(cb){ cb(new SVGLoader().parse(document.getElementById("mephysvg").textContent)); })(data => {
     buildScene(data.paths);
+    window._logoReady = (window._logoReady || 0) + 1;
     addEventListener('resize', fitViewport);
     if (reducedMotion) {
       renderer.render(scene, camera); // static frontal frame, no spin
@@ -2580,7 +2580,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
           function fin(){ if(finned.done) return; if(++got<GATES) return; finned.done=1;
             rr.dur=R.CONNECT+(R.len||Math.max(0.5,rr.callerDur-R.calIn))+R.TAIL;
             if(R.zoomSeq && R.zoomSeq[0] && R.zoomSeq[0].tin<=0.05){ instantInside(); rr.committed=true; rr.zi=0; }
-            res({duration:rr.dur, fps:R.fps, frames:Math.ceil(rr.dur*R.fps)}); }
+            (function lw(n){ if(window._logoReady || n>=100){ res({duration:rr.dur, fps:R.fps, frames:Math.ceil(rr.dur*R.fps)}); } else ((window.__rt&&window.__rt.st)||setTimeout)(function(){ lw(n+1); },200); })(0); }
           vv.onloadedmetadata=function(){ rr.callerDur=vv.duration||8; fin(); };
           vv.onerror=function(){ rr.callerDur=8; fin(); };
           vv.src=clips[rr.calIdx].url;
@@ -2608,6 +2608,7 @@ function composeWrapFilter(){ var w=document.getElementById('wrap'); if(w) w.sty
       });
     }
     window.__renderStep=function(t){
+      window.__takeT=t;
       return new Promise(function(res){
         try{ vid.pause(); }catch(e){}
         try{ var mb=document.getElementById('mutebtn'); if(mb&&mb.innerHTML.indexOf('Unmute')>-1) mb.innerHTML='&#128266; Mute'; }catch(e){}
