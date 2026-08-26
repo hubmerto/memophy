@@ -842,13 +842,16 @@ function currentFx() {
   return FX_KEYS.filter(k => document.getElementById('fx-' + k)?.checked).join(' ') || 'none';
 }
 // one word of the headline gets accented (colored + underlined) on the basic skins only
-const ACCENT_SKINS = new Set(['fax','craigslist','reply','midnight','plain','inverted']);
+const ACCENT_SKINS = new Set(['fax']);
 const HOT_WORDS = new Set(['PLAY','RAW','DL','TRADE','PIG','BREED','LOAD','LOADS','NOW','FREE','HOT','CAM','LIVE','HARD','DEEP','WET','FUEL','PUMP','AROMA','HUNG','TOP','MSG','HOOK','DISCREET','NEAR','TONIGHT','STRONG','FULL','OPEN','READY','SOLO','BOOST','FRESH']);
 function esc(s){ return s.replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 function accentHeadline(text, node){
   if (text.includes('\n')) return false;
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length < 2) return false;
+  // only sometimes — deterministic per headline so it stays stable across re-renders
+  let h = 0; for (let i = 0; i < text.length; i++) h = (h * 31 + text.charCodeAt(i)) & 0xffff;
+  if (h % 100 >= 45) return false;
   let idx = words.findIndex(w => HOT_WORDS.has(w.replace(/[^A-Za-z]/g,'').toUpperCase()));
   if (idx < 0) { // fall back to the longest word (skip 2-letter fillers)
     let best = -1, bl = 2;
