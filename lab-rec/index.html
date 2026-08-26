@@ -106,6 +106,7 @@ button:disabled{opacity:.5;cursor:default;}
       <button id="btnApply" style="border-color:#b0006e;color:#b0006e">&#8635; APPLY CHANGES</button>
       <span class="hint">re-arms the previews with the numbers above</span>
       &nbsp;&nbsp;<label style="font:bold 13px Arial"><input type="checkbox" id="draft"> &#9889; draft render (1080p, ~4&times; faster)</label>
+      &nbsp;&nbsp;<label style="font:bold 13px Arial"><input type="checkbox" id="autodl" checked> &#11015; auto-download when ready</label>
     </div>
     <div class="row"><span class="hint">arm a preview on the right &mdash; both clips load to their in-points and hold; &#9654; plays the take (loops); RENDER makes the 4K mp4 of that view</span>
       <div id="status"></div>
@@ -397,6 +398,18 @@ function fitFrames(){
 }
 window.addEventListener('resize',fitFrames);
 if($('zsel')) $('zsel').addEventListener('change',function(){ updateBand(); if($('btnApply')&&$('btnApply').onclick) $('btnApply').onclick(); });
+function autoDownload(file){
+  if(!file) return;
+  if($('autodl') && !$('autodl').checked) return;
+  try{
+    var a=document.createElement('a');
+    a.href=API+'/'+file+'?dl=1';           // server sends Content-Disposition: attachment
+    a.download=file.split('/').pop();
+    a.style.display='none';
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ a.remove(); }, 4000);
+  }catch(e){}
+}
 var prevState={room:'idle',pshow:'idle'};
 function previewTake(view){
   var btn=$('btnPrev_'+view), stage=$('stage_'+view);
@@ -445,7 +458,7 @@ function recordTake(view){
         fetch(API+'/api/status/'+j.id).then(r=>r.json()).then(function(sj){
           var last=(sj.log&&sj.log.length)?(' · '+sj.log[sj.log.length-1]):'';
           $('status').textContent='take '+j.id+': '+sj.state+(sj.progress?(' '+Math.round(sj.progress*100)+'%'):'')+last+(sj.err?(' — '+sj.err):'');
-          if(sj.state==='done'){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='DONE — saved '+sj.file.split('/').pop(); refreshRecs(); }
+          if(sj.state==='done'){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='DONE — saved '+sj.file.split('/').pop(); refreshRecs(); autoDownload(sj.file); }
           if(sj.state==='error'){ clearInterval(iv); btnRec.disabled=false; }
           if(sj.state==='unknown'){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='engine restarted — job lost, render again'; }
         }).catch(function(){ clearInterval(iv); btnRec.disabled=false; $('status').textContent='engine unreachable — is it still running?'; });
@@ -658,7 +671,7 @@ function qRenderOne(i,done){
       var iv=setInterval(function(){
         fetch(API+'/api/status/'+j.id).then(function(r){return r.json();}).then(function(sj){
           $('qStatus').textContent='take '+row.take+': '+sj.state+((sj.log&&sj.log.length)?(' · '+sj.log[sj.log.length-1]):'');
-          if(sj.state==='done'){ clearInterval(iv); row.status='rendered'; qSave(); qChip(i); loadRecs&&loadRecs(); done&&done(); }
+          if(sj.state==='done'){ clearInterval(iv); row.status='rendered'; qSave(); qChip(i); loadRecs&&loadRecs(); autoDownload(sj.file); done&&done(); }
           if(sj.state==='error'){ clearInterval(iv); $('qStatus').textContent='take '+row.take+' FAILED: '+(sj.err||'?'); done&&done('err'); }
         }).catch(function(){});
       },2500);
