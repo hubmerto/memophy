@@ -133,7 +133,7 @@ button:disabled{opacity:.5;cursor:default;}
       <h3>4 &middot; TAKE QUEUE <span class="hint">GO ALL NIGHT &mdash; 17 UI takes, bar-locked; edit each, then render</span></h3>
       <div class="row" style="margin:6px 0 10px">
         <button id="qArmAll" style="padding:5px 12px">&#9202; ARM ALL PREVIEWS</button>
-        <select id="qView" style="font:bold 12px Arial"><option value="pshow" selected>private show</option><option value="room">chat room</option></select>
+        <select id="qView" style="font:bold 12px Arial" title="sets ALL takes at once; each row can still differ"><option value="pshow" selected>all: private show</option><option value="room">all: chat room</option></select>
         <button id="qRenderAll" style="border-color:#0a7d43;color:#0a7d43;padding:5px 12px">&#9679; RENDER APPROVED</button>
         <button id="qReset" style="font-size:11px" title="throw away queue edits, back to the take sheet">reset</button>
         <span class="hint" id="qStatus"></span>
@@ -556,6 +556,7 @@ var Q_SEED=[
 ];
 var Q_KEY='mph_take_queue_v1';
 var QUEUE=(function(){ try{ var st=JSON.parse(localStorage.getItem(Q_KEY)); if(st&&st.length===17) return st; }catch(e){} return JSON.parse(JSON.stringify(Q_SEED)); })();
+QUEUE.forEach(function(r){ if(!r.view) r.view='pshow'; });
 function qSave(){ try{ localStorage.setItem(Q_KEY,JSON.stringify(QUEUE)); }catch(e){} }
 function qFmtS(t){ var m=Math.floor(t/60), sec=t-m*60; return m+':'+(sec<10?'0':'')+sec.toFixed(1); }
 function qStartFor(row){ return Math.round((row.songStart-(SONG_OFF[row.clip]||0))*100)/100; }
@@ -582,7 +583,7 @@ function qDefaultCallers(){
 function qFrameURL(row){
   var q=new URLSearchParams({nogate:'',nopop:'',takepreview:'',caller:row.caller,clip:row.clip,start:qStartFor(row),
     zoomat:row.zoomat==null?'':row.zoomat, calzoom:row.calzoom==null?'':row.calzoom,
-    calin:row.calIn||'', len:row.len, adseed:row.take, view:$('qView').value});
+    calin:row.calIn||'', len:row.len, adseed:row.take, view:row.view||'pshow'});
   return API+'/index.html?'+q.toString();
 }
 var qArmed={}; var qMuted={};
@@ -612,7 +613,7 @@ function qSpec(row){
   return { caller:row.caller, clip:row.clip, start:qStartFor(row),
     songStart:Math.round(row.songStart*100)/100, len:row.len, calIn:row.calIn||null,
     zoomAt:row.zoomat||null, calZoom:row.calzoom||null, adSeed:row.take,
-    draft:$('draft').checked||undefined, view:$('qView').value };
+    draft:$('draft').checked||undefined, view:row.view||'pshow' };
 }
 var qRenderBusy=false;
 function qRenderOne(i,done){
@@ -645,7 +646,10 @@ function qRow(i){
     'start <span id="qstart'+i+'" class="mono" style="font-weight:bold">'+qStartFor(row).toFixed(2)+'s</span> <span class="hint">(auto from song)</span></div>'+
     '<div style="margin:3px 0">caller <select data-k="caller" style="font:12px Arial;max-width:200px">'+callerOpts+'</select> '+
     'in <input data-k="calIn" type="number" min="0" step="0.1" style="width:54px" value="'+(row.calIn||0)+'">s</div>'+
-    '<div style="margin:3px 0">zoom <select data-k="zsel" style="font:12px Arial">'+
+    '<div style="margin:3px 0">view <select data-k="view" style="font:bold 12px Arial">'+
+    '<option value="pshow"'+((row.view||'pshow')==='pshow'?' selected':'')+'>private show</option>'+
+    '<option value="room"'+(row.view==='room'?' selected':'')+'>chat room</option>'+
+    '</select> &nbsp; zoom <select data-k="zsel" style="font:12px Arial">'+
     '<option value=""'+(!row.zoomat?' selected':'')+'>no zoom</option>'+
     '<option value="in"'+((row.zoomat&&row.zoomat.indexOf('0-')!==0)?' selected':'')+'>zoom IN</option>'+
     '<option value="out"'+((row.zoomat&&row.zoomat.indexOf('0-')===0)?' selected':'')+'>starts ZOOMED IN</option>'+
@@ -712,7 +716,12 @@ $('qReset').addEventListener('click',function(){
   if(!confirm('reset the queue to the take sheet? your edits are lost')) return;
   QUEUE=JSON.parse(JSON.stringify(Q_SEED)); qSave(); renderQueue();
 });
-$('qView').addEventListener('change',function(){ Object.keys(qArmed).forEach(function(i){ qArm(+i); }); });
+$('qView').addEventListener('change',function(){
+  var v=$('qView').value;
+  QUEUE.forEach(function(r){ r.view=v; }); qSave();
+  renderQueue();
+  Object.keys(qArmed).forEach(function(i){ qArm(+i); });
+});
 setTimeout(renderQueue, 1400);
 
 </script>
