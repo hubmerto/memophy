@@ -334,7 +334,6 @@ const SCENARIOS = {
   t4tCuties: { label:'T4T cuties',        weight:4, skins:['magenta','reply'],              fx:['gummy','sparkle','shadow'],   motion:['rise','lineup'] },
   camLive:   { label:'Cam is live',       weight:4, skins:['magenta','midnight','neon'],    fx:['glitter','shadow'],           motion:['twitch','swap'] },
   fakeNotif: { label:'Fake notification', weight:3, skins:['reply','magenta'],              fx:['shadow'],                     motion:['rise','static'] },
-  prize:     { label:'You won a prize',   weight:3, skins:['magenta','alert','neon'],       fx:['sparkle','gold','glitter'],   motion:['swap','twitch'] },
 };
 
 const COPY = {
@@ -373,11 +372,6 @@ const COPY = {
     sub: ['sent you {N} pics','ur profile got ({N}) taps','tap to open','{DIST} miles away','just now'],
     cta: ['OPEN','VIEW NOW','REPLY','SEE PICS'],
     badge: ['● {N}','NEW','●','NOW'] },
-  prize: {
-    headline: ['YOU WON A {PRIZE}','SPIN TO WIN',"YOU'RE TODAY'S WINNER",'CLAIM YOUR {PRIZE}',"YOU'RE THE {N}TH VISITOR"],
-    sub: ['1 spin left','claim in {N} min','no purchase needed','you have been selected','offer ends tonight'],
-    cta: ['SPIN NOW','CLAIM PRIZE','GET IT','OPEN GIFT'],
-    badge: ['WINNER','FREE','●','TODAY ONLY'] },
 };
 
 const TOKENS = {
@@ -388,7 +382,6 @@ const TOKENS = {
   THING:['TRICK','APP','LOOPHOLE','FILTER','ANGLE'],
   STATE:['FURIOUS','SHOOK','SPEECHLESS','FERAL','BANNED'],
   VERB:['SEE','HANDLE','RESIST','UNSEE'],
-  PRIZE:['iPhone','gift card','PS5','$500','mystery box'],
 };
 const BANKS = TOKENS;
 
@@ -427,14 +420,14 @@ const SWAP_GROUPS = {
 };
 const STATIC_FALLBACK = 0.12;
 
-const FORMAT_NUDGE = { fakeNotif:['show-mobile','show-rect-side'], prize:['show-mpu','show-halfpage'], sexShop:['show-mpu','show-halfpage'] };
+const FORMAT_NUDGE = { fakeNotif:['show-mobile','show-rect-side'], sexShop:['show-mpu','show-halfpage'] };
 const BADGE_WEIGHTS = {
   sellPill:{tag:3,pill:2,ribbon:2,none:1}, poppers:{tag:3,pill:2,ribbon:1,none:2},
   sexShop:{ribbon:3,tag:2,pill:2,none:1},  meetTrade:{pill:3,none:3,tag:1,ribbon:0},
   t4tCuties:{pill:3,none:3,tag:1,ribbon:0},camLive:{pill:4,tag:1,none:2,ribbon:0},
-  fakeNotif:{pill:4,none:2,tag:0,ribbon:0},prize:{ribbon:4,tag:2,pill:1,none:0},
+  fakeNotif:{pill:4,none:2,tag:0,ribbon:0},
 };
-const SUB_CHANCE = { sellPill:0.6, poppers:0.6, sexShop:0.55, meetTrade:0.7, t4tCuties:0.6, camLive:0.65, fakeNotif:0.5, prize:0.45 };
+const SUB_CHANCE = { sellPill:0.6, poppers:0.6, sexShop:0.55, meetTrade:0.7, t4tCuties:0.6, camLive:0.65, fakeNotif:0.5 };
 function rollBadgeStyle(scen){ const w=BADGE_WEIGHTS[scen]||{pill:1}; const bag=[]; for(const[k,v]of Object.entries(w))for(let i=0;i<v;i++)bag.push(k); return bag.length?pick(bag):'pill'; }
 /* map spec motion names -> app motion names */
 const MOTION_MAP = { rise:'slideup', swap:'appear', lineup:'lineup', twitch:'twitch', static:'static' };
