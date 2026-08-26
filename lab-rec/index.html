@@ -676,6 +676,10 @@ function qBar(i,pct){
 function qRenderOne(i,done){
   var row=QUEUE[i];
   if(!row.caller){ done&&done('no caller'); return; }
+  if(qStartFor(row) < 0){
+    qMsg(i,'&#9888; '+row.clip+' has no footage at '+qFmtS(row.songStart)+' &mdash; pick a source that covers it','#b00000');
+    done&&done('bad start'); return;
+  }
   qMsg(i,'&#9679; sending to the renderer&hellip;'); qBar(i,2);
   fetch(API+'/api/record',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(qSpec(row))})
     .then(function(r){return r.json();}).then(function(j){
@@ -710,7 +714,11 @@ function qRow(i){
   var d=document.createElement('div');
   d.style.cssText='border:1px solid #d9b8cb;background:#fff;padding:10px 12px;font:12px Arial';
   var callerOpts=qCallers().map(function(c){ return '<option value="'+c+'"'+(c===row.caller?' selected':'')+'>'+c+'</option>'; }).join('');
-  var clipOpts=CLIPS.map(function(c){ return '<option value="'+c+'"'+(c===row.clip?' selected':'')+'>'+c+'</option>'; }).join('');
+  var okClips=qClipOptions(row);
+  var clipOpts=CLIPS.map(function(c){
+    var fits=okClips.indexOf(c)>-1;
+    return '<option value="'+c+'"'+(c===row.clip?' selected':'')+(fits?'':' disabled')+'>'+c+(fits?'':' — doesn\'t reach this moment')+'</option>';
+  }).join('');
   d.innerHTML='<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
     '<b style="font:bold 14px Arial;color:#b0006e">#'+(row.take<10?'0':'')+row.take+'</b>'+
     '<span>bar '+row.bar+' &middot; '+qFmtS(row.songStart)+' → '+qFmtS(row.songStart+row.len)+'</span>'+
@@ -722,7 +730,8 @@ function qRow(i){
     (flags[i]?'<span title="footage overlap with another take" style="color:#b00000;font-weight:bold">⚠</span>':'')+
     '<span id="qchip'+i+'" style="margin-left:auto;border:1px solid #999;padding:1px 7px;font:bold 10px Arial"></span></div>'+
     '<div style="margin:3px 0">clip <select data-k="clip" style="font:12px Arial">'+clipOpts+'</select> '+
-    'start <span id="qstart'+i+'" class="mono" style="font-weight:bold">'+qStartFor(row).toFixed(2)+'s</span> <span class="hint">(auto from song)</span></div>'+
+    'start <span id="qstart'+i+'" class="mono" style="font-weight:bold;color:'+(qStartFor(row)>=0?'inherit':'#b00000')+'">'+qStartFor(row).toFixed(2)+'s</span> '+
+    (qStartFor(row)>=0?'<span class="hint">(auto from song)</span>':'<span style="color:#b00000;font-weight:bold">&#9888; this source has no footage at that moment &mdash; pick another</span>')+'</div>'+
     '<div style="margin:3px 0">caller <select data-k="caller" style="font:12px Arial;max-width:200px">'+callerOpts+'</select> '+
     'in <input data-k="calIn" type="number" min="0" step="0.1" style="width:54px" value="'+(row.calIn||0)+'">s</div>'+
     '<div style="margin:3px 0">view <select data-k="view" style="font:bold 12px Arial">'+
