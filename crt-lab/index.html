@@ -605,7 +605,7 @@ function useImage(url){
   img.src = url;
 }
 /* audio analysis: bass/mid/high bands drive the shader when Audio react > 0 */
-let actx=null, analyser=null, audioSrcNode=null, freqData=null;
+let actx=null, analyser=null, audioSrcNode=null, freqData=null, audioDest=null;
 const audioBands = [0,0,0];
 function attachAudio(el){
   try{
@@ -621,6 +621,9 @@ function attachAudio(el){
     }
     audioSrcNode.connect(analyser);
     analyser.connect(actx.destination);
+    // second tap: a MediaStream branch so Record/Render can mux the audio in
+    if(!audioDest) audioDest = actx.createMediaStreamDestination();
+    analyser.connect(audioDest);
   }catch(e){ console.warn("audio attach failed:", e.message); }
 }
 function updateAudioBands(){
@@ -864,10 +867,12 @@ document.getElementById("bTest").onclick = useTestCard;
 /* video recording (mp4 when the browser can mux it, webm fallback) */
 let recorder=null, recChunks=[], recT0=0, recTimer=null, recCleanup=null;
 const bRec = document.getElementById("bRec");
-function recMime(){
-  return ["video/mp4;codecs=avc1.640028","video/mp4;codecs=avc1.42E01E","video/mp4",
-          "video/webm;codecs=h264","video/webm;codecs=vp9","video/webm"]
-         .find(t=>MediaRecorder.isTypeSupported(t)) || "";
+function recMime(withAudio){
+  const av = ["video/mp4;codecs=avc1.640028,mp4a.40.2","video/mp4;codecs=avc1.42E01E,mp4a.40.2",
+              "video/mp4","video/webm;codecs=h264,opus","video/webm;codecs=vp9,opus","video/webm"];
+  const v  = ["video/mp4;codecs=avc1.640028","video/mp4;codecs=avc1.42E01E","video/mp4",
+              "video/webm;codecs=h264","video/webm;codecs=vp9","video/webm"];
+  return (withAudio?av:v).find(t=>MediaRecorder.isTypeSupported(t)) || "";
 }
 let lastLock = "";
 function lockCanvasToSource(useExportRatio){
@@ -893,9 +898,14 @@ function recIdle(){
   bRen.textContent = "Render clip"; bRen.classList.remove("rec");
 }
 function startRecorder(){
-  const mime = recMime();
-  recorder = new MediaRecorder(canvas.captureStream(60),
-    {mimeType:mime||undefined, videoBitsPerSecond:20e6});
+  const stream = canvas.captureStream(60);
+  // file videos play through the AudioContext — carry that audio into the export
+  const aTracks = (video && !video.srcObject && audioDest)
+                  ? audioDest.stream.getAudioTracks() : [];
+  aTracks.forEach(t=>stream.addTrack(t));
+  const mime = recMime(aTracks.length>0);
+  recorder = new MediaRecorder(stream,
+    {mimeType:mime||undefined, videoBitsPerSecond:20e6, audioBitsPerSecond:192e3});
   recChunks = [];
   recorder.ondataavailable = e=>{ if(e.data.size) recChunks.push(e.data); };
   recorder.onstop = ()=>{
