@@ -154,6 +154,7 @@
   .crtv.skin-craigslist .hl { text-decoration:underline; font-weight:bold; }
   .crtv.skin-plain .hl, .crtv.skin-inverted .hl { font-weight:bold; }
   .crtv.skin-fax { border:3px double #000 !important; }
+  .t-show-banner .badge { display:none !important; }
   /* show-mobile 320x100: image left, headline+cta stacked right */
   .t-show-mobile { width:320px; height:100px; background:var(--bg,#000); border:1px solid var(--cta-border,#444); }
   .t-show-mobile .pic { float:left; width:96px; height:98px; overflow:hidden; }
@@ -479,7 +480,7 @@ function resolve(scen) {
   const cls = groupName ? SWAP_GROUPS[groupName].motionClass : motionClassOf(iconIds[0]);
   const allowed = MOTION_CLASS[cls] || ['static'];
   let smotion = pick(S.motion.filter(m => allowed.includes(m)));
-  if (groupName && iconIds.length > 1) smotion = S.motion.includes('lineup') && Math.random()<0.4 ? 'lineup' : 'swap';
+  if (groupName && iconIds.length > 1) smotion = 'swap';   // memphy photo set: swap only, never lineup
   if (groupName && iconIds.length === 1) smotion = 'static';
   const motion = MOTION_MAP[smotion || 'static'] || 'static';
 
@@ -824,6 +825,7 @@ function makeAd(template, skin, copy, imgUrl, fx, motion, opts) {
   opts = opts || {};
   fx = fx ?? currentFx();
   motion = motion ?? (document.getElementById('motion')?.value || 'static');
+  if (motion === 'lineup' && !['show-rect','show-mpu'].includes(template)) motion = 'appear';  // lineup shrinks icons too much elsewhere
   if (!SKINS[skin]) skin = Object.keys(SKINS)[0];
   const t = TPL[template];
   const el = document.createElement('div');
@@ -1030,7 +1032,6 @@ function renderPreviewInner() {
     if (urls.length > 1) ad._icons = urls;
     row.appendChild(ad);
     enableEditing(ad, template);
-    fitText(ad);
     // scale ads that are wider than the preview pane so the whole ad is visible
     const paneW = (wrap.clientWidth || 900) - 24;
     if (TPL[template].w > paneW) {
@@ -1062,6 +1063,7 @@ function renderPreviewInner() {
     meta.appendChild(lbl); meta.appendChild(btn);
     row.appendChild(meta);
     wrap.appendChild(row);
+    fitText(ad);
   }
   persist();
 }
@@ -1226,7 +1228,7 @@ function buildOptions() {
     const box = document.createElement('div');
     box.className = 'scalebox';
     const t = TPL[template];
-    box.appendChild(ad); card.appendChild(box); fitText(ad);
+    box.appendChild(ad); card.appendChild(box);
     const meta = document.createElement('div');
     meta.className = 'meta';
     meta.innerHTML = `<span>${SCENARIOS[scen]?.label || scen} · ${skin}</span>`;
@@ -1273,6 +1275,7 @@ function buildOptions() {
     }
     grid.appendChild(line);
   }
+  for (const t of tiles) fitText(t.ad);
 }
 
 /* ============ GIF89a encoder (web-safe 216 palette + LZW) ============ */
@@ -1406,7 +1409,7 @@ function fitText(adEl){
     const mh = parseFloat(cs.maxHeight);
     const trackH = (mh && isFinite(mh)) ? mh : (el.clientHeight || 40);
     const wOK = () => el.scrollWidth <= el.clientWidth + 2;   // block fills width; nowrap = real text width
-    const hOK = () => el.scrollHeight <= trackH + 3;
+    const hOK = () => el.scrollHeight <= trackH + Math.max(3, fs * 0.28);  // absorb text-stroke overshoot
     const fits = () => wOK() && hOK();
     let fs = parseFloat(cs.fontSize) || 20;
     // headline grows to fill its track (up to 1.8x design), then trims to fit
