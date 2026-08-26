@@ -404,10 +404,6 @@ const ICON_FAMILY = {
   PHARMA:   { icons:['bluepill','capsules','blister','boost','vial'], scen:['sellPill'] },
   AROMA:    { icons:['poppers','poppersbig'], scen:['poppers'] },
   GEAR:     { icons:['whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lips','rose','towel'], scen:['meetTrade','sexShop'] },
-  CAM:      { icons:['ringlight','tripod','token','heartspam','webcam'], scen:['camLive'] },
-  UI:       { icons:['bubble','notifdot','battery','cursor'], scen:['fakeNotif'] },
-  SHOP:     { icons:['parcel','pumpbottle','priceburst'], scen:['sellPill','poppers'] },
-  WIN:      { icons:['cart','giftbox','spinwheel'], scen:['prize','sexShop'] },
 };
 const ICON_SCEN = {};
 for (const fam of Object.values(ICON_FAMILY)) for (const ic of fam.icons) ICON_SCEN[ic] = fam.scen;
@@ -421,8 +417,8 @@ const MOTION_CLASS = {
 };
 const ICON_MOTION = {};
 for (const n of ['memphy1','memphy2','memphy3','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','girl1','girl2','girl3','girl4']) ICON_MOTION[n]='set';
-for (const n of ['notifdot','battery','bubble']) ICON_MOTION[n]='alarm';
-for (const n of ['spinwheel','token']) ICON_MOTION[n]='spinnable';
+for (const n of ['notifdot']) ICON_MOTION[n]='alarm';
+for (const n of ['token']) ICON_MOTION[n]='spinnable';
 const motionClassOf = id => ICON_MOTION[baseId(id)] || 'solo';
 
 /* ---- swap groups (bind multi-frame subjects) ---- */
@@ -1176,11 +1172,41 @@ setInterval(() => {
 }, 500);
 
 /* ============ options ============ */
+// §8 justified-row packer: greedily fill each row, scale tiles to span container width exactly
+function packJustified(tiles, { containerW, targetH, gutter, lastRowFill }) {
+  const rows = []; let row = [], rowW = 0;
+  for (const t of tiles) {
+    const ar = t.w / t.h, wAtTarget = targetH * ar;
+    row.push({ ...t, ar });
+    rowW += wAtTarget + (row.length > 1 ? gutter : 0);
+    if (rowW >= containerW) {
+      const gutters = gutter * (row.length - 1);
+      const scale = (containerW - gutters) / (rowW - gutters);
+      const h = targetH * scale;
+      rows.push({ tiles: row.map(t => ({ ...t, dw: h * t.ar, dh: h })), h }); row = []; rowW = 0;
+    }
+  }
+  if (row.length) {
+    if (lastRowFill === 'justify' && row.length > 1) {
+      const gutters = gutter * (row.length - 1);
+      const raw = row.reduce((s, t) => s + targetH * t.ar, 0);
+      const scale = Math.min((containerW - gutters) / raw, 1.25);
+      const h = targetH * scale;
+      rows.push({ tiles: row.map(t => ({ ...t, dw: h * t.ar, dh: h })), h });
+    } else rows.push({ tiles: row.map(t => ({ ...t, dw: targetH * t.ar, dh: targetH })), h: targetH });
+  }
+  return rows;
+}
+let FILL_SEED = 1;
+function fillMode(id) { let h = 0; const str = id + ':' + FILL_SEED; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return (h % 100) < 40 ? 'frame' : 'bleed'; }
+
 function buildOptions() {
   const grid = document.getElementById('optGrid');
   grid.innerHTML = '';
+  FILL_SEED = (FILL_SEED % 9999) + 7;
   const pinned = window.ACTIVE || sel('template');
   const pinnedScen = sel('scenario');   // '' = surprise
+  const tiles = [];
   for (let i = 0; i < 12; i++) {
     // choose a scenario that can live in the pinned format
     let scen = pinnedScen || weightedScenario();
@@ -1201,11 +1227,6 @@ function buildOptions() {
     const box = document.createElement('div');
     box.className = 'scalebox';
     const t = TPL[template];
-    const isBanner = template === 'show-banner';
-    const scale = isBanner ? Math.min(1, 900 / t.w) : Math.min(1, 340 / t.w);
-    if (isBanner) card.style.width = '100%';
-    box.style.width = t.w * scale + 'px'; box.style.height = t.h * scale + 'px';
-    ad.style.transformOrigin = '0 0'; ad.style.transform = `scale(${scale})`;
     box.appendChild(ad); card.appendChild(box); fitText(ad);
     const meta = document.createElement('div');
     meta.className = 'meta';
@@ -1227,7 +1248,31 @@ function buildOptions() {
     dl.textContent = 'GIF';
     dl.onclick = () => exportCreative({ template, skin, copy, imgUrl: img.dataUrl, icons: opts.icons, overlayPattern: r.overlayPattern, badgeStyle: r.badgeStyle, fx: ad._fx12, motion: ad._mo12 }, `${scen}-${skin}-${i+1}`);
     meta.appendChild(ed); meta.appendChild(dl); card.appendChild(meta);
-    grid.appendChild(card);
+    tiles.push({ card, box, ad, w: t.w, h: t.h, id: 'c' + i });
+  }
+  // §8: pack into justified rows; wide/tall formats get sensible target heights
+  const containerW = (grid.clientWidth || 900) - 2;
+  const tall = ['show-sky','show-halfpage'].includes(pinned);
+  const wide = pinned === 'show-banner';
+  const targetH = tall ? 300 : wide ? 92 : 170;
+  const rows = packJustified(tiles, { containerW, targetH, gutter: 12, lastRowFill: 'left' });
+  for (const r of rows) {
+    const line = document.createElement('div');
+    line.style.cssText = 'display:flex; gap:12px; margin-bottom:12px; align-items:flex-start;';
+    for (const t of r.tiles) {
+      const sc = t.dw / t.w;
+      t.box.style.width = t.dw + 'px'; t.box.style.height = t.dh + 'px'; t.box.style.overflow = 'hidden';
+      t.ad.style.transformOrigin = '0 0'; t.ad.style.transform = `scale(${sc})`;
+      // §8.3 fill variation: ~40% framed (inset + matte), 60% bleed
+      if (fillMode(t.id) === 'frame') {
+        t.box.style.padding = Math.round(Math.min(t.dw, t.dh) * 0.08) + 'px';
+        t.box.style.background = '#0d0d0f';
+        t.ad.style.transform = `scale(${sc * 0.84})`;
+      }
+      t.card.style.width = t.dw + 'px';
+      line.appendChild(t.card);
+    }
+    grid.appendChild(line);
   }
 }
 
@@ -1436,7 +1481,7 @@ function persist() {
   }));
 }
 let CAMO_URL = null;
-const PURGED_ICONS = ['padlock','padlockopen','hazard','shieldcheck','scangear'];
+const PURGED_ICONS = ['padlock','padlockopen','hazard','shieldcheck','scangear','cart','giftbox','spinwheel','ringlight','tripod','token','heartspam','webcam','bubble','notifdot','battery','cursor','parcel','priceburst','pumpbottle'];
 async function purgeRemoved() {
   for (const n of PURGED_ICONS) { const id='builtin-'+n; if (assets.find(a=>a.id===id)) { dropAsset(id); assets = assets.filter(a=>a.id!==id); } }
 }
@@ -1450,7 +1495,7 @@ async function loadCamo() {
   if (cam) { dropAsset('builtin-camo'); assets = assets.filter(a => a.id !== 'builtin-camo'); }
 }
 async function loadBuiltins() {
-  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','pfiercer','gummygirl','slave','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop','cart','giftbox','spinwheel','ringlight','tripod','token','heartspam','webcam','bubble','notifdot','battery','cursor','parcel','priceburst','pumpbottle'];
+  const names = ['gummies','vial','capsules','blister','boost','rose','pendant','lips','towel','cherries','peach','logo','shield','girl1','girl2','girl3','girl4','pfiercer','gummygirl','slave','sketch1','sketch2','sketch3','sketch4','sketch5','sketch6','sketch7','sketch8','memphy1','memphy2','memphy3','gtagirl','bluepill','gummybear','whip','cuffs','blindfold','heel','choker','tickler','candle','garter','chain','lollipop'];
   for (const n of names) {
     const id = 'builtin-' + n;
     if (DELETED.includes(id)) continue;
